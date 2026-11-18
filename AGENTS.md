@@ -21,6 +21,7 @@ Project: `mfe-lab`, a private learning monorepo for Federated Micro Frontends. R
 - Fonts, if any, self-hosted in the repo. No CDN, no external requests at runtime.
 - API: Fastify, `better-sqlite3`, zod, `@fastify/jwt`. Prefer stdlib and what is installed; add a dependency only with a one-line reason in the PR.
 - Shared singletons: `react`, `react-dom`, `react-router`, `@mfe/auth-store`. Everything shared is declared in one place per app (`federation.shared.ts`) from a common list.
+- API runs TS natively on Node 26: `.ts` import extensions, erasable syntax only (no enums, namespaces, parameter properties), no build step.
 - Keep it small. This is a lab: no speculative abstractions, no config for values that never change.
 
 ## Secrets and data

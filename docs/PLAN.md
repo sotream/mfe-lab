@@ -19,7 +19,7 @@ T0 ─┬─ T1 ── T2 ── T3 ───────┐
 ## T1 API: db, migrations, seed (needs T0)
 
 - `apps/api`: Fastify app factory `buildApp({ dbPath })`, `better-sqlite3`, SQL migrations in `migrations/*.sql` applied on start, `/health`.
-- `pnpm seed`: deterministic data from BRIEF (bcrypt/argon2 hashes for users).
+- `pnpm seed`: deterministic data from BRIEF (scrypt (`node:crypto`) hashes for users).
 - **Done when:** seed twice is idempotent (reset flag), tests cover migration + seed counts.
 
 ## T2 API: auth (needs T1)

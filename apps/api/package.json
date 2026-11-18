@@ -4,6 +4,17 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "node --watch src/server.ts",
+    "start": "node src/server.ts",
+    "seed": "node src/seed.ts",
+    "seed:reset": "node src/seed.ts --reset",
     "typecheck": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "better-sqlite3": "^13.2.0",
+    "fastify": "^5.12.8"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13"
   }
 }
