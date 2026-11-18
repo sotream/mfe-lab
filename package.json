@@ -11,6 +11,7 @@
     "dev": "pnpm -r --if-present dev",
     "build": "pnpm -r --if-present build",
     "seed": "pnpm -r --if-present seed",
+    "seed:reset": "pnpm --filter @mfe/api seed:reset",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
     "typecheck": "pnpm -r --if-present typecheck",
