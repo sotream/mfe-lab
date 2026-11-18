@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.env
+*.db
+*.db-journal
+apps/api/data/
+playwright-report/
+test-results/
+.DS_Store
