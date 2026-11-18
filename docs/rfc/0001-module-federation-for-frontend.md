@@ -32,21 +32,22 @@ flowchart LR
 
 - **Host:** `apps/shell`, `remotes: { products: 'products@http://localhost:3001/mf-manifest.json', dashboard: ... }`. Remote URLs come from env with local defaults, declared once in `remotes.ts`.
 - **Remotes:** expose one page component each (`./ProductsPage`, `./DashboardPage`). Own `index.tsx` for standalone development.
-- **Shared:** `react`, `react-dom`, `react-router-dom`, `@mfe/auth-store` with `singleton: true` and a `requiredVersion` from the root lockfile. One shared list, imported by all three Rspack configs.
+- **Shared:** `react`, `react-dom`, `react-router` (v8 ships no `react-router-dom`), `@mfe/auth-store` with `singleton: true` and a `requiredVersion` from the root lockfile. One shared list, imported by all three Rspack configs.
 - **Isolation:** every remote mounts inside `RemoteFrame` = error boundary + Suspense + visible frame. A failed `import()` renders a fallback with a retry button, never a blank page.
 - **Contract:** the exposed module is the only public surface. Props: none for pages (they read auth from the shared store and router from the shared singleton). Adding props needs a new RFC.
 - **Versioning (lab level):** each build writes `mf-manifest.json` with a build stamp; the inspector page reads it. No semver negotiation between remotes.
 
 ## Alternatives considered
 
-| Option | Why not |
-|---|---|
-| Single SPA monolith | Hides the point of the lab. |
-| iframes | Strong isolation but no shared state or deps, poor UX, nothing to learn about federation. |
-| single-spa | Extra orchestration layer; Module Federation covers the need with less. |
-| Native Federation / import maps | Good candidate for a later comparison RFC. |
-| Vite + federation plugin | Less mature runtime and manifest tooling than Rspack today. |
-| Webpack 5 | Works, slower; Rspack is config-compatible and faster. |
+| Option                          | Why not                                                                                   |
+| ------------------------------- | ----------------------------------------------------------------------------------------- |
+| Single SPA monolith             | Hides the point of the lab.                                                               |
+| iframes                         | Strong isolation but no shared state or deps, poor UX, nothing to learn about federation. |
+| single-spa                      | Extra orchestration layer; Module Federation covers the need with less.                   |
+| Native Federation / import maps | Good candidate for a later comparison RFC.                                                |
+| Vite + federation plugin        | Less mature runtime and manifest tooling than Rspack today.                               |
+| React 18 + react-router-dom 7   | Outdated at start; v7 is maintenance only.                                                |
+| Webpack 5                       | Works, slower; Rspack is config-compatible and faster.                                    |
 
 ## Trade-offs and risks
 
@@ -62,3 +63,7 @@ T4 (host + stubs), T6 and T7 (real remotes), T8 (inspector). See `docs/PLAN.md`.
 ## Open questions
 
 - Should the shell prefetch remote entries on idle? Measure first.
+
+## Changelog
+
+- 2026-11-18: stack bumped to React 19 + react-router 8; shared list uses `react-router`.

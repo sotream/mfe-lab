@@ -13,7 +13,7 @@ When an RFC is needed: anything that changes the architecture, a shared contract
 
 ## Index
 
-| # | Title | Status |
-|---|---|---|
-| 0001 | Module Federation for the frontend | Accepted |
-| 0002 | Sharing auth state between shell and remotes | Draft |
+| #    | Title                                        | Status   |
+| ---- | -------------------------------------------- | -------- |
+| 0001 | Module Federation for the frontend           | Accepted |
+| 0002 | Sharing auth state between shell and remotes | Draft    |
