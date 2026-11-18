@@ -7,3 +7,4 @@ apps/api/data/
 playwright-report/
 test-results/
 .DS_Store
+coverage/

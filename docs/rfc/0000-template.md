@@ -25,8 +25,8 @@ The design. Contracts, data flow, code sketches, diagrams. Enough detail that so
 ## Alternatives considered
 
 | Option | Why not |
-|---|---|
-| ... | ... |
+| ------ | ------- |
+| ...    | ...     |
 
 ## Trade-offs and risks
 

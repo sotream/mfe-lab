@@ -38,13 +38,13 @@ getToken(): string | null;                       // for the API client
 
 ## Alternatives considered
 
-| Option | Why not |
-|---|---|
-| Props from shell | Couples every remote to the host's prop contract. |
-| `window` custom events | Works, but untyped and invisible to the inspector. |
-| Each remote logs in | Duplicated sessions, bad UX. |
-| localStorage token | XSS exposure; also hides the sharing lesson behind storage. |
-| Redux/zustand as singleton | Heavier than needed for three fields. |
+| Option                     | Why not                                                     |
+| -------------------------- | ----------------------------------------------------------- |
+| Props from shell           | Couples every remote to the host's prop contract.           |
+| `window` custom events     | Works, but untyped and invisible to the inspector.          |
+| Each remote logs in        | Duplicated sessions, bad UX.                                |
+| localStorage token         | XSS exposure; also hides the sharing lesson behind storage. |
+| Redux/zustand as singleton | Heavier than needed for three fields.                       |
 
 ## Trade-offs and risks
 
