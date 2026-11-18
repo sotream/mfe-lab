@@ -6,13 +6,64 @@ Status: planned, not built yet. Start with [`docs/BRIEF.md`](docs/BRIEF.md), the
 
 Prerequisites: Node 26 (`nvm use`) and pnpm 12 (`packageManager` pins 12.21.0).
 
-Target quick start (after the plan is done):
+## How it works
+
+The shell (`:3000`) is a Module Federation host. At runtime it loads two independently built and served remotes, `products` (`:3001`) and `dashboard` (`:3002`), by fetching their `mf-manifest.json`, then `remoteEntry.js`. `react`, `react-dom` and `react-router` are singletons: loaded once from the shell, and the remotes reuse that copy. Every remote slot is wrapped in `RemoteFrame` (error boundary, Suspense, labelled frame, Retry), so a dead remote shows a fallback and the rest of the page keeps working. The remotes will call the API on `:4000` from T6/T7.
+
+```mermaid
+flowchart TB
+  B([Browser]) --> S
+
+  subgraph S["shell :3000 · host"]
+    direction LR
+    FP["RemoteFrame<br/>products slot"]
+    SH[("shared singletons<br/>react · react-dom<br/>react-router<br/>loaded once")]
+    FD["RemoteFrame<br/>dashboard slot"]
+  end
+
+  FP -- "loadRemote()<br/>mf-manifest.json → remoteEntry.js" --> P["products :3001<br/>exposes ./ProductsPage"]
+  FD -- "loadRemote()<br/>mf-manifest.json → remoteEntry.js" --> D["dashboard :3002<br/>exposes ./DashboardPage"]
+  P -. "reuses" .-> SH
+  D -. "reuses" .-> SH
+  P & D -. "REST + JWT (from T6/T7)" .-> A[("api :4000 · SQLite")]
+```
+
+Loading one remote, including the "remote down" path:
+
+```mermaid
+sequenceDiagram
+  actor U as User
+  participant S as shell :3000
+  participant F as RemoteFrame
+  participant P as products :3001
+
+  U->>S: open /
+  S->>F: render RemoteFrame (products)
+  F-->>U: Loading products…
+  F->>P: loadRemote('products/ProductsPage'): GET mf-manifest.json
+  alt remote up
+    P-->>F: manifest
+    F->>P: GET remoteEntry.js and the expose chunk
+    Note over F,P: react, react-dom, react-router resolve to the shell's copies
+    F-->>U: ProductsPage renders
+  else remote down
+    P--xF: fetch fails
+    F-->>U: products is unavailable + Retry
+    U->>F: click Retry
+    F->>P: load() again (re-register, refetch manifest)
+  end
+```
+
+## Develop
 
 ```bash
 pnpm i
 pnpm seed
-pnpm dev   # shell :3000, products :3001, dashboard :3002, api :4000
+pnpm dev     # shell :3000, products :3001, dashboard :3002, api :4000 (all in parallel)
+pnpm build   # apps/*/dist (remotes emit mf-manifest.json)
 ```
+
+Remote manifest URLs are baked into the shell at build time; override with `MF_PRODUCTS_URL` / `MF_DASHBOARD_URL` (defaults `http://localhost:3001|3002/mf-manifest.json`). Package versions live in the `catalog:` of `pnpm-workspace.yaml`.
 
 ## API
 
