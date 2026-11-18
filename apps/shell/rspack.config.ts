@@ -36,5 +36,10 @@ export default defineConfig({
     }),
     new rspack.HtmlRspackPlugin({ template: './index.html', publicPath: '/' }),
   ],
-  devServer: { port: 3000, historyApiFallback: true },
+  devServer: {
+    port: 3000,
+    historyApiFallback: true,
+    // /api/* goes to the API with the prefix stripped: same origin for the browser, no CORS.
+    proxy: [{ context: ['/api'], target: 'http://localhost:4000', pathRewrite: { '^/api': '' } }],
+  },
 });

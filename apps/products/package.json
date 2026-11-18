@@ -9,6 +9,8 @@
     "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {
+    "@mfe/api-client": "workspace:*",
+    "@mfe/auth-store": "workspace:*",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-router": "catalog:"
