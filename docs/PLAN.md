@@ -43,8 +43,8 @@ T0 ─┬─ T1 ── T2 ── T3 ───────┐
 
 ## T5 Shared auth store + login (needs T4; real API from T2)
 
-- `packages/auth-store` singleton shared by shell and remotes (see RFC 0002). Login page in shell, token in memory, `/auth/me` on load, logout.
-- Route guard for protected routes. Typed API client in `packages/ui` or own package `packages/api-client`.
+- `packages/auth-store` singleton shared by shell and remotes (see RFC 0002). Login page in shell, token in memory, logout. (No `/auth/me` on load: the token is in memory only per RFC 0002, so after a reload there is nothing to restore and the user logs in again.)
+- Route guard for protected routes. Typed API client in its own package `packages/api-client`; dev servers proxy `/api` to the API.
 - Tests: store logic, guard.
 
 ## T6 Products remote (needs T5, T3)

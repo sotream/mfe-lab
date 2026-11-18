@@ -75,6 +75,14 @@ describe('federation build', { timeout: BUILD_TIMEOUT }, () => {
     expect(overridden).not.toContain('localhost:3001/mf-manifest.json');
   });
 
+  it('Q-manifest-auth-store: shell and both remotes share @mfe/auth-store as a singleton', () => {
+    for (const app of ['shell', 'products', 'dashboard']) {
+      expect(manifest(app).shared, app).toContainEqual(
+        expect.objectContaining({ name: '@mfe/auth-store', singleton: true }),
+      );
+    }
+  });
+
   it('Q-root-typecheck: pnpm typecheck exits 0 (includes root tests/**)', () => {
     expect(() => pnpm(['typecheck'])).not.toThrow();
   });

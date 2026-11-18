@@ -37,5 +37,7 @@ export default defineConfig({
     port: 3002,
     headers: { 'Access-Control-Allow-Origin': '*' },
     historyApiFallback: true,
+    // /api/* goes to the API with the prefix stripped: same origin for the browser, no CORS.
+    proxy: [{ context: ['/api'], target: 'http://localhost:4000', pathRewrite: { '^/api': '' } }],
   },
 });

@@ -1,5 +1,8 @@
+import { logout, useAuth } from '@mfe/auth-store';
 import { RemoteFrame } from '@mfe/ui';
-import { createBrowserRouter, NavLink, Outlet } from 'react-router';
+import { createBrowserRouter, NavLink, Outlet, useNavigate } from 'react-router';
+import { LoginPage } from './LoginPage.tsx';
+import { RequireAuth } from './RequireAuth.tsx';
 import { loadPage, remotePort, type RemoteName } from './remotes.ts';
 
 const Remote = ({ name }: { name: RemoteName }) => (
@@ -7,6 +10,8 @@ const Remote = ({ name }: { name: RemoteName }) => (
 );
 
 function Layout() {
+  const user = useAuth((s) => s.user);
+  const navigate = useNavigate();
   return (
     <>
       <nav>
@@ -16,7 +21,21 @@ function Layout() {
         <NavLink to="/products">Products</NavLink>
         <NavLink to="/dashboard">Dashboard</NavLink>
         <NavLink to="/inspector">Inspector</NavLink>
-        <NavLink to="/login">Login</NavLink>
+        {user ? (
+          <>
+            <span>{`${user.email} · ${user.role}`}</span>
+            <button
+              onClick={() => {
+                navigate('/login');
+                logout();
+              }}
+            >
+              Log out
+            </button>
+          </>
+        ) : (
+          <NavLink to="/login">Login</NavLink>
+        )}
       </nav>
       <main>
         <Outlet />
@@ -32,17 +51,31 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: (
-          <>
+          <RequireAuth>
             <h1>mfe-lab shell</h1>
             <Remote name="products" />
             <Remote name="dashboard" />
-          </>
+          </RequireAuth>
         ),
       },
-      { path: 'products', element: <Remote name="products" /> },
-      { path: 'dashboard', element: <Remote name="dashboard" /> },
+      {
+        path: 'products',
+        element: (
+          <RequireAuth>
+            <Remote name="products" />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'dashboard',
+        element: (
+          <RequireAuth>
+            <Remote name="dashboard" />
+          </RequireAuth>
+        ),
+      },
       { path: 'inspector', element: <h1>Inspector</h1> },
-      { path: 'login', element: <h1>Login</h1> },
+      { path: 'login', element: <LoginPage /> },
     ],
   },
 ]);

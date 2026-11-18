@@ -33,7 +33,7 @@ getToken(): string | null;                       // for the API client
 - Implementation: ~30 lines on `useSyncExternalStore`, no dependency. (If it grows, zustand is the fallback.)
 - Declared `singleton: true`, `eager: false`, same `requiredVersion` everywhere. If a remote got its own copy, state would silently split; the inspector checks that exactly one instance is loaded.
 - Token lives **in memory** only. Page reload re-authenticates via login form (accepted for the lab). Trade-off documented in README.
-- API client reads `getToken()` per request and calls `logout()` on 401.
+- API client (`@mfe/api-client`) reads `getToken()` per request and calls `logout()` on 401. It always calls the relative `/api/...`; every dev server proxies `/api` to the API on `:4000` (prefix stripped), so requests are same-origin and no CORS setup is needed.
 - Roles come from `user.role`; UI hides actions, API enforces. Remotes use `useAuth(s => s.user?.role)`.
 
 ## Alternatives considered
@@ -58,3 +58,7 @@ T5. Tests: store unit tests, route guard, e2e in T9.
 ## Open questions
 
 - Keep the store in a package of its own or expose it from the shell? Package chosen for standalone remote development; revisit if it causes duplicate instances.
+
+## Changelog
+
+- 2026-11-18: T5: store implemented as specified; added `@mfe/api-client` and the `/api` dev-server proxy; `@mfe/auth-store` joined the shared singleton list.
