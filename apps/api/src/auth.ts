@@ -1,5 +1,6 @@
 import jwt from '@fastify/jwt';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { verifyPassword } from './password.ts';
 
@@ -77,21 +78,23 @@ export async function registerAuth(app: FastifyInstance, opts: { jwtSecret?: str
   // before this ever faces a network.
   // ponytail: an unknown email returns before scrypt runs, so response timing reveals whether
   // an account exists; hash a dummy password on that path to equalize.
-  app.post('/auth/login', async (request, reply) => {
-    const body = loginBody.safeParse(request.body);
-    if (!body.success)
-      return reply.code(400).send({ error: 'invalid_body', issues: body.error.issues });
+  app
+    .withTypeProvider<ZodTypeProvider>()
+    .post(
+      '/auth/login',
+      { schema: { tags: ['auth'], body: loginBody, security: [] } },
+      async (request, reply) => {
+        const user = app.db
+          .prepare('select id, email, password_hash, role from users where email = ?')
+          .get(request.body.email) as UserRow | undefined;
+        if (!user || !(await verifyPassword(request.body.password, user.password_hash))) {
+          return reply.code(401).send({ error: 'invalid_credentials' });
+        }
 
-    const user = app.db
-      .prepare('select id, email, password_hash, role from users where email = ?')
-      .get(body.data.email) as UserRow | undefined;
-    if (!user || !(await verifyPassword(body.data.password, user.password_hash))) {
-      return reply.code(401).send({ error: 'invalid_credentials' });
-    }
-
-    const token = app.jwt.sign({ sub: user.id, role: user.role, email: user.email });
-    return { token, user: { id: user.id, email: user.email, role: user.role } };
-  });
+        const token = app.jwt.sign({ sub: user.id, role: user.role, email: user.email });
+        return { token, user: { id: user.id, email: user.email, role: user.role } };
+      },
+    );
 
   app.get('/auth/me', { preHandler: authenticate }, (request) => {
     const { sub, email, role } = request.user;

@@ -85,6 +85,24 @@ Demo users (**demo-only credentials, never reuse**): `admin@lab.test`, `editor@l
 - Routes are protected with `preHandler: app.authenticate` or `app.requireRole('admin', 'editor')` (`401 unauthorized`, `403 forbidden`).
 - `JWT_SECRET` env sets the signing secret (see `.env.example`, **demo-only**). If unset outside production, the API uses an insecure dev secret and logs a warning; in production a missing secret is a startup error.
 
+### Endpoints
+
+All routes except `GET /health`, `POST /auth/login` and `/docs*` need `Authorization: Bearer <token>` (auth runs before validation, so no token is always `401`). Errors are always `{ "error": "<code>" }`: `invalid_body` / `invalid_query` / `invalid_params` (400), `unauthorized` (401), `forbidden` (403), `not_found` (404), `conflict` (409), `internal` (500).
+
+| Route                                   | Roles allowed | Notes                                                                                                          |
+| --------------------------------------- | ------------- | -------------------------------------------------------------------------------------------------------------- |
+| `GET /products`                         | any           | `?page&limit&sort&order&q`; returns `{ items, total, page, limit }`; `q` matches name or sku, case-insensitive |
+| `GET /products/:id`                     | any           |                                                                                                                |
+| `POST /products`, `PATCH /products/:id` | admin, editor | duplicate sku gives `409`                                                                                      |
+| `DELETE /products/:id`                  | admin, editor | `409` if the product has orders                                                                                |
+| `GET /orders`                           | any           | `?page&limit&status`; newest first                                                                             |
+| `POST /orders`, `PATCH /orders/:id`     | admin         | create sets status `new`; PATCH sets `status`                                                                  |
+| `GET /stats`                            | any           | counts, revenue by status, orders per day (UTC)                                                                |
+
+Pagination defaults to `page=1&limit=20` (max `limit` 100); `sort` is one of `id, sku, name, price_cents, stock, created_at`.
+
+Interactive OpenAPI docs: <http://localhost:4000/docs> (spec at `/docs/json`; both public).
+
 ## Run CI locally
 
 GitHub Actions minutes are unavailable, so run CI with [act](https://github.com/nektos/act) before any push or merge. Run it from a fresh clone of the committed branch (a worktree's `.git` points to a host path that does not exist in the container, and the clone tests only committed state, like real CI):
