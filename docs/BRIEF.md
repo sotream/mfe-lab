@@ -17,14 +17,14 @@ Not a product. A teaching lab: every design choice must make the federation boun
 
 ## Scope
 
-| Piece | Tech | Port |
-|---|---|---|
-| `apps/shell` (host) | React 18, TS, Rspack + Module Federation 2 (`@module-federation/enhanced`), react-router | 3000 |
-| `apps/products` (remote) | same stack; exposes `./ProductsPage` | 3001 |
-| `apps/dashboard` (remote) | same stack; exposes `./DashboardPage` (stats cards + small chart) | 3002 |
-| `packages/auth-store` | tiny store (zustand or own 30 lines), singleton shared via federation | n/a |
-| `packages/ui` | minimal shared components: `RemoteFrame`, `Button`, `Table`; plain CSS, no UI lib | n/a |
-| `apps/api` | Fastify, TS, `better-sqlite3`, JWT (`@fastify/jwt`), zod validation | 4000 |
+| Piece                     | Tech                                                                                       | Port |
+| ------------------------- | ------------------------------------------------------------------------------------------ | ---- |
+| `apps/shell` (host)       | React 19, TS, Rspack + Module Federation 2 (`@module-federation/enhanced`), react-router 8 | 3000 |
+| `apps/products` (remote)  | same stack; exposes `./ProductsPage`                                                       | 3001 |
+| `apps/dashboard` (remote) | same stack; exposes `./DashboardPage` (stats cards + small chart)                          | 3002 |
+| `packages/auth-store`     | tiny store (zustand or own 30 lines), singleton shared via federation                      | n/a  |
+| `packages/ui`             | minimal shared components: `RemoteFrame`, `Button`, `Table`; plain CSS, no UI lib          | n/a  |
+| `apps/api`                | Fastify, TS, `better-sqlite3`, JWT (`@fastify/jwt`), zod validation                        | 4000 |
 
 Data: SQLite file `apps/api/data/app.db` (gitignored), created by migration, filled by `pnpm seed`.
 
@@ -35,6 +35,7 @@ Data: SQLite file `apps/api/data/app.db` (gitignored), created by migration, fil
 Seed: 3 users (`admin@lab.test`, `editor@lab.test`, `viewer@lab.test`, password `lab12345`, documented in README as demo-only), ~30 products, ~60 orders. Deterministic (seeded RNG).
 
 API:
+
 - `POST /auth/login`, `GET /auth/me`
 - `GET/POST /products`, `GET/PATCH/DELETE /products/:id` (write: admin, editor)
 - `GET /orders`, `POST /orders`, `PATCH /orders/:id`
