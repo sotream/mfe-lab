@@ -4,6 +4,17 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "rspack dev",
+    "build": "rspack build",
     "typecheck": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-router": "catalog:"
+  },
+  "devDependencies": {
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:"
   }
 }

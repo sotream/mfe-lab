@@ -1,0 +1,33 @@
+[data-remote] {
+  --frame-color: var(--border, #888);
+  border: 2px solid var(--frame-color);
+  border-radius: 8px;
+  padding: 0 1rem 1rem;
+  margin: 1rem 0;
+}
+
+[data-remote='products'] {
+  --frame-color: #2f7d4f;
+}
+
+[data-remote='dashboard'] {
+  --frame-color: #7a4fc2;
+}
+
+.remote-frame-label {
+  display: inline-block;
+  margin: 0 0 0.75rem;
+  padding: 0.15rem 0.6rem;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: var(--frame-color);
+  color: #fff;
+  font:
+    600 0.75rem/1.4 ui-monospace,
+    monospace;
+}
+
+.remote-frame-error {
+  padding: 0.5rem 0;
+  color: #a12626;
+}
