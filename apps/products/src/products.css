@@ -1,0 +1,94 @@
+.products {
+  --p-border: var(--border, #888);
+  --p-accent: var(--accent, #2b59c3);
+  --p-danger: #a12626;
+}
+
+.products-toolbar {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.products-toolbar input[type='search'] {
+  flex: 1;
+  max-width: 20rem;
+}
+
+.products table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.products th,
+.products td {
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--p-border);
+  text-align: left;
+}
+
+.products th button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.products th[aria-sort] button {
+  color: var(--p-accent);
+}
+
+.products th[aria-sort='ascending'] button::after {
+  content: ' ▲';
+}
+
+.products th[aria-sort='descending'] button::after {
+  content: ' ▼';
+}
+
+.products-pager {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 0.75rem;
+}
+
+.products [role='alert'],
+.products-dialog [role='alert'],
+.products-field-error {
+  color: var(--p-danger, #a12626);
+}
+
+.products-dialog {
+  min-width: 20rem;
+  border: 2px solid var(--border, #888);
+  border-radius: 8px;
+}
+
+.products-dialog form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.products-dialog label {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.products-dialog-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.standalone-bar {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px dashed var(--border, #888);
+}
