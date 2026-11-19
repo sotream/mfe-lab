@@ -7,6 +7,7 @@ export default defineConfig({
   entry: './src/index.ts',
   output: { publicPath: 'auto', clean: true },
   resolve: { extensions: ['.ts', '.tsx', '.js'] },
+  experiments: { css: true },
   module: {
     rules: [
       {
@@ -20,6 +21,7 @@ export default defineConfig({
           },
         },
       },
+      { test: /\.css$/, type: 'css/auto' },
     ],
   },
   plugins: [

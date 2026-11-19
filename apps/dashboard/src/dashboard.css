@@ -1,0 +1,149 @@
+.dashboard {
+  --d-surface: #fcfcfb;
+  --d-ink: #0b0b0b;
+  --d-ink-2: #52514e;
+  --d-muted: #898781;
+  --d-series: #2a78d6;
+  --d-grid: #e4e3df;
+  color: var(--d-ink);
+}
+
+.dashboard-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.75rem;
+  margin: 0 0 1.25rem;
+}
+
+.dashboard-tile {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--d-grid);
+  border-radius: 8px;
+  background: var(--d-surface);
+}
+
+.dashboard-tile dt {
+  color: var(--d-ink-2);
+  font-size: 0.8rem;
+}
+
+.dashboard-tile dd {
+  margin: 0.25rem 0 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.dashboard figure {
+  margin: 0 0 1.25rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--d-grid);
+  border-radius: 8px;
+  background: var(--d-surface);
+}
+
+.dashboard figcaption {
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.dashboard-chart {
+  position: relative;
+}
+
+.dashboard-chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.dashboard-chart .grid {
+  stroke: var(--d-grid);
+  stroke-width: 1;
+}
+
+.dashboard-chart .axis {
+  fill: var(--d-muted);
+  font-size: 11px;
+}
+
+.dashboard-chart .bar {
+  fill: var(--d-series);
+  clip-path: inset(0 round 4px 4px 0 0);
+}
+
+.dashboard-chart .bar:hover,
+.dashboard-chart .bar:focus-visible {
+  fill: #1c5aa6;
+  outline: none;
+}
+
+.dashboard-tooltip {
+  position: absolute;
+  padding: 0.25rem 0.5rem;
+  transform: translate(-50%, calc(-100% - 6px));
+  border-radius: 4px;
+  background: var(--d-ink);
+  color: #fff;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.dashboard-revenue {
+  margin-bottom: 1.25rem;
+}
+
+.dashboard-revenue h3 {
+  margin: 0 0 0.5rem;
+}
+
+.dashboard-revenue-row {
+  display: grid;
+  grid-template-columns: 5rem 1fr 8rem;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 0.4rem;
+}
+
+.dashboard-revenue-row .label {
+  color: var(--d-ink-2);
+}
+
+.dashboard-revenue-row .track {
+  display: block;
+  height: 14px;
+  background: var(--d-grid);
+  border-radius: 0 4px 4px 0;
+}
+
+.dashboard-revenue-row .fill {
+  display: block;
+  height: 100%;
+  background: var(--d-series);
+  border-radius: 0 4px 4px 0;
+}
+
+.dashboard-revenue-row .value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.dashboard details table {
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+
+.dashboard details th,
+.dashboard details td {
+  padding: 0.25rem 0.75rem;
+  border-bottom: 1px solid var(--d-grid);
+  text-align: left;
+}
+
+.standalone-bar {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px dashed var(--border, #888);
+}
