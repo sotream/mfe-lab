@@ -82,3 +82,11 @@ export const createProduct = (input: ProductInput) =>
 export const updateProduct = (id: number, patch: Partial<ProductInput>) =>
   request<Product>(`/products/${id}`, { method: 'PATCH', body: patch });
 export const deleteProduct = (id: number) => request<void>(`/products/${id}`, { method: 'DELETE' });
+
+export type Stats = {
+  counts: { products: number; orders: number };
+  revenue_by_status: { new: number; paid: number; shipped: number };
+  orders_per_day: { date: string; count: number }[];
+};
+
+export const getStats = () => request<Stats>('/stats');
