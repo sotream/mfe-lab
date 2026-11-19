@@ -57,3 +57,28 @@ export async function request<T>(path: string, opts: Options = {}): Promise<T> {
   if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
 }
+
+export type Product = {
+  id: number;
+  sku: string;
+  name: string;
+  price_cents: number;
+  stock: number;
+  created_at: string;
+};
+export type ProductInput = { sku: string; name: string; price_cents: number; stock: number };
+export type Page<T> = { items: T[]; total: number; page: number; limit: number };
+export type ProductQuery = {
+  page?: number;
+  limit?: number;
+  sort?: 'id' | 'sku' | 'name' | 'price_cents' | 'stock' | 'created_at';
+  order?: 'asc' | 'desc';
+  q?: string;
+};
+
+export const listProducts = (query: ProductQuery) => request<Page<Product>>('/products', { query });
+export const createProduct = (input: ProductInput) =>
+  request<Product>('/products', { method: 'POST', body: input });
+export const updateProduct = (id: number, patch: Partial<ProductInput>) =>
+  request<Product>(`/products/${id}`, { method: 'PATCH', body: patch });
+export const deleteProduct = (id: number) => request<void>(`/products/${id}`, { method: 'DELETE' });
