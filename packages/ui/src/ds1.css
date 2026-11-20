@@ -1,49 +1,163 @@
 .ds1-button {
-  padding: var(--ds1-space-1) var(--ds1-space-3);
-  border: 1px solid var(--ds1-color-border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 var(--ds1-space-sm);
+  border: 1px solid var(--ds1-rule-2);
   border-radius: var(--ds1-radius);
-  background: transparent;
-  color: var(--ds1-color-text);
-  font: var(--ds1-font);
+  background-color: var(--ds1-paper-2);
+  color: var(--ds1-ink);
+  font: inherit;
+  font-size: var(--ds1-text-sm);
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
   cursor: pointer;
+  transition:
+    background-color var(--ds1-dur-micro) var(--ds1-ease-out),
+    border-color var(--ds1-dur-micro) var(--ds1-ease-out);
+}
+
+.ds1-button--sm {
+  height: 30px;
+  padding: 0 var(--ds1-space-xs);
+}
+
+.ds1-button:hover:not(:disabled) {
+  border-color: var(--ds1-muted);
+  background-color: var(--ds1-paper-3);
+}
+
+.ds1-button:active:not(:disabled) {
+  transform: translateY(1px);
 }
 
 .ds1-button:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
 .ds1-button--primary {
-  border-color: var(--ds1-color-primary);
-  background: var(--ds1-color-primary);
-  color: #fff;
+  border-color: var(--ds1-accent);
+  background-color: var(--ds1-accent);
+  color: var(--ds1-accent-ink);
+}
+
+.ds1-button--primary:hover:not(:disabled) {
+  border-color: color-mix(in oklab, var(--ds1-accent) 85%, var(--ds1-ink));
+  background-color: color-mix(in oklab, var(--ds1-accent) 85%, var(--ds1-ink));
 }
 
 .ds1-button--danger {
-  border-color: var(--ds1-color-danger);
-  color: var(--ds1-color-danger);
+  color: var(--ds1-bad);
+}
+
+.ds1-button--danger:hover:not(:disabled) {
+  background-color: var(--ds1-bad-soft);
 }
 
 .ds1-table {
   width: 100%;
   border-collapse: collapse;
-  color: var(--ds1-color-text);
-  font: var(--ds1-font);
+  color: var(--ds1-ink);
+  font-size: var(--ds1-text-sm);
 }
 
 .ds1-table th,
 .ds1-table td {
-  padding: var(--ds1-space-2) var(--ds1-space-3);
-  border-bottom: 1px solid var(--ds1-color-border);
+  padding: var(--ds1-space-xs) var(--ds1-space-sm);
+  border-bottom: 1px solid var(--ds1-rule);
   text-align: left;
+  vertical-align: baseline;
+}
+
+.ds1-table th {
+  color: var(--ds1-muted);
+  font-weight: 500;
+}
+
+.ds1-table tbody tr:hover {
+  background-color: var(--ds1-paper-3);
+}
+
+.ds1-table .ds1-mono,
+.ds1-table .ds1-num {
+  font-family: var(--ds1-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.ds1-table .ds1-num {
+  text-align: right;
 }
 
 .ds1-field {
   display: grid;
-  gap: var(--ds1-space-1);
+  gap: var(--ds1-space-2xs);
+}
+
+.ds1-field label {
+  color: var(--ds1-ink-2);
+  font-size: var(--ds1-text-sm);
+  font-weight: 500;
 }
 
 .ds1-field-error {
   margin: 0;
-  color: var(--ds1-color-danger);
+  color: var(--ds1-bad);
+  font-size: var(--ds1-text-sm);
+}
+
+.ds1-field input,
+.ds1-input {
+  height: 36px;
+  padding: 0 var(--ds1-space-sm);
+  border: 1px solid var(--ds1-rule);
+  border-radius: var(--ds1-radius);
+  background-color: var(--ds1-paper-3);
+  color: var(--ds1-ink);
+  font: inherit;
+  font-size: var(--ds1-text-sm);
+  transition: border-color var(--ds1-dur-micro) var(--ds1-ease-out);
+}
+
+.ds1-field input:hover,
+.ds1-input:hover {
+  border-color: var(--ds1-rule-2);
+}
+
+.ds1-field input[aria-invalid='true'] {
+  border-color: var(--ds1-bad);
+}
+
+/* One surface split into cells by 1px rules: the Console readings pattern. */
+.ds1-readings {
+  display: grid;
+  grid-template-columns: repeat(var(--ds1-cols, 2), minmax(0, 1fr));
+  gap: 1px;
+  margin: 0;
+  border: 1px solid var(--ds1-rule);
+  border-radius: var(--ds1-radius-card);
+  background-color: var(--ds1-rule);
+  overflow: clip;
+}
+
+.ds1-readings > div {
+  min-width: 0;
+  padding: var(--ds1-space-sm) var(--ds1-space-md);
+  background-color: var(--ds1-paper-2);
+}
+
+.ds1-readings dt {
+  color: var(--ds1-muted);
+  font-size: var(--ds1-text-sm);
+  font-weight: 500;
+}
+
+.ds1-readings dd {
+  margin: var(--ds1-space-2xs) 0 0;
+  overflow-wrap: break-word;
+  font-family: var(--ds1-font-mono);
+  font-size: var(--ds1-text-2xl);
+  font-variant-numeric: tabular-nums;
 }

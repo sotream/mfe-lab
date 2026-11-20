@@ -1,4 +1,5 @@
 import { Component, Suspense, use, useState, type ComponentType, type ReactNode } from 'react';
+import { Button } from './Button.tsx';
 import './frame.css';
 
 export type RemoteModule = { default: ComponentType; buildVersion?: string };
@@ -37,7 +38,9 @@ function Remote({ promise }: { promise: Promise<RemoteModule> }) {
   return (
     <>
       {buildVersion && <span className="remote-frame-build">{`build ${buildVersion}`}</span>}
-      <Page />
+      <div className="remote-frame-body">
+        <Page />
+      </div>
     </>
   );
 }
@@ -83,18 +86,21 @@ export function RemoteFrame({ name, port, load, report }: Props) {
 
   return (
     <section data-remote={name} aria-label={`${name} remote`}>
-      <span className="remote-frame-label">{`${name} · :${port}`}</span>
+      <span className="remote-frame-label">{name}</span>
+      <span className="remote-frame-port">{`:${port}`}</span>
       <Boundary
         key={attempt}
         onError={onError}
         fallback={
           <div role="alert" className="remote-frame-error">
             <p>{`${name} is unavailable`}</p>
-            <button onClick={retry}>Retry</button>
+            <Button onClick={retry}>Retry</Button>
           </div>
         }
       >
-        <Suspense fallback={<p role="status">{`Loading ${name}…`}</p>}>
+        <Suspense
+          fallback={<p role="status" className="remote-frame-body">{`Loading ${name}…`}</p>}
+        >
           <Remote promise={promise} />
         </Suspense>
       </Boundary>

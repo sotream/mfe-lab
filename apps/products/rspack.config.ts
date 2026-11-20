@@ -32,6 +32,7 @@ export default defineConfig({
         },
       },
       { test: /\.css$/, type: 'css/auto' },
+      { test: /\.woff2$/, type: 'asset/resource' },
     ],
   },
   plugins: [

@@ -9,8 +9,38 @@ const USERS = [
   { email: 'viewer@lab.test', role: 'viewer' },
 ] as const;
 const STATUSES = ['new', 'paid', 'shipped'] as const;
-const NOUNS = ['Widget', 'Gadget', 'Gizmo', 'Bracket', 'Cable', 'Lamp', 'Valve', 'Sensor'];
-const ADJECTIVES = ['Compact', 'Rugged', 'Smart', 'Classic', 'Mini'];
+const NAMES = [
+  'Pressure Sensor',
+  'Flow Valve',
+  'Relay Board',
+  'Thermal Probe',
+  'Stepper Driver',
+  'Logic Analyzer',
+  'Signal Generator',
+  'Power Supply',
+  'Servo Controller',
+  'Load Cell',
+  'Gas Detector',
+  'Humidity Sensor',
+  'Current Shunt',
+  'Solenoid Valve',
+  'Bench Multimeter',
+  'Oscilloscope Probe',
+  'Breakout Board',
+  'Thermocouple Amplifier',
+  'Pump Controller',
+  'Level Switch',
+  'Vibration Sensor',
+  'Encoder Module',
+  'Data Logger',
+  'Isolation Amplifier',
+  'Fan Controller',
+  'Light Sensor',
+  'Voltage Divider Kit',
+  'Motor Driver',
+  'Torque Sensor',
+  'Pulse Counter',
+];
 
 const DAY = 86_400_000;
 const PRODUCTS_FROM = Date.parse('2026-09-02T00:00:00.000Z');
@@ -62,7 +92,7 @@ export async function seed(db: Database, opts: { reset?: boolean } = {}): Promis
     );
     const productIds: number[] = [];
     for (let i = 0; i < PRODUCTS; i++) {
-      const name = `${ADJECTIVES[int(0, ADJECTIVES.length - 1)]} ${NOUNS[int(0, NOUNS.length - 1)]}`;
+      const name = NAMES[i]!;
       const sku = `SKU-${String(i + 1).padStart(4, '0')}`;
       const info = addProduct.run(
         sku,

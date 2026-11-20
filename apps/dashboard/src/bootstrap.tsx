@@ -1,4 +1,6 @@
 import { login, useAuth } from '@mfe/auth-store';
+import { Button } from '@mfe/ui';
+import '@mfe/ui/base.css';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router';
 import DashboardPage from './DashboardPage.tsx';
@@ -12,12 +14,15 @@ function StandaloneBar() {
   const user = useAuth((s) => s.user);
   return (
     <div className="standalone-bar">
-      <strong>Standalone dev</strong>
-      <span>· sign in as:</span>
+      <span className="standalone-title">Standalone dev. Sign in as</span>
       {ROLES.map((role) => (
-        <button key={role} onClick={() => login(`${role}@lab.test`, 'lab12345').catch(() => {})}>
+        <Button
+          key={role}
+          className="ds1-button--sm"
+          onClick={() => login(`${role}@lab.test`, 'lab12345').catch(() => {})}
+        >
           {role}
-        </button>
+        </Button>
       ))}
       <span>{user ? `signed in as ${user.email} (${user.role})` : 'not signed in'}</span>
     </div>

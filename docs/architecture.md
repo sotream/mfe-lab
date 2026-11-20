@@ -101,7 +101,7 @@ Rules: no remote reads another remote's store or cache; `@tanstack/react-query`,
 
 ## Login flow
 
-The shell owns login. `@mfe/auth-store` is a federation singleton (see [RFC 0002](rfc/0002-sharing-auth-state.md)), so the shell and both remotes read the same user and token. Guarded routes (`/`, `/products`, `/dashboard`) redirect anonymous users to `/login?next=<path>`; after signing in you land back on the page you asked for. The nav shows `email · role` and a Log out button.
+The shell owns login. `@mfe/auth-store` is a federation singleton (see [RFC 0002](rfc/0002-sharing-auth-state.md)), so the shell and both remotes read the same user and token. Guarded routes (`/`, `/products`, `/dashboard`) redirect anonymous users to `/login?next=<path>`; after signing in you land back on the page you asked for. The nav shows the email, a role chip and a Log out button.
 
 The token lives in memory only, so **a page reload logs you out** (accepted trade-off, RFC 0002). API calls go through `@mfe/api-client` to the relative `/api/...`; each dev server proxies `/api` to `http://localhost:4000` (prefix stripped), so there is no CORS setup.
 

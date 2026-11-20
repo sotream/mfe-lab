@@ -44,6 +44,8 @@ Remotes are released independently (RFC 0004). A design system forced to one cop
 
 T22 in `docs/PLAN.md`: ship 1.0.0, move products and dashboard to it. The README "Design system versions" section walks through both cases: a compatible bump (one copy) and a major bump (two copies).
 
+T25: the Console theme (dark palette, self-hosted Host Grotesk and Atkinson Hyperlegible Mono) lives in `@mfe/ui` 1.2.0, a minor: new `--ds1-*` tokens and additive classes, the 1.0.0 names kept, `requiredVersion` stays `^1.0.0`. Theming stays a non-goal: there is one theme.
+
 ## Open questions
 
 - None.

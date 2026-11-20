@@ -146,6 +146,11 @@ Goal: weekly grouped dependency update PRs via `.github/dependabot.yml`, with no
 - **Goal:** errors are reported to the API (`003_errors.sql`, `POST /errors`, admin `GET /errors`, `GET /errors/summary`, `DELETE /errors`) with the remote and its build, from `RemoteFrame` (`report` prop) and from `@mfe/telemetry` window handlers in the shell and each remote; an admin-only inspector `Errors` section lists them (RFC 0010).
 - **Done when:** as admin, checking `products.crash` makes the products frame show `products is unavailable` while the dashboard still renders, and after `Refresh` the inspector Errors table has a row with Remote `products` and Kind `render`; `@mfe/telemetry` is absent from `federation.shared.ts`; `pnpm lint && pnpm typecheck && pnpm test` pass.
 
+## T25 Visual redesign
+
+- **Goal:** one dark "Console" look across shell, products and dashboard, owned by `@mfe/ui` 1.2.0 (tokens `--ds1-*`, `base.css`, self-hosted OFL fonts): a frame bar that shows each remote's name, port and build, readings instead of cards, an inspector with a readings strip, and 30 unique lab-hardware product names in the seed (RFC 0008).
+- **Done when:** every colour and font family is declared only in `packages/ui/src/tokens.css`; the three apps emit the `.woff2` files and make no request outside localhost; the Home frame bars sit level; `@mfe/ui` is 1.2.0 with a changelog entry and `requiredVersion` stays `^1.0.0`; the seed has 30 unique product names; roles, labels and routes are unchanged apart from the copy listed for T25; `pnpm lint && pnpm typecheck && pnpm test` pass.
+
 ## Later (not now)
 
 Nothing planned.

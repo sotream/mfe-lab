@@ -29,25 +29,33 @@ export default function ProductDetail() {
   } else {
     body = (
       <>
-        <h2>{data.name}</h2>
-        <dl>
-          <dt>SKU</dt>
-          <dd>{data.sku}</dd>
-          <dt>Price</dt>
-          <dd>{formatPrice(data.price_cents)}</dd>
-          <dt>Stock</dt>
-          <dd>{data.stock}</dd>
-          <dt>Created</dt>
-          <dd>{data.created_at.slice(0, 10)}</dd>
+        <h2 className="product-name">{data.name}</h2>
+        <dl className="ds1-readings product-readings">
+          <div>
+            <dt>SKU</dt>
+            <dd>{data.sku}</dd>
+          </div>
+          <div className="price">
+            <dt>Price</dt>
+            <dd>{formatPrice(data.price_cents)}</dd>
+          </div>
+          <div>
+            <dt>Stock</dt>
+            <dd>{data.stock}</dd>
+          </div>
+          <div>
+            <dt>Created</dt>
+            <dd>{data.created_at.slice(0, 10)}</dd>
+          </div>
         </dl>
       </>
     );
   }
   return (
     <div className="products">
-      <p>
-        <Link to="..">Back to products</Link>
-      </p>
+      <Link to=".." className="product-back">
+        Back to products
+      </Link>
       {body}
     </div>
   );
