@@ -1,10 +1,32 @@
-# mfe-lab
+<h1 align="center">
+  <img src="docs/img/banner.svg" alt="mfe-lab: federated micro frontends, built the way a platform team ships them" width="100%">
+</h1>
 
-[![CI](https://github.com/sotream/mfe-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/sotream/mfe-lab/actions/workflows/ci.yml)
+<p align="center">
+  <a href="https://github.com/sotream/mfe-lab/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/sotream/mfe-lab/actions/workflows/ci.yml/badge.svg"></a>
+  <img alt="React 19" src="https://img.shields.io/badge/React-19-0e1116?style=flat-square&labelColor=161b22&logo=react&logoColor=f2efe9">
+  <img alt="Module Federation 2" src="https://img.shields.io/badge/Module%20Federation-2-0e1116?style=flat-square&labelColor=161b22&logo=webpack&logoColor=f2efe9">
+  <img alt="Rspack 2" src="https://img.shields.io/badge/Rspack-2-0e1116?style=flat-square&labelColor=161b22&logo=rspack&logoColor=f2efe9">
+  <img alt="TypeScript strict" src="https://img.shields.io/badge/TypeScript-strict-0e1116?style=flat-square&labelColor=161b22&logo=typescript&logoColor=f2efe9">
+  <img alt="tests Vitest + Playwright" src="https://img.shields.io/badge/tests-Vitest%20%2B%20Playwright-0e1116?style=flat-square&labelColor=161b22&logo=vitest&logoColor=f2efe9">
+</p>
 
-A working lab for **federated micro frontends**: one shell loads two independently built and deployed React remotes at runtime with Module Federation 2, on top of a small Fastify + SQLite API.
+<p align="center">
+  <a href="docs/tour.md"><b>Tour</b></a>&nbsp;&nbsp;&nbsp;
+  <a href="docs/architecture.md"><b>How it works</b></a>&nbsp;&nbsp;&nbsp;
+  <a href="docs/rfc/"><b>RFCs</b></a>&nbsp;&nbsp;&nbsp;
+  <a href="#quick-start"><b>Quick start</b></a>
+</p>
 
-It is built to answer the questions you hit on a real micro frontend platform. How does auth reach a remote it never logged into? How do remotes stay in sync without sharing a store? What happens when one is down, or ships a new version? Every answer is running code, black-box tests and a short RFC.
+One shell loads two independently built and deployed React remotes **at runtime** with Module Federation 2, on top of a small Fastify + SQLite API.
+
+It answers the questions a real micro frontend platform runs into:
+
+- How does auth reach a remote that never logged in?
+- How do remotes stay in sync without sharing a store?
+- What happens when one remote is down, or ships a new version?
+
+Every answer is running code, covered by black-box tests and argued in a short RFC.
 
 ![Architecture: browser, shell host, shared singletons, products and dashboard remotes, event bus, API](docs/img/architecture.svg)
 
@@ -90,3 +112,7 @@ packages/        auth-store, api-client, events, ui, telemetry
 ## How it was built
 
 Each task in [`docs/PLAN.md`](docs/PLAN.md) goes through its own PR. A builder writes the code. A tester writes black-box tests from the task's contract without reading the implementation. CI runs lint, typecheck, unit and e2e tests on every PR, and [act](https://github.com/nektos/act) reproduces it locally. Dependabot opens weekly grouped updates.
+
+## Author
+
+Built by Andrii Prisniak ([@sotream](https://github.com/sotream)).
