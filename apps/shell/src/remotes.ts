@@ -1,4 +1,4 @@
-import { loadRemote, registerRemotes } from '@module-federation/enhanced/runtime';
+import { loadRemote, preloadRemote, registerRemotes } from '@module-federation/enhanced/runtime';
 import type { RemoteModule } from '@mfe/ui';
 
 // Manifest URLs are baked in at build time: MF_*_URL env overrides the localhost defaults.
@@ -62,5 +62,24 @@ export async function loadPage(name: RemoteName): Promise<RemoteModule> {
   } catch (err) {
     failed.add(name);
     throw err;
+  }
+}
+
+let prefetched = false;
+
+// Warm the browser cache with both remotes (manifest, entry, expose chunks incl. async) once per page load.
+export function prefetchRemotes(): void {
+  if (prefetched) return;
+  prefetched = true;
+  try {
+    preloadRemote(
+      (Object.keys(entries) as RemoteName[]).map((name) => ({
+        nameOrAlias: name,
+        exposes: [`./${entries[name].module}`],
+        resourceCategory: 'all' as const,
+      })),
+    ).catch((err) => console.warn('prefetchRemotes failed', err));
+  } catch (err) {
+    console.warn('prefetchRemotes failed', err);
   }
 }
