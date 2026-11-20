@@ -1,7 +1,9 @@
 import { logout, useAuth } from '@mfe/auth-store';
 import { report } from '@mfe/telemetry';
 import { Button, RemoteFrame } from '@mfe/ui';
-import { createBrowserRouter, NavLink, Outlet, useNavigate } from 'react-router';
+import { useEffect, useLayoutEffect, useRef } from 'react';
+import { createBrowserRouter, NavLink, Outlet, useLocation, useNavigate } from 'react-router';
+import { LiveRegion } from './LiveRegion.tsx';
 import InspectorPage from './InspectorPage.tsx';
 import { LoginPage } from './LoginPage.tsx';
 import { RequireAuth } from './RequireAuth.tsx';
@@ -21,11 +23,41 @@ const Remote = ({ name, module }: { name: RemoteName; module?: string }) => (
   />
 );
 
+// Page title per top-level route; a remote owns the title below its route (RFC 0011).
+const TITLES: Record<string, string> = {
+  '': 'Home',
+  products: 'Products',
+  dashboard: 'Dashboard',
+  inspector: 'Inspector',
+  login: 'Sign in',
+};
+
 function Layout() {
   const user = useAuth((s) => s.user);
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const firstRender = useRef(true);
+
+  // Layout effect: runs before a remote's own effects, so ProductDetail's title wins.
+  useLayoutEffect(() => {
+    const title = TITLES[pathname.split('/')[1] ?? ''];
+    if (title) document.title = `${title} – mfe-lab`;
+  }, [pathname]);
+
+  // Every navigation after the first render, back and forward included, moves focus to the h1.
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    document.querySelector<HTMLElement>('main h1')?.focus();
+  }, [pathname]);
+
   return (
     <>
+      <a href="#main" className="skip-link">
+        Skip to content
+      </a>
       <header className="topbar">
         <nav className="container">
           <Wordmark />
@@ -55,9 +87,10 @@ function Layout() {
           )}
         </nav>
       </header>
-      <main className="container">
+      <main id="main" tabIndex={-1} className="container">
         <Outlet />
       </main>
+      <LiveRegion />
       <footer className="container">
         <span>shell</span>
         <span className="mono build">{`build ${__BUILD_VERSION__}`}</span>
@@ -75,7 +108,7 @@ export const router = createBrowserRouter([
         element: (
           <RequireAuth>
             <div className="page-head">
-              <h1>One page, three independent apps</h1>
+              <h1 tabIndex={-1}>One page, three independent apps</h1>
               <p className="lead">
                 The shell on :3000 loads products and dashboard at runtime. Each is built and
                 deployed on its own.
@@ -93,6 +126,9 @@ export const router = createBrowserRouter([
         path: 'products/*',
         element: (
           <RequireAuth>
+            <div className="page-head">
+              <h1 tabIndex={-1}>Products</h1>
+            </div>
             <Remote name="products" module="ProductsApp" />
           </RequireAuth>
         ),
@@ -101,6 +137,9 @@ export const router = createBrowserRouter([
         path: 'dashboard',
         element: (
           <RequireAuth>
+            <div className="page-head">
+              <h1 tabIndex={-1}>Dashboard</h1>
+            </div>
             <Remote name="dashboard" />
           </RequireAuth>
         ),

@@ -86,13 +86,20 @@ export function RemoteFrame({ name, port, load, report }: Props) {
 
   return (
     <section data-remote={name} aria-label={`${name} remote`}>
-      <span className="remote-frame-label">{name}</span>
+      <h2 className="remote-frame-label">{name}</h2>
       <span className="remote-frame-port">{`:${port}`}</span>
       <Boundary
         key={attempt}
         onError={onError}
         fallback={
-          <div role="alert" className="remote-frame-error">
+          <div
+            role="alert"
+            className="remote-frame-error"
+            // After a failed Retry the boundary remounts this fallback: put focus back on Retry, not body.
+            ref={(el) => {
+              if (attempt > 0) el?.querySelector('button')?.focus();
+            }}
+          >
             <p>{`${name} is unavailable`}</p>
             <Button onClick={retry}>Retry</Button>
           </div>

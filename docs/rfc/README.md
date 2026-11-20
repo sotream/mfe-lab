@@ -25,3 +25,4 @@ When an RFC is needed: anything that changes the architecture, a shared contract
 | 0008 | Design system versioning                     | Accepted |
 | 0009 | Feature flags                                | Accepted |
 | 0010 | Error tracking per remote                    | Accepted |
+| 0011 | Accessibility across remotes                 | Accepted |

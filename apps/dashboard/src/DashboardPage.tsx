@@ -79,6 +79,8 @@ function OrdersChart({ days }: { days: Day[] }) {
   const width = MARGIN.left + plotW + MARGIN.right;
   const height = MARGIN.top + PLOT_H + MARGIN.bottom;
   const baseline = MARGIN.top + PLOT_H;
+  const total = days.reduce((sum, d) => sum + d.count, 0);
+  const peak = days.find((d) => d.count === max)!;
   const first = days[0]!.date;
   const last = days[days.length - 1]!.date;
 
@@ -96,7 +98,7 @@ function OrdersChart({ days }: { days: Day[] }) {
         // Never scale above natural size: one SVG unit is one CSS px, so MAX_BAR caps real px.
         style={{ maxWidth: width }}
         role="img"
-        aria-label={`Orders per day, ${first} to ${last}`}
+        aria-label={`Orders per day, ${first} to ${last}: ${total} orders, peak ${peak.count} on ${peak.date}`}
       >
         {yTicks(max).map((tick) => {
           const y = baseline - (tick / top) * PLOT_H;
@@ -127,12 +129,9 @@ function OrdersChart({ days }: { days: Day[] }) {
               y={y}
               width={barW}
               height={h}
-              tabIndex={0}
-              aria-label={`${d.date}: ${d.count} orders`}
+              // Mouse tooltip only: bars are not focusable, the data table is the accessible alternative.
               onMouseEnter={() => setActive(d)}
               onMouseLeave={() => setActive(null)}
-              onFocus={() => setActive(d)}
-              onBlur={() => setActive(null)}
             />
           );
         })}

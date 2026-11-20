@@ -35,7 +35,7 @@ export function LoginPage() {
     <div className="login">
       <div className="login-intro">
         <Wordmark />
-        <h1>Sign in to the shell</h1>
+        <h1 tabIndex={-1}>Sign in to the shell</h1>
         <p className="lead">
           The shell owns login. Both remotes read the same user from a shared store.
         </p>

@@ -4,6 +4,7 @@
 export type EventMap = {
   'products:changed': { id: number; kind: 'created' | 'updated' | 'deleted' };
   'flags:changed': { name: string; enabled: boolean };
+  'a11y:announce': { message: string };
 };
 export type EventName = keyof EventMap;
 export type MfeEvent = {

@@ -235,21 +235,23 @@ function useProductList() {
 // On success: refresh this remote's own cache, then tell the other remotes (RFC 0006).
 function useProductMutations() {
   const client = useQueryClient();
-  const changed = (id: number, kind: 'created' | 'updated' | 'deleted') => {
+  const changed = (id: number, kind: 'created' | 'updated' | 'deleted', sku: string) => {
     void client.invalidateQueries({ queryKey: ['products'] });
     emit('products:changed', { id, kind });
+    // The shell owns the live region (RFC 0011); standalone nobody listens.
+    emit('a11y:announce', { message: `Product ${sku} ${kind === 'updated' ? 'saved' : kind}` });
   };
   const create = useMutation({
     mutationFn: createProduct,
-    onSuccess: (p) => changed(p.id, 'created'),
+    onSuccess: (p) => changed(p.id, 'created', p.sku),
   });
   const update = useMutation({
     mutationFn: ({ id, input }: { id: number; input: ProductInput }) => updateProduct(id, input),
-    onSuccess: (_, { id }) => changed(id, 'updated'),
+    onSuccess: (_, { id, input }) => changed(id, 'updated', input.sku),
   });
   const remove = useMutation({
-    mutationFn: deleteProduct,
-    onSuccess: (_, id) => changed(id, 'deleted'),
+    mutationFn: (p: Product) => deleteProduct(p.id),
+    onSuccess: (_, p) => changed(p.id, 'deleted', p.sku),
   });
   return { create, update, remove };
 }
@@ -280,7 +282,7 @@ function ProductsTable({
   };
   return (
     <div className="products-table">
-      <Table>
+      <Table label="Products">
         <thead>
           <tr>
             {COLUMNS.map(({ label, field }) => (
@@ -451,7 +453,7 @@ export function ProductsContent({ base }: { base: string }) {
           product={deleting}
           onClose={() => dispatch(closeDialogs())}
           onDelete={async () => {
-            await remove.mutateAsync(deleting.id);
+            await remove.mutateAsync(deleting);
             afterDelete();
           }}
         />

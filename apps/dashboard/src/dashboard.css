@@ -71,10 +71,8 @@
   clip-path: inset(0 round 4px 4px 0 0);
 }
 
-.dashboard-chart .bar:hover,
-.dashboard-chart .bar:focus-visible {
+.dashboard-chart .bar:hover {
   fill: var(--ds1-ink);
-  outline: none;
 }
 
 .dashboard-tooltip {

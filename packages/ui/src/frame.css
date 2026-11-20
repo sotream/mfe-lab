@@ -20,6 +20,11 @@
 
 .remote-frame-label {
   grid-column: 1;
+  max-width: none;
+  margin: 0;
+  letter-spacing: normal;
+  line-height: inherit;
+  text-wrap: wrap;
   border-right: 1px solid var(--ds1-rule);
   color: var(--ds1-ink);
   font-weight: 500;

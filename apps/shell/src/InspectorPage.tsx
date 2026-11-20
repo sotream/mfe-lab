@@ -97,6 +97,7 @@ function Flags({ flags, setFlags }: { flags: Flag[]; setFlags: Dispatch<SetState
     try {
       const updated = await setFlag(name, enabled);
       emit('flags:changed', { name, enabled: updated.enabled });
+      emit('a11y:announce', { message: `${name} turned ${updated.enabled ? 'on' : 'off'}` });
       setFlags((all) => all.map((f) => (f.name === name ? updated : f)));
     } catch {
       setFailed(true);
@@ -115,7 +116,7 @@ function Flags({ flags, setFlags }: { flags: Flag[]; setFlags: Dispatch<SetState
               Could not load or change flags
             </p>
           )}
-          <Table>
+          <Table label="Flags">
             <thead>
               <tr>
                 <th>Flag</th>
@@ -161,7 +162,12 @@ function Errors() {
     );
   const clear = () =>
     clearErrors().then(
-      () => (setSummary([]), setRows([]), setFailed(false)),
+      () => (
+        setSummary([]),
+        setRows([]),
+        setFailed(false),
+        emit('a11y:announce', { message: 'Errors cleared' })
+      ),
       () => setFailed(true),
     );
 
@@ -190,7 +196,7 @@ function Errors() {
               Clear
             </Button>
           </div>
-          <Table>
+          <Table label="Errors">
             <thead>
               <tr>
                 <th>Time</th>
@@ -260,7 +266,7 @@ export default function InspectorPage() {
   return (
     <>
       <div className="page-head">
-        <h1>Federation inspector</h1>
+        <h1 tabIndex={-1}>Federation inspector</h1>
         <p className="lead">
           Live state of this page: remotes, shared modules, flags, errors and events.
         </p>
@@ -288,7 +294,7 @@ export default function InspectorPage() {
       </dl>
       <section className="panel">
         <h2>Remotes</h2>
-        <Table>
+        <Table label="Remotes">
           <thead>
             <tr>
               <th>Name</th>
@@ -319,7 +325,7 @@ export default function InspectorPage() {
       </section>
       <section className="panel">
         <h2>Shared dependencies</h2>
-        <Table>
+        <Table label="Shared dependencies">
           <thead>
             <tr>
               <th>Package</th>
@@ -357,7 +363,7 @@ export default function InspectorPage() {
       <Errors />
       <section className="panel">
         <h2>Events</h2>
-        <Table className="trail">
+        <Table className="trail" label="Events">
           <thead>
             <tr>
               <th>Time</th>
