@@ -1,5 +1,6 @@
 import { Component, Suspense, use, useState, type ComponentType, type ReactNode } from 'react';
 import { Button } from './Button.tsx';
+import { useT } from './messages.ts';
 import './frame.css';
 
 export type RemoteModule = { default: ComponentType; buildVersion?: string };
@@ -64,6 +65,7 @@ class Boundary extends Component<
 
 // Not React.lazy: it caches a rejection forever. Here Retry calls load() again.
 export function RemoteFrame({ name, port, load, report }: Props) {
+  const t = useT();
   const [attempt, setAttempt] = useState(0);
   const [promise, setPromise] = useState(() => start(load));
 
@@ -85,7 +87,7 @@ export function RemoteFrame({ name, port, load, report }: Props) {
   };
 
   return (
-    <section data-remote={name} aria-label={`${name} remote`}>
+    <section data-remote={name} aria-label={t.remote(name)}>
       <h2 className="remote-frame-label">{name}</h2>
       <span className="remote-frame-port">{`:${port}`}</span>
       <Boundary
@@ -100,13 +102,17 @@ export function RemoteFrame({ name, port, load, report }: Props) {
               if (attempt > 0) el?.querySelector('button')?.focus();
             }}
           >
-            <p>{`${name} is unavailable`}</p>
-            <Button onClick={retry}>Retry</Button>
+            <p>{t.unavailable(name)}</p>
+            <Button onClick={retry}>{t.retry}</Button>
           </div>
         }
       >
         <Suspense
-          fallback={<p role="status" className="remote-frame-body">{`Loading ${name}…`}</p>}
+          fallback={
+            <p role="status" className="remote-frame-body">
+              {t.loading(name)}
+            </p>
+          }
         >
           <Remote promise={promise} />
         </Suspense>

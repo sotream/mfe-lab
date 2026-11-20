@@ -41,6 +41,7 @@ Every answer is running code, covered by black-box tests and argued in a short R
 - **Feature flags.** Flags are served by the API and toggled live. Each remote reads only its own. ([RFC 0009](docs/rfc/0009-feature-flags.md))
 - **Error tracking per remote.** Errors are attributed to the remote and build that threw them. ([RFC 0010](docs/rfc/0010-error-tracking.md))
 - **Accessibility across remotes.** One owner per concern: the shell owns title, focus and the live region, remotes announce through a typed event, and lint and axe guard it. ([RFC 0011](docs/rfc/0011-accessibility-across-remotes.md))
+- **Locale across remotes.** German by default for German browsers, with an EN switch. The shell owns the language (`<html lang>` plus an event), each remote owns its strings, and `Intl` formats prices, dates and times. ([RFC 0012](docs/rfc/0012-locale-across-remotes.md))
 - **Prefetch on idle.** Measured first: −31.5% median time to the first product row on Fast 4G. ([RFC 0005](docs/rfc/0005-prefetch-remotes.md))
 - **An inspector page.** It shows remotes, versions, shared dependencies, flags, errors and a live event log.
 

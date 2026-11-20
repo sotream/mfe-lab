@@ -174,3 +174,11 @@
   color: var(--ds1-ink);
   font-weight: 500;
 }
+
+.product-readings .vat {
+  display: block;
+  margin-top: var(--ds1-space-xs);
+  color: var(--ds1-muted);
+  font-size: var(--ds1-text-sm);
+  font-weight: 400;
+}

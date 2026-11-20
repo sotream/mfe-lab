@@ -1,7 +1,7 @@
 import { getStats, type Stats } from '@mfe/api-client';
 import { useAuth } from '@mfe/auth-store';
 import { on } from '@mfe/events';
-import { Button, Table } from '@mfe/ui';
+import { Button, formatDate, formatMoney, formatNumber, Table, useLocale } from '@mfe/ui';
 import {
   notifyManager,
   QueryClient,
@@ -11,7 +11,8 @@ import {
 } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useFlag, useFlagsSync } from './flags.ts';
-import { fillDays, formatCents, niceMax, totalRevenue, yTicks } from './stats.ts';
+import { useT } from './messages.ts';
+import { fillDays, formatDayMonth, niceMax, totalRevenue, yTicks } from './stats.ts';
 import './dashboard.css';
 import './telemetry.ts';
 
@@ -39,11 +40,13 @@ function useStats() {
 }
 
 function Tiles({ stats }: { stats: Stats }) {
+  const t = useT().tiles;
+  const locale = useLocale();
   const tiles = [
-    ['Products', String(stats.counts.products)],
-    ['Orders', String(stats.counts.orders)],
-    ['Revenue', formatCents(totalRevenue(stats.revenue_by_status))],
-    ['Paid revenue', formatCents(stats.revenue_by_status.paid)],
+    [t.products, formatNumber(stats.counts.products, locale)],
+    [t.orders, formatNumber(stats.counts.orders, locale)],
+    [t.revenue, formatMoney(totalRevenue(stats.revenue_by_status), locale)],
+    [t.paid, formatMoney(stats.revenue_by_status.paid, locale)],
   ];
   return (
     <dl className="ds1-readings dashboard-tiles">
@@ -70,6 +73,8 @@ function anchorFor(i: number, n: number): 'start' | 'middle' | 'end' {
 }
 
 function OrdersChart({ days }: { days: Day[] }) {
+  const t = useT();
+  const locale = useLocale();
   const [active, setActive] = useState<Day | null>(null);
   const max = Math.max(...days.map((d) => d.count));
   const top = niceMax(max);
@@ -98,7 +103,13 @@ function OrdersChart({ days }: { days: Day[] }) {
         // Never scale above natural size: one SVG unit is one CSS px, so MAX_BAR caps real px.
         style={{ maxWidth: width }}
         role="img"
-        aria-label={`Orders per day, ${first} to ${last}: ${total} orders, peak ${peak.count} on ${peak.date}`}
+        aria-label={t.chartLabel(
+          formatDate(first, locale),
+          formatDate(last, locale),
+          formatNumber(total, locale),
+          formatNumber(peak.count, locale),
+          formatDate(peak.date, locale),
+        )}
       >
         {yTicks(max).map((tick) => {
           const y = baseline - (tick / top) * PLOT_H;
@@ -143,7 +154,7 @@ function OrdersChart({ days }: { days: Day[] }) {
             y={baseline + 16}
             textAnchor={anchorFor(i, days.length)}
           >
-            {days[i]!.date}
+            {formatDayMonth(days[i]!.date, locale)}
           </text>
         ))}
       </svg>
@@ -156,7 +167,7 @@ function OrdersChart({ days }: { days: Day[] }) {
             top: `${(tip.y / height) * 100}%`,
           }}
         >
-          {`${active.date}: ${active.count} orders`}
+          {t.tooltip(formatDate(active.date, locale), formatNumber(active.count, locale))}
         </div>
       )}
     </div>
@@ -164,6 +175,8 @@ function OrdersChart({ days }: { days: Day[] }) {
 }
 
 function RevenueByStatus({ revenue }: { revenue: Stats['revenue_by_status'] }) {
+  const t = useT();
+  const locale = useLocale();
   const rows = (['new', 'paid', 'shipped'] as const).map((status) => ({
     status,
     value: revenue[status],
@@ -171,14 +184,14 @@ function RevenueByStatus({ revenue }: { revenue: Stats['revenue_by_status'] }) {
   const max = Math.max(...rows.map((r) => r.value));
   return (
     <section className="dashboard-revenue">
-      <h3>Revenue by status</h3>
+      <h3>{t.revenueByStatus}</h3>
       {rows.map(({ status, value }) => (
         <div key={status} className="dashboard-revenue-row">
-          <span className="label">{status}</span>
+          <span className="label">{t.status[status]}</span>
           <span className="track">
             <span className="fill" style={{ width: `${max > 0 ? (value / max) * 100 : 0}%` }} />
           </span>
-          <span className="value">{formatCents(value)}</span>
+          <span className="value">{formatMoney(value, locale)}</span>
         </div>
       ))}
     </section>
@@ -186,21 +199,23 @@ function RevenueByStatus({ revenue }: { revenue: Stats['revenue_by_status'] }) {
 }
 
 function DataTable({ days }: { days: Day[] }) {
+  const t = useT();
+  const locale = useLocale();
   return (
     <details>
-      <summary>Show data table</summary>
+      <summary>{t.showTable}</summary>
       <Table>
         <thead>
           <tr>
-            <th>Date</th>
-            <th>Orders</th>
+            <th>{t.date}</th>
+            <th>{t.orders}</th>
           </tr>
         </thead>
         <tbody>
           {days.map((d) => (
             <tr key={d.date}>
-              <td>{d.date}</td>
-              <td>{d.count}</td>
+              <td>{formatDate(d.date, locale)}</td>
+              <td>{formatNumber(d.count, locale)}</td>
             </tr>
           ))}
         </tbody>
@@ -213,6 +228,7 @@ declare const __BUILD_VERSION__: string;
 export const buildVersion: string = __BUILD_VERSION__;
 
 function DashboardContent() {
+  const t = useT();
   const { stats, failed, reload } = useStats();
   useFlagsSync();
   const showRevenue = useFlag('dashboard.revenue', true);
@@ -220,20 +236,20 @@ function DashboardContent() {
   if (failed) {
     return (
       <div role="alert">
-        <p>Could not load dashboard</p>
-        <Button onClick={reload}>Retry</Button>
+        <p>{t.loadFailed}</p>
+        <Button onClick={reload}>{t.retry}</Button>
       </div>
     );
   }
-  if (!stats) return <p role="status">Loading dashboard…</p>;
+  if (!stats) return <p role="status">{t.loading}</p>;
 
   const days = fillDays(stats.orders_per_day);
   return (
     <div className="dashboard">
       <Tiles stats={stats} />
       <figure>
-        <figcaption>Orders per day</figcaption>
-        {days.length === 0 ? <p>No orders yet</p> : <OrdersChart days={days} />}
+        <figcaption>{t.ordersPerDay}</figcaption>
+        {days.length === 0 ? <p>{t.noOrders}</p> : <OrdersChart days={days} />}
       </figure>
       {showRevenue && <RevenueByStatus revenue={stats.revenue_by_status} />}
       {days.length > 0 && <DataTable days={days} />}

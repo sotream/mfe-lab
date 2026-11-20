@@ -53,6 +53,7 @@ T17 `@mfe/events` and the inspector log; T18 TanStack Query and cross-remote inv
 - 2026-11-20: products UI state (page, sort, search, dialogs) moved to a Redux Toolkit slice in a store created per page mount and per user; not shared, not exposed (T19).
 - 2026-11-20: `flags:changed` `{ name, enabled }`, emitted by the shell inspector after a flag is toggled; remotes invalidate their `['flags']` query (T23, RFC 0009).
 - 2026-11-20: `a11y:announce` `{ message }`, emitted by products and the shell inspector; the shell writes it into its one live region (T26, RFC 0011).
+- 2026-11-20: `locale:changed` `{ locale }`, emitted by the shell when the language switch is used; remotes re-render in the new language (T27, RFC 0012).
 
 ## Open questions
 

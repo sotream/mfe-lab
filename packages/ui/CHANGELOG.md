@@ -2,6 +2,10 @@
 
 Breaking changes need a major bump, a new CSS prefix (`ds2-`) and an entry here (RFC 0008).
 
+## 1.4.0
+
+- Locale helpers (RFC 0012): `detectLocale`, `useLocale`, `formatMoney`, `formatNumber`, `formatDate`, `formatTime`, `LOCALE_KEY` and the `Locale` type. `RemoteFrame` strings (loading, unavailable, Retry, build, region label) follow the locale, `de` or `en`. Additive; an app with no `lang` set stays English.
+
 ## 1.3.0
 
 - `Table` takes an optional `label`: the scroll wrapper becomes a focusable `region` named by it (keyboard scrolling, WCAG 2.1.1). Without `label` nothing changes.

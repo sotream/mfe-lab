@@ -10,7 +10,7 @@ import {
 } from '@mfe/api-client';
 import { useAuth } from '@mfe/auth-store';
 import { emit } from '@mfe/events';
-import { Button, Field, Table } from '@mfe/ui';
+import { Button, Field, formatDate, formatMoney, Table, useLocale, type Locale } from '@mfe/ui';
 import {
   keepPreviousData,
   QueryClient,
@@ -23,13 +23,13 @@ import {
 import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import {
   centsToPriceInput,
-  formatPrice,
   validateProductForm,
   type FormErrors,
   type FormValues,
 } from './productForm.ts';
 import { Link } from 'react-router';
 import { useFlag, useFlagsSync } from './flags.ts';
+import { messages, useT } from './messages.ts';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import {
   closeDialogs,
@@ -54,12 +54,12 @@ const LIMIT = 10;
 const useAppDispatch = useDispatch.withTypes<AppDispatch>();
 const useAppSelector = useSelector.withTypes<RootState>();
 
-const COLUMNS: { label: string; field: Sort }[] = [
-  { label: 'SKU', field: 'sku' },
-  { label: 'Name', field: 'name' },
-  { label: 'Price', field: 'price_cents' },
-  { label: 'Stock', field: 'stock' },
-  { label: 'Created', field: 'created_at' },
+const COLUMNS: { label: keyof typeof messages.en.columns; field: Sort }[] = [
+  { label: 'sku', field: 'sku' },
+  { label: 'name', field: 'name' },
+  { label: 'price', field: 'price_cents' },
+  { label: 'stock', field: 'stock' },
+  { label: 'created', field: 'created_at' },
 ];
 
 // Native <dialog>, opened modally on mount. jsdom has no showModal, so fall back to `open`.
@@ -99,19 +99,19 @@ function Modal({
   );
 }
 
-const FIELDS: { key: keyof FormValues; label: string; inputMode?: 'decimal' | 'numeric' }[] = [
-  { key: 'sku', label: 'SKU' },
-  { key: 'name', label: 'Name' },
-  { key: 'price', label: 'Price', inputMode: 'decimal' },
-  { key: 'stock', label: 'Stock', inputMode: 'numeric' },
+const FIELDS: { key: keyof FormValues; inputMode?: 'decimal' | 'numeric' }[] = [
+  { key: 'sku' },
+  { key: 'name' },
+  { key: 'price', inputMode: 'decimal' },
+  { key: 'stock', inputMode: 'numeric' },
 ];
 
-function initialValues(product: Product | null): FormValues {
+function initialValues(product: Product | null, locale: Locale): FormValues {
   if (!product) return { sku: '', name: '', price: '', stock: '' };
   return {
     sku: product.sku,
     name: product.name,
-    price: centsToPriceInput(product.price_cents),
+    price: centsToPriceInput(product.price_cents, locale),
     stock: String(product.stock),
   };
 }
@@ -126,14 +126,16 @@ function ProductDialog({
   onSave: (input: ProductInput) => Promise<unknown>;
 }) {
   const id = useId();
-  const [values, setValues] = useState(() => initialValues(product));
+  const t = useT();
+  const locale = useLocale();
+  const [values, setValues] = useState(() => initialValues(product, locale));
   const [errors, setErrors] = useState<FormErrors>({});
   const [failure, setFailure] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    const result = validateProductForm(values);
+    const result = validateProductForm(values, t);
     setErrors(result.errors);
     if (!result.input) return;
     setFailure(null);
@@ -141,23 +143,19 @@ function ProductDialog({
     try {
       await onSave(result.input);
     } catch (err) {
-      setFailure(
-        err instanceof ApiError && err.status === 409
-          ? 'SKU already exists'
-          : 'Could not save product',
-      );
+      setFailure(err instanceof ApiError && err.status === 409 ? t.skuExists : t.saveFailed);
       setSaving(false);
     }
   }
 
   return (
-    <Modal title={product ? 'Edit product' : 'Add product'} onClose={onClose}>
+    <Modal title={product ? t.edit : t.add} onClose={onClose}>
       <form onSubmit={submit} noValidate>
-        {FIELDS.map(({ key, label, inputMode }) => {
+        {FIELDS.map(({ key, inputMode }) => {
           return (
             <Field
               key={key}
-              label={label}
+              label={t.columns[key]}
               id={`${id}-${key}`}
               value={values[key]}
               inputMode={inputMode}
@@ -168,9 +166,9 @@ function ProductDialog({
         })}
         {failure && <p role="alert">{failure}</p>}
         <div className="products-dialog-actions">
-          <Button onClick={onClose}>Cancel</Button>
+          <Button onClick={onClose}>{t.cancel}</Button>
           <Button type="submit" variant="primary" disabled={saving}>
-            Save
+            {t.save}
           </Button>
         </div>
       </form>
@@ -189,6 +187,7 @@ function DeleteDialog({
   onDelete: () => Promise<unknown>;
   returnTo: () => HTMLElement | null;
 }) {
+  const t = useT();
   const [failure, setFailure] = useState<string | null>(null);
 
   async function confirm() {
@@ -196,20 +195,18 @@ function DeleteDialog({
       await onDelete();
     } catch (err) {
       setFailure(
-        err instanceof ApiError && err.status === 409
-          ? 'Cannot delete: product has orders'
-          : 'Could not delete product',
+        err instanceof ApiError && err.status === 409 ? t.deleteHasOrders : t.deleteFailed,
       );
     }
   }
 
   return (
-    <Modal title={`Delete ${product.name}?`} onClose={onClose} returnTo={returnTo}>
+    <Modal title={t.deleteTitle(product.name)} onClose={onClose} returnTo={returnTo}>
       {failure && <p role="alert">{failure}</p>}
       <div className="products-dialog-actions">
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onClose}>{t.cancel}</Button>
         <Button variant="danger" onClick={confirm}>
-          Delete
+          {t.deleteBtn}
         </Button>
       </div>
     </Modal>
@@ -248,11 +245,12 @@ function useProductList() {
 // On success: refresh this remote's own cache, then tell the other remotes (RFC 0006).
 function useProductMutations() {
   const client = useQueryClient();
+  const t = useT();
   const changed = (id: number, kind: 'created' | 'updated' | 'deleted', sku: string) => {
     void client.invalidateQueries({ queryKey: ['products'] });
     emit('products:changed', { id, kind });
     // The shell owns the live region (RFC 0011); standalone nobody listens.
-    emit('a11y:announce', { message: `Product ${sku} ${kind === 'updated' ? 'saved' : kind}` });
+    emit('a11y:announce', { message: t.announce(sku, kind) });
   };
   const create = useMutation({
     mutationFn: createProduct,
@@ -288,14 +286,16 @@ function ProductsTable({
   onEdit: (p: Product) => void;
   onDelete: (p: Product) => void;
 }) {
-  if (items.length === 0) return <p>No products found</p>;
+  const t = useT();
+  const locale = useLocale();
+  if (items.length === 0) return <p>{t.none}</p>;
   const ariaSort = (field: Sort) => {
     if (query.sort !== field) return undefined;
     return query.order === 'asc' ? 'ascending' : 'descending';
   };
   return (
     <div className="products-table">
-      <Table label="Products">
+      <Table label={t.table}>
         <thead>
           <tr>
             {COLUMNS.map(({ label, field }) => (
@@ -304,10 +304,10 @@ function ProductsTable({
                 aria-sort={ariaSort(field)}
                 className={field === 'price_cents' || field === 'stock' ? 'ds1-num' : undefined}
               >
-                <button onClick={() => onSort(field)}>{label}</button>
+                <button onClick={() => onSort(field)}>{t.columns[label]}</button>
               </th>
             ))}
-            {canWrite && <th className="products-actions-head">Actions</th>}
+            {canWrite && <th className="products-actions-head">{t.actions}</th>}
           </tr>
         </thead>
         <tbody>
@@ -315,26 +315,26 @@ function ProductsTable({
             <tr key={p.id}>
               <td className="ds1-mono">{p.sku}</td>
               <td>{detailLinks ? <Link to={`${base}${p.id}`}>{p.name}</Link> : p.name}</td>
-              <td className="ds1-num">{formatPrice(p.price_cents)}</td>
+              <td className="ds1-num">{formatMoney(p.price_cents, locale)}</td>
               <td className="ds1-num">{p.stock}</td>
-              <td className="ds1-mono products-created">{p.created_at.slice(0, 10)}</td>
+              <td className="ds1-mono products-created">{formatDate(p.created_at, locale)}</td>
               {canWrite && (
                 <td>
                   <div className="products-actions">
                     <Button
                       className="ds1-button--sm"
-                      aria-label={`Edit ${p.sku}`}
+                      aria-label={t.editSku(p.sku)}
                       onClick={() => onEdit(p)}
                     >
-                      Edit
+                      {t.editBtn}
                     </Button>
                     <Button
                       className="ds1-button--sm"
                       variant="danger"
-                      aria-label={`Delete ${p.sku}`}
+                      aria-label={t.deleteSku(p.sku)}
                       onClick={() => onDelete(p)}
                     >
-                      Delete
+                      {t.deleteBtn}
                     </Button>
                   </div>
                 </td>
@@ -358,15 +358,16 @@ function Content({
   onRetry: () => void;
   children: ReactNode;
 }) {
+  const t = useT();
   if (failed) {
     return (
       <div role="alert">
-        <p>Could not load products</p>
-        <Button onClick={onRetry}>Retry</Button>
+        <p>{t.loadFailed}</p>
+        <Button onClick={onRetry}>{t.retry}</Button>
       </div>
     );
   }
-  if (!data) return <p role="status">Loading products…</p>;
+  if (!data) return <p role="status">{t.loadingProducts}</p>;
   return children;
 }
 
@@ -381,6 +382,7 @@ export const buildVersion: string = __BUILD_VERSION__;
 
 // base is the link prefix to a detail page: '' inside ProductsApp (relative), '/products/' on Home.
 export function ProductsContent({ base }: { base: string }) {
+  const t = useT();
   const role = useAuth((s) => s.user?.role);
   const canWrite = role === 'admin' || role === 'editor';
   const [text, setText] = useState('');
@@ -418,14 +420,14 @@ export function ProductsContent({ base }: { base: string }) {
         <input
           type="search"
           className="ds1-input"
-          aria-label="Search"
-          placeholder="Search name or SKU"
+          aria-label={t.search}
+          placeholder={t.searchPlaceholder}
           value={text}
           onChange={(e) => setText(e.target.value)}
         />
         {canWrite && (
           <Button variant="primary" onClick={() => dispatch(openNew())}>
-            Add product
+            {t.add}
           </Button>
         )}
       </div>
@@ -446,11 +448,11 @@ export function ProductsContent({ base }: { base: string }) {
         />
         <div className="products-pager">
           <Button disabled={query.page <= 1} onClick={() => dispatch(setPage(query.page - 1))}>
-            Previous
+            {t.previous}
           </Button>
-          <span>{`Page ${query.page} of ${pages}`}</span>
+          <span>{t.pageOf(query.page, pages)}</span>
           <Button disabled={query.page >= pages} onClick={() => dispatch(setPage(query.page + 1))}>
-            Next
+            {t.next}
           </Button>
         </div>
       </Content>
