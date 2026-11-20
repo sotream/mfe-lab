@@ -66,7 +66,7 @@ T0 ─┬─ T1 ── T2 ── T3 ───────┐
 
 ## T9 E2E, README, RFC sync (needs T8)
 
-- Playwright smoke: login, both remotes visible, kill-remote fallback (start/stop via test setup), viewer cannot see "Add product".
+- Playwright smoke: login, both remotes visible, kill-remote fallback (simulated by aborting requests to :3001), viewer cannot see "Add product".
 - README with 3-command start, mermaid architecture, screenshots/GIF. Update RFC statuses to `Accepted`, fix any drift.
 - CI runs Playwright headless.
 

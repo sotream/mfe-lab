@@ -2,13 +2,63 @@
 
 Private learning lab: **Federated Micro Frontends** with React, Rspack Module Federation, and a small Fastify + SQLite API.
 
-Status: planned, not built yet. Start with [`docs/BRIEF.md`](docs/BRIEF.md), then [`docs/PLAN.md`](docs/PLAN.md). Design decisions live in [`docs/rfc/`](docs/rfc/).
+The brief is in [`docs/BRIEF.md`](docs/BRIEF.md), the task plan in [`docs/PLAN.md`](docs/PLAN.md), and the design decisions in [`docs/rfc/`](docs/rfc/).
 
 Prerequisites: Node 26 (`nvm use`) and pnpm 12 (`packageManager` pins 12.21.0).
 
+## Quick start
+
+```bash
+pnpm i
+pnpm seed
+pnpm dev
+```
+
+Then open <http://localhost:3000>. `pnpm dev` runs the shell (`:3000`), products (`:3001`), dashboard (`:3002`) and the API (`:4000`) in parallel.
+
+Demo users (**demo-only**, never reuse the password): `admin@lab.test`, `editor@lab.test`, `viewer@lab.test`, all with password `lab12345`.
+
+## Six things to see
+
+### 1. Login in the shell
+
+Open the app and you are sent to `/login`. Sign in as any demo user; you land on the page you asked for. Only the shell has a login form.
+
+![Login page](docs/screenshots/1-login.png)
+
+### 2. Two remotes in one page
+
+The home page mounts the products and dashboard remotes in labelled frames. Each frame shows its name, its port and the build stamp of the remote that served it. The shell footer shows its own stamp.
+
+![Home with both frames](docs/screenshots/2-frames.png)
+
+### 3. A dead remote does not take the page down
+
+Stop the products dev server (or abort requests to `:3001` in the browser). The products frame shows "products is unavailable" with a Retry button, and the dashboard keeps working. Start the server again and click Retry: the frame loads without a page reload.
+
+![Products down, dashboard still working](docs/screenshots/3-remote-down.png)
+
+### 4. Remotes are built and versioned on their own
+
+Restart or rebuild only one remote and reload the page: only its build stamp changes. The screenshot was taken after restarting just the dashboard dev server, so its stamp is newer than the products and shell stamps.
+
+![Inspector after restarting only the dashboard](docs/screenshots/4-build-stamps.png)
+
+### 5. Shared dependencies are loaded once
+
+`/inspector` (no login needed) lists the remotes with their live manifest version and up/down status, and the shared dependencies (`react`, `react-dom`, `react-router`, `@mfe/auth-store`) with their versions and a "loaded once" status read from the Module Federation share scope. The page also lists a few ways to break the setup on purpose.
+
+![Federation inspector](docs/screenshots/5-inspector.png)
+
+### 6. The remotes know who is logged in
+
+The products remote never logs in. It reads the user from the shared `@mfe/auth-store` singleton. Signed in as a viewer you only see the table; sign in as an editor or admin and the same remote shows the "Add product" button and the edit and delete actions. The API enforces the same roles.
+
+![Products as editor, with Add product](docs/screenshots/6-roles.png)
+
 ## How it works
 
-The shell (`:3000`) is a Module Federation host. At runtime it loads two independently built and served remotes, `products` (`:3001`) and `dashboard` (`:3002`), by fetching their `mf-manifest.json`, then `remoteEntry.js`. `react`, `react-dom` and `react-router` are singletons: loaded once from the shell, and the remotes reuse that copy. Every remote slot is wrapped in `RemoteFrame` (error boundary, Suspense, labelled frame, Retry), so a dead remote shows a fallback and the rest of the page keeps working. The remotes will call the API on `:4000` from T6/T7.
+The shell (`:3000`) is a Module Federation host. At runtime it loads two independently built and served remotes, `products` (`:3001`) and `dashboard` (`:3002`), by fetching their `mf-manifest.json`, then `remoteEntry.js`. `react`, `react-dom`, `react-router` and `@mfe/auth-store` are singletons: loaded once from the shell, and the remotes reuse that copy. Every remote slot is wrapped in `RemoteFrame` (error boundary, Suspense, labelled frame, Retry), so a dead remote shows a fallback and the rest of the page keeps working. The remotes call the API on `:4000` through the shell's `/api` proxy.
 
 ```mermaid
 flowchart TB
@@ -17,7 +67,7 @@ flowchart TB
   subgraph S["shell :3000 · host"]
     direction LR
     FP["RemoteFrame<br/>products slot"]
-    SH[("shared singletons<br/>react · react-dom<br/>react-router<br/>loaded once")]
+    SH[("shared singletons<br/>react · react-dom<br/>react-router · @mfe/auth-store<br/>loaded once")]
     FD["RemoteFrame<br/>dashboard slot"]
   end
 
@@ -25,7 +75,7 @@ flowchart TB
   FD -- "loadRemote()<br/>mf-manifest.json → remoteEntry.js" --> D["dashboard :3002<br/>exposes ./DashboardPage"]
   P -. "reuses" .-> SH
   D -. "reuses" .-> SH
-  P & D -. "REST + JWT (from T6/T7)" .-> A[("api :4000 · SQLite")]
+  P & D -. "REST + JWT" .-> A[("api :4000 · SQLite")]
 ```
 
 Loading one remote, including the "remote down" path:
@@ -44,7 +94,7 @@ sequenceDiagram
   alt remote up
     P-->>F: manifest
     F->>P: GET remoteEntry.js and the expose chunk
-    Note over F,P: react, react-dom, react-router resolve to the shell's copies
+    Note over F,P: react, react-dom, react-router, auth-store resolve to the shell's copies
     F-->>U: ProductsPage renders
   else remote down
     P--xF: fetch fails
@@ -57,10 +107,9 @@ sequenceDiagram
 ## Develop
 
 ```bash
-pnpm i
-pnpm seed
 pnpm dev     # shell :3000, products :3001, dashboard :3002, api :4000 (all in parallel)
 pnpm build   # apps/*/dist (remotes emit mf-manifest.json)
+pnpm lint && pnpm typecheck && pnpm test
 ```
 
 Remote manifest URLs are baked into the shell at build time; override with `MF_PRODUCTS_URL` / `MF_DASHBOARD_URL` (defaults `http://localhost:3001|3002/mf-manifest.json`). Package versions live in the `catalog:` of `pnpm-workspace.yaml`.
@@ -68,8 +117,6 @@ Remote manifest URLs are baked into the shell at build time; override with `MF_P
 ### Login flow
 
 The shell owns login. `@mfe/auth-store` is a federation singleton (see [RFC 0002](docs/rfc/0002-sharing-auth-state.md)), so the shell and both remotes read the same user and token. Guarded routes (`/`, `/products`, `/dashboard`) redirect anonymous users to `/login?next=<path>`; after signing in you land back on the page you asked for. The nav shows `email · role` and a Log out button.
-
-Demo accounts (**demo-only**, password `lab12345`): `admin@lab.test`, `editor@lab.test`, `viewer@lab.test`.
 
 The token lives in memory only, so **a page reload logs you out** (accepted trade-off, RFC 0002). API calls go through `@mfe/api-client` to the relative `/api/...`; each dev server proxies `/api` to `http://localhost:4000` (prefix stripped), so there is no CORS setup.
 
@@ -126,6 +173,17 @@ All routes except `GET /health`, `POST /auth/login` and `/docs*` need `Authoriza
 Pagination defaults to `page=1&limit=20` (max `limit` 100); `sort` is one of `id, sku, name, price_cents, stock, created_at`.
 
 Interactive OpenAPI docs: <http://localhost:4000/docs> (spec at `/docs/json`; both public).
+
+## E2E
+
+One Playwright smoke suite in `e2e/` runs against the dev servers in headless Chromium. Install the browser once, then run:
+
+```bash
+pnpm exec playwright install chromium
+pnpm e2e
+```
+
+Playwright starts the API (after seeding), products, dashboard and shell itself. Locally it reuses servers that are already running (for example from `pnpm dev`) and does not stop them; in CI (`CI` set) it always starts its own. The suite covers login, both remotes rendering, the shared login (a viewer cannot see "Add product", an editor can), the inspector, and the remote-down fallback, which is simulated by aborting requests to `:3001`. Reports and traces go to `playwright-report/` and `test-results/` (gitignored).
 
 ## Run CI locally
 

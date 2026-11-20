@@ -1,6 +1,6 @@
 # RFC 0002: Sharing auth state between shell and remotes
 
-- **Status:** Draft
+- **Status:** Accepted
 - **Author:** owner
 - **Date:** 2026-11-18
 - **Related:** RFC 0001
@@ -30,8 +30,8 @@ useAuth<T>(selector: (s: AuthState) => T): T;   // React hook
 getToken(): string | null;                       // for the API client
 ```
 
-- Implementation: ~30 lines on `useSyncExternalStore`, no dependency. (If it grows, zustand is the fallback.)
-- Declared `singleton: true`, `eager: false`, same `requiredVersion` everywhere. If a remote got its own copy, state would silently split; the inspector checks that exactly one instance is loaded.
+- Implementation: about 60 lines on `useSyncExternalStore`, no dependency. (If it grows, zustand is the fallback.)
+- Declared `singleton: true` (`eager` left at its default, false), the same `requiredVersion` everywhere (from `federation.shared.ts`). If a remote got its own copy, state would silently split; the inspector checks that exactly one instance is loaded.
 - Token lives **in memory** only. Page reload re-authenticates via login form (accepted for the lab). Trade-off documented in README.
 - API client (`@mfe/api-client`) reads `getToken()` per request and calls `logout()` on 401. It always calls the relative `/api/...`; every dev server proxies `/api` to the API on `:4000` (prefix stripped), so requests are same-origin and no CORS setup is needed.
 - Roles come from `user.role`; UI hides actions, API enforces. Remotes use `useAuth(s => s.user?.role)`.
@@ -48,12 +48,12 @@ getToken(): string | null;                       // for the API client
 
 ## Trade-offs and risks
 
-- Singleton mismatch splits state silently. Mitigation: inspector check, e2e test asserting login in shell is visible in both remotes.
+- Singleton mismatch splits state silently. Mitigation: the inspector checks that `@mfe/auth-store` is loaded once, and an e2e test asserts that a login in the shell is visible in the products remote.
 - In-memory token means reload logs out. Acceptable here; a cookie session would be the production answer and needs its own RFC.
 
 ## Rollout
 
-T5. Tests: store unit tests, route guard, e2e in T9.
+T5. Tests: store unit tests, route guard, e2e in T9 (`E-shared-auth`).
 
 ## Open questions
 
@@ -62,3 +62,5 @@ T5. Tests: store unit tests, route guard, e2e in T9.
 ## Changelog
 
 - 2026-11-18: T5: store implemented as specified; added `@mfe/api-client` and the `/api` dev-server proxy; `@mfe/auth-store` joined the shared singleton list.
+- 2026-11-20: T8: the inspector lists `@mfe/auth-store` in the shared table and shows `loaded once`.
+- 2026-11-20: T9: e2e `E-shared-auth` logs in as viewer and editor in the shell and checks that the products remote shows `Add product` only for the editor. Status set to Accepted.
