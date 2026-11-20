@@ -7,7 +7,7 @@ async function login(page: Page, email: string): Promise<void> {
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password').fill('lab12345');
   await page.getByRole('button', { name: 'Sign in' }).click();
-  await expect(page.getByText(`${email} · `)).toBeVisible();
+  await expect(page.getByText(email, { exact: true })).toBeVisible();
 }
 
 const rowOf = (page: Page, name: string) =>
@@ -18,7 +18,8 @@ const dashboard = (page: Page) => page.locator('section[data-remote="dashboard"]
 test('E-login: viewer logs in and lands on /', async ({ page }) => {
   await login(page, 'viewer@lab.test');
   await expect(page).toHaveURL(`${BASE}/`);
-  await expect(page.getByText('viewer@lab.test · viewer')).toBeVisible();
+  await expect(page.getByText('viewer@lab.test', { exact: true })).toBeVisible();
+  await expect(page.getByText('viewer', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Log out' })).toBeVisible();
 });
 
@@ -26,13 +27,15 @@ test('E-remotes: both frames render real content with build stamps', async ({ pa
   await login(page, 'viewer@lab.test');
 
   const p = products(page);
-  await expect(p).toContainText('products · :3001');
+  await expect(p).toContainText('products');
+  await expect(p).toContainText(':3001');
   await expect(p.locator('tbody tr').first()).toBeVisible();
   await expect(p).toContainText(/Page 1 of \d+/);
   await expect(p).toContainText('build ');
 
   const d = dashboard(page);
-  await expect(d).toContainText('dashboard · :3002');
+  await expect(d).toContainText('dashboard');
+  await expect(d).toContainText(':3002');
   await expect(d.getByRole('figure').filter({ hasText: 'Orders per day' })).toBeVisible();
   await expect(d.locator('svg[role="img"] rect[data-date]').first()).toBeVisible();
   const tiles = d.locator('dl');
@@ -41,7 +44,9 @@ test('E-remotes: both frames render real content with build stamps', async ({ pa
   }
   await expect(d).toContainText('build ');
 
-  await expect(page.getByText('shell · build ')).toBeVisible();
+  await expect(page.locator('footer')).toContainText('shell');
+  await expect(page.locator('footer')).toContainText('build ');
+  await expect(page.locator('footer')).not.toContainText('·');
 });
 
 test('E-shared-auth: remote sees the shell login role', async ({ page }) => {

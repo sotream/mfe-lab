@@ -86,7 +86,7 @@ describe('RequireAuth', () => {
     await start('/products?x=1');
     expect(location()).toBe('/login?next=%2Fproducts%3Fx%3D1');
     expect(screen.queryByText('products page')).toBeNull();
-    expect(screen.getByRole('heading', { name: 'Login' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Sign in to the shell' })).toBeTruthy();
   });
 
   it('Q-guard-ok: authenticated renders the children', async () => {
@@ -112,7 +112,12 @@ describe('RequireAuth', () => {
 describe('LoginPage', () => {
   it('Q-login-render: heading, labelled inputs, button and demo accounts', async () => {
     await start('/login');
-    expect(screen.getByRole('heading', { name: 'Login' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Sign in to the shell' })).toBeTruthy();
+    expect(
+      screen.getByText(
+        'The shell owns login. Both remotes read the same user from a shared store.',
+      ),
+    ).toBeTruthy();
     expect(screen.getByLabelText('Email')).toBeTruthy();
     expect(screen.getByLabelText('Password')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Sign in' })).toBeTruthy();

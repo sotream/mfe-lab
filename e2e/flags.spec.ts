@@ -21,7 +21,7 @@ test('E-flags: admin toggles dashboard.revenue from the inspector', async ({ pag
   await page.getByLabel('Email').fill('admin@lab.test');
   await page.getByLabel('Password').fill('lab12345');
   await page.getByRole('button', { name: 'Sign in' }).click();
-  await expect(page.getByText('admin@lab.test · ')).toBeVisible();
+  await expect(page.getByText('admin@lab.test', { exact: true })).toBeVisible();
 
   try {
     await expect(revenue(page)).toBeVisible();

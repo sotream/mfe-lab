@@ -82,3 +82,17 @@ describe('seed', () => {
     expect(users(a)).toEqual(users(b));
   });
 });
+
+describe('seed names', () => {
+  it('Q-seed-names: 30 distinct names, none from the old adjective x noun generator', async () => {
+    const db = await seeded();
+    const names = (db.prepare('SELECT name FROM products').all() as { name: string }[]).map(
+      (r) => r.name,
+    );
+    expect(names).toHaveLength(30);
+    expect(new Set(names).size).toBe(30);
+    const old =
+      /^(Compact|Rugged|Smart|Classic|Mini) (Widget|Gadget|Gizmo|Bracket|Cable|Lamp|Valve|Sensor)$/;
+    expect(names.filter((n) => old.test(n))).toEqual([]);
+  });
+});
