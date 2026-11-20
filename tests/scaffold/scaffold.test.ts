@@ -25,10 +25,11 @@ const packages = [
   '@mfe/ui',
   '@mfe/api-client', // added in T5
   '@mfe/events', // added in T17
+  '@mfe/telemetry', // added in T24
 ];
 
 describe('scaffold', { timeout: 60_000 }, () => {
-  it('T-workspace: workspace has the eight packages and nothing else but the root', () => {
+  it('T-workspace: workspace has the nine packages and nothing else but the root', () => {
     const entries = JSON.parse(run('pnpm', ['-r', 'ls', '--depth', '-1', '--json'])) as {
       name: string;
       path: string;
