@@ -87,8 +87,9 @@
   background-color: var(--ds1-paper-3);
 }
 
-.ds1-table :is(td, th).ds1-mono,
-.ds1-table :is(td, th).ds1-num {
+.ds1-table td.ds1-mono,
+.ds1-table td.ds1-num,
+.ds1-table tbody th.ds1-mono {
   font-family: var(--ds1-font-mono);
   font-variant-numeric: tabular-nums;
 }

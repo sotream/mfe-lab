@@ -24,6 +24,7 @@
 
 .topbar nav ul {
   display: flex;
+  flex-wrap: wrap;
   gap: 0 var(--ds1-space-lg);
   margin: 0;
   padding: 0;
