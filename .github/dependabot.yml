@@ -1,4 +1,8 @@
 version: 2
+# Every entry sets commit-message so PR titles are Conventional Commits (build(deps): ..., ci(deps): ...):
+# the title becomes the squash-merge subject on main, and CI checks it (scripts/check-commits.mjs).
+# Minor and patch updates get auto-merge (dependabot-auto-merge.yml) once the required checks are green.
+# Majors and GitHub Actions bumps stay manual.
 updates:
   # pnpm workspace (root, apps/*, packages/*) and the pnpm catalog in pnpm-workspace.yaml.
   - package-ecosystem: npm
@@ -8,7 +12,8 @@ updates:
       day: monday
     open-pull-requests-limit: 5
     commit-message:
-      prefix: chore(deps)
+      prefix: build
+      include: scope
     groups:
       react:
         patterns:
@@ -48,4 +53,5 @@ updates:
       interval: weekly
       day: monday
     commit-message:
-      prefix: chore(deps)
+      prefix: ci
+      include: scope

@@ -1,0 +1,6 @@
+title = "mfe-lab gitleaks"
+
+# Default rules only. The full history scans clean, so nothing is allowlisted:
+# any hit, in any path, fails CI.
+[extend]
+useDefault = true
