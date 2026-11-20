@@ -50,6 +50,7 @@ T17 `@mfe/events` and the inspector log; T18 TanStack Query and cross-remote inv
 
 - 2026-11-20: `products:changed` `{ id, kind }` (T17).
 - 2026-11-20: products and dashboard use TanStack Query, one `QueryClient` per page mount and per user; products emits `products:changed` after a successful mutation, dashboard invalidates `['stats']` (T18).
+- 2026-11-20: products UI state (page, sort, search, dialogs) moved to a Redux Toolkit slice in a store created per page mount and per user; not shared, not exposed (T19).
 
 ## Open questions
 

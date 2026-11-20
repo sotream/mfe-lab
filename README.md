@@ -134,7 +134,7 @@ It also runs on its own: `pnpm --filter @mfe/dashboard dev` serves it on `:3002`
 
 ### Data between remotes
 
-Products and dashboard each fetch through their own TanStack Query client (created per page mount and per user, bundled in each remote, never shared). When products creates, updates or deletes a product it emits `products:changed` through `@mfe/events`, and the dashboard invalidates its stats: on Home the `Products` tile updates with no reload (RFC 0006).
+Products and dashboard each fetch through their own TanStack Query client (created per page mount and per user, bundled in each remote, never shared). When products creates, updates or deletes a product it emits `products:changed` through `@mfe/events`, and the dashboard invalidates its stats: on Home the `Products` tile updates with no reload (RFC 0006). Products keeps its UI state (page, sort, search, dialogs) in a per-mount Redux Toolkit store, also never shared.
 
 ### Inspector and build stamps
 
