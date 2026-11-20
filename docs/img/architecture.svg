@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 830" width="1200" height="830" role="img" aria-labelledby="t d">
+  <title id="t">mfe-lab architecture</title>
+  <desc id="d">A browser page hosts the shell on port 3000, which loads the products remote on 3001 and the dashboard remote on 3002 through Module Federation. React, react-dom, react-router and auth-store are shared singletons. The remotes talk through a typed DOM event bus and reach the Fastify and SQLite API on 4000 through the /api proxy.</desc>
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; fill: #1f2328; font-size: 13px; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .h { font-size: 15px; font-weight: 700; }
+    .s { font-size: 11.5px; fill: #57606a; }
+    .c { text-anchor: middle; }
+    .box { fill: #ffffff; stroke: #c9d1d9; stroke-width: 1.2; }
+    .line { fill: none; stroke: #57606a; stroke-width: 1.6; }
+    .dash { stroke-dasharray: 5 4; }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#57606a"/></marker>
+    <marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b25e09"/></marker>
+  </defs>
+  <rect width="1200" height="830" fill="#fbfbf9"/>
+  <text x="20" y="32" class="h" style="font-size:19px">mfe-lab: one shell, two remotes, loaded at runtime</text>
+
+  <!-- browser -->
+  <rect x="20" y="48" width="1160" height="590" rx="12" fill="#f3f4f1" stroke="#8c959f" stroke-width="1.4" stroke-dasharray="7 5"/>
+  <text x="38" y="70" class="s" style="font-weight:700">BROWSER (one page, one window)</text>
+
+  <!-- shell -->
+  <rect x="40" y="82" width="1120" height="254" rx="10" fill="#eef2f9" stroke="#3b5b92" stroke-width="2"/>
+  <text x="58" y="106" class="h">shell :3000</text>
+  <text x="152" y="106" class="s">Module Federation host. Owns login, routing and the build stamp footer.</text>
+  <rect x="58" y="120" width="1084" height="32" rx="6" class="box"/>
+  <text x="72" y="141">nav: Home · Products · Dashboard · Inspector</text>
+  <text x="1128" y="141" class="s" style="text-anchor:end">login form · user + token live in @mfe/auth-store</text>
+
+  <rect x="58" y="166" width="342" height="76" rx="8" fill="#fff" stroke="#2f7d4f" stroke-width="2.4"/>
+  <text x="74" y="190" class="h">RemoteFrame</text><text x="74" y="210" class="s">error boundary · Suspense · Retry</text><text x="74" y="228" class="s">products slot (green frame)</text>
+  <rect x="418" y="166" width="342" height="76" rx="8" fill="#fff" stroke="#7a4fc2" stroke-width="2.4"/>
+  <text x="434" y="190" class="h">RemoteFrame</text><text x="434" y="210" class="s">error boundary · Suspense · Retry</text><text x="434" y="228" class="s">dashboard slot (purple frame)</text>
+  <rect x="778" y="166" width="364" height="76" rx="8" class="box"/>
+  <text x="794" y="190" class="h">Inspector <tspan class="mono s" style="font-weight:400">/inspector</tspan></text><text x="794" y="210" class="s">remotes · versions (Use select) · shared deps</text><text x="794" y="228" class="s">Events log: last 20 events, newest first</text>
+
+  <!-- loadRemote arrows -->
+  <path d="M230 242V430" class="line" marker-end="url(#a)"/>
+  <text x="242" y="270" class="s mono">loadRemote()</text><text x="242" y="286" class="s">mf-manifest.json → remoteEntry.js</text>
+  <path d="M720 242V430" class="line" marker-end="url(#a)"/>
+  <text x="732" y="270" class="s mono">loadRemote()</text><text x="732" y="286" class="s">mf-manifest.json → remoteEntry.js</text>
+
+  <!-- shared singletons band -->
+  <rect x="40" y="348" width="1120" height="52" rx="10" fill="#fdf3e1" stroke="#b25e09" stroke-width="1.6"/>
+  <text x="58" y="370" class="h" style="fill:#7a4306">shared singletons</text><text x="58" y="388" class="s">loaded once, from the host</text>
+  <g class="mono" style="font-size:12px">
+    <rect x="250" y="358" width="84" height="32" rx="6" class="box"/><text x="292" y="378" class="c mono">react</text>
+    <rect x="344" y="358" width="104" height="32" rx="6" class="box"/><text x="396" y="378" class="c mono">react-dom</text>
+    <rect x="458" y="358" width="116" height="32" rx="6" class="box"/><text x="516" y="378" class="c mono">react-router</text>
+    <rect x="612" y="358" width="140" height="32" rx="6" class="box"/><text x="682" y="378" class="c mono">@mfe/auth-store</text>
+  </g>
+  <text x="772" y="374" class="s">remotes reuse the shell's copy</text><text x="772" y="390" class="s">(singleton: true, one version)</text>
+
+  <!-- products -->
+  <rect x="40" y="430" width="490" height="182" rx="10" fill="#f1f8f3" stroke="#2f7d4f" stroke-width="2.6"/>
+  <text x="58" y="454" class="h" style="fill:#1f5c39">products :3001</text><text x="190" y="454" class="s">exposes ./ProductsPage · built and served alone</text>
+  <rect x="58" y="468" width="226" height="62" rx="7" class="box"/>
+  <text x="70" y="488" style="font-weight:700">QueryClient</text><text x="70" y="506" class="s">own server-state cache</text><text x="70" y="521" class="s">per mount and per user</text>
+  <rect x="296" y="468" width="216" height="62" rx="7" class="box"/>
+  <text x="308" y="488" style="font-weight:700">Redux Toolkit store</text><text x="308" y="506" class="s">productsUi: page, sort, search,</text><text x="308" y="521" class="s">dialogs. Local to products.</text>
+  <rect x="58" y="544" width="454" height="52" rx="7" class="box"/>
+  <text x="70" y="564" style="font-weight:700">@mfe/api-client</text><text x="70" y="581" class="s">fetch /api/products, Bearer token from @mfe/auth-store</text>
+
+  <!-- dashboard -->
+  <rect x="670" y="430" width="490" height="182" rx="10" fill="#f6f2fc" stroke="#7a4fc2" stroke-width="2.6"/>
+  <text x="688" y="454" class="h" style="fill:#593392">dashboard :3002</text><text x="842" y="454" class="s">exposes ./DashboardPage · built and served alone</text>
+  <rect x="688" y="468" width="226" height="62" rx="7" class="box"/>
+  <text x="700" y="488" style="font-weight:700">QueryClient</text><text x="700" y="506" class="s">own server-state cache</text><text x="700" y="521" class="s">per mount and per user</text>
+  <rect x="926" y="468" width="216" height="62" rx="7" class="box"/>
+  <text x="938" y="488" style="font-weight:700">Stats view</text><text x="938" y="506" class="s">tiles, SVG orders chart,</text><text x="938" y="521" class="s">revenue by status</text>
+  <rect x="688" y="544" width="454" height="52" rx="7" class="box"/>
+  <text x="700" y="564" style="font-weight:700">@mfe/api-client</text><text x="700" y="581" class="s">fetch /api/stats, Bearer token from @mfe/auth-store</text>
+
+  <!-- events bus -->
+  <text x="600" y="452" class="c" style="font-weight:700">@mfe/events</text>
+  <text x="600" y="468" class="c s">DOM bus on window</text>
+  <text x="600" y="484" class="c s">(not shared)</text>
+  <path d="M536 514H664" class="line" style="stroke:#b25e09;stroke-width:2.2" marker-end="url(#ao)"/>
+  <text x="600" y="502" class="c mono" style="font-size:12px;font-weight:700;fill:#7a4306">products:changed</text>
+  <text x="600" y="530" class="c s">dashboard invalidates</text>
+  <text x="600" y="545" class="c s">its stats query</text>
+
+  <!-- api -->
+  <path d="M285 596V668H420" class="line" marker-end="url(#a)"/>
+  <text x="294" y="656" class="s mono">/products</text>
+  <path d="M915 596V668H780" class="line" marker-end="url(#a)"/>
+  <text x="906" y="656" class="s mono" style="text-anchor:end">/stats</text>
+  <rect x="420" y="650" width="360" height="36" rx="8" class="box"/>
+  <text x="600" y="672" class="c">/api proxy (dev server or nginx, prefix stripped)</text>
+  <path d="M600 686V724" class="line" marker-end="url(#a)"/>
+  <text x="612" y="710" class="s">REST + Bearer JWT</text>
+  <rect x="300" y="724" width="600" height="86" rx="10" fill="#eef2f9" stroke="#3b5b92" stroke-width="2"/>
+  <text x="320" y="750" class="h">api :4000</text><text x="398" y="750" class="s">Fastify · zod validation</text>
+  <text x="320" y="772" class="s">JWT HS256, 15 minutes, no refresh. Roles: admin, editor, viewer.</text>
+  <text x="320" y="790" class="s">Auth runs before validation; the API enforces what the UI hides.</text>
+  <g>
+    <path d="M770 748v34a50 14 0 0 0 100 0v-34" fill="#fff" stroke="#3b5b92" stroke-width="1.6"/>
+    <ellipse cx="820" cy="748" rx="50" ry="12" fill="#fff" stroke="#3b5b92" stroke-width="1.6"/>
+    <text x="820" y="772" class="c mono" style="font-size:12px">SQLite</text><text x="820" y="789" class="c s">app.db</text>
+  </g>
+</svg>

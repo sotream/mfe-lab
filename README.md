@@ -1,12 +1,14 @@
 # mfe-lab
 
-Private learning lab: **Federated Micro Frontends** with React, Rspack Module Federation, and a small Fastify + SQLite API.
+A learning lab for **Federated Micro Frontends**. One shell app loads two independently built and served remotes (products and dashboard) at runtime with Rspack Module Federation 2, shares React, React Router and the auth store as singletons, and keeps each remote's data in its own TanStack Query cache (plus a Redux Toolkit store local to products). The remotes sync through a small typed DOM event contract, and a Fastify + SQLite API gives them real auth and CRUD. The inspector page shows remotes, versions, shared dependencies and a live event log. Releases can be frozen and switched at runtime; Docker and Playwright e2e are included.
+
+![Architecture: browser, shell host, shared singletons, products and dashboard remotes, event bus, API](docs/img/architecture.svg)
 
 The brief is in [`docs/BRIEF.md`](docs/BRIEF.md), the task plan in [`docs/PLAN.md`](docs/PLAN.md), and the design decisions in [`docs/rfc/`](docs/rfc/). Why Module Federation and not Native Federation: [RFC 0003](docs/rfc/0003-native-federation-comparison.md).
 
-Prerequisites: Node 26 (`nvm use`) and pnpm 12 (`packageManager` pins 12.21.0).
-
 ## Quick start
+
+Prerequisites: Node 26 (`nvm use`) and pnpm 12 (`packageManager` pins 12.21.0).
 
 ```bash
 pnpm i
@@ -18,7 +20,14 @@ Then open <http://localhost:3000>. `pnpm dev` runs the shell (`:3000`), products
 
 Demo users (**demo-only**, never reuse the password): `admin@lab.test`, `editor@lab.test`, `viewer@lab.test`, all with password `lab12345`.
 
-## Six things to see
+```bash
+pnpm build   # apps/*/dist (remotes emit mf-manifest.json)
+pnpm lint && pnpm typecheck && pnpm test
+```
+
+Remote manifest URLs are baked into the shell at build time; override with `MF_PRODUCTS_URL` / `MF_DASHBOARD_URL` (defaults `http://localhost:3001|3002/mf-manifest.json`). Package versions live in the `catalog:` of `pnpm-workspace.yaml`.
+
+## Things to see
 
 ### 1. Login in the shell
 
@@ -55,6 +64,26 @@ Restart or rebuild only one remote and reload the page: only its build stamp cha
 The products remote never logs in. It reads the user from the shared `@mfe/auth-store` singleton. Signed in as a viewer you only see the table; sign in as an editor or admin and the same remote shows the "Add product" button and the edit and delete actions. The API enforces the same roles.
 
 ![Products as editor, with Add product](docs/screenshots/6-roles.png)
+
+### 7. Switch a remote to a frozen release
+
+After `pnpm --filter @mfe/products release 1.0.0` and `1.1.0`, the inspector `Use` select for products lists `dev`, `1.0.0` and `1.1.0`. Pick `1.1.0` and the manifest URL changes to `/releases/1.1.0/mf-manifest.json`; Home then shows `build 1.1.0` in the products frame. The shell is not rebuilt (RFC 0004). The screenshot stacks the inspector and Home, because the selection lives in memory and cannot be shared between two page loads.
+
+![Inspector with products on 1.1.0, Home showing build 1.1.0](docs/screenshots/7-versions.png)
+
+### 8. Events between remotes, live
+
+The inspector has an `Events` table: every `@mfe/events` event with time, name and payload, newest first, last 20 only. This one was captured right after adding a product in the products frame.
+
+![Inspector Events log after an edit](docs/screenshots/8-events.png)
+
+### 9. Edit in one remote, the other updates
+
+On Home, the dashboard `Products` tile reads 30. Add a product in the products frame and the tile moves to 31 with no reload and no shared cache between the two remotes; the new row is found by searching for its SKU.
+
+| Before                                                                    | After                                                                                                 |
+| ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| ![Home, Products tile at 30](docs/screenshots/9a-cross-remote-before.png) | ![Home, Products tile at 31 and the new row in the table](docs/screenshots/9b-cross-remote-after.png) |
 
 ## How it works
 
@@ -104,15 +133,58 @@ sequenceDiagram
   end
 ```
 
-## Develop
+### Edit a product, the dashboard updates
 
-```bash
-pnpm dev     # shell :3000, products :3001, dashboard :3002, api :4000 (all in parallel)
-pnpm build   # apps/*/dist (remotes emit mf-manifest.json)
-pnpm lint && pnpm typecheck && pnpm test
+```mermaid
+sequenceDiagram
+  actor U as Editor
+  participant PP as products (useMutation)
+  participant API as api :4000
+  participant W as window
+  participant DD as dashboard (on)
+  participant QC as dashboard QueryClient
+
+  U->>PP: Save in the edit dialog
+  PP->>API: PATCH /api/products/:id
+  API-->>PP: 200 updated product
+  PP->>PP: invalidateQueries(['products'])
+  PP->>W: emit('products:changed', { id, kind })
+  Note over PP,W: dispatchEvent(CustomEvent 'mfe:products:changed')
+  W-->>DD: listener registered with on()
+  DD->>QC: invalidateQueries(['stats'])
+  QC->>API: GET /api/stats
+  API-->>QC: counts, revenue, orders per day
+  QC-->>U: stat tiles re-render
 ```
 
-Remote manifest URLs are baked into the shell at build time; override with `MF_PRODUCTS_URL` / `MF_DASHBOARD_URL` (defaults `http://localhost:3001|3002/mf-manifest.json`). Package versions live in the `catalog:` of `pnpm-workspace.yaml`.
+A failed mutation (409, 500) emits nothing.
+
+### Who owns which state
+
+```mermaid
+flowchart LR
+  subgraph shell["shell (host)"]
+    AS[("@mfe/auth-store<br/>user + token<br/>shared singleton")]
+    LOG["event log<br/>last 20, in memory"]
+  end
+  subgraph products["products remote"]
+    PQ["QueryClient<br/>server state: products"]
+    PR["Redux store productsUi<br/>page, sort, search, dialogs"]
+  end
+  subgraph dashboard["dashboard remote"]
+    DQ["QueryClient<br/>server state: stats"]
+  end
+  EV{"@mfe/events<br/>window CustomEvent<br/>the only contract"}
+
+  AS -. "read by" .-> products
+  AS -. "read by" .-> dashboard
+  products -- "emit products:changed" --> EV
+  EV -- "on" --> dashboard
+  EV -- "onAny" --> LOG
+  PQ --- PR
+```
+
+Rules: no remote reads another remote's store or cache; `@tanstack/react-query`, `@reduxjs/toolkit`, `react-redux` and `@mfe/events` are not in `federation.shared.ts`; only `react`, `react-dom`, `react-router` and `@mfe/auth-store` are shared.
 
 ### Login flow
 
@@ -132,15 +204,19 @@ It also runs on its own: `pnpm --filter @mfe/products dev` serves it on `:3001` 
 
 It also runs on its own: `pnpm --filter @mfe/dashboard dev` serves it on `:3002` with the same "Standalone dev" bar as products (the bar is not part of the exposed module).
 
-### Data between remotes
-
-Products and dashboard each fetch through their own TanStack Query client (created per page mount and per user, bundled in each remote, never shared). When products creates, updates or deletes a product it emits `products:changed` through `@mfe/events`, and the dashboard invalidates its stats: on Home the `Products` tile updates with no reload (RFC 0006). Products keeps its UI state (page, sort, search, dialogs) in a per-mount Redux Toolkit store, also never shared.
-
 ### Inspector and build stamps
 
 Every build gets a stamp: `MF_BUILD_VERSION` if set, else the UTC time (`YYYY-MM-DDTHH:MM:SSZ`). It is baked in as `__BUILD_VERSION__`, written to `mf-manifest.json` (`metaData.buildInfo.buildVersion`), exported as `buildVersion` by both exposed pages, and shown in each remote frame and in the shell footer. Rebuild one remote and its stamp changes while the shell's stays. `/inspector` (no login) lists the remotes with their live manifest version and up/down status (polled every 5 s) and the shared dependencies read from the runtime's share scope.
 
-### Versioned remotes
+## Data between remotes
+
+Server state: products and dashboard each fetch through their own TanStack Query client, created per page mount and per user, bundled in each remote and never shared. After a user change the page refetches, so one user's rows are not shown to the next.
+
+UI state: the products page keeps page, sort, order, search and open dialogs in a Redux Toolkit slice `productsUi`, in a store created per mount (`makeStore()`), local to products.
+
+Between remotes: `@mfe/events` wraps `window` `CustomEvent`, so each remote may bundle its own copy and they still talk. The contract is the `EventMap` type in `packages/events/src/index.ts`; today it has one event, `products:changed` with `{ id, kind: 'created' | 'updated' | 'deleted' }`. `emit` with an unknown name is a TypeScript error. Products emits it after a successful create, update or delete; the dashboard calls `invalidateQueries({ queryKey: ['stats'] })`. The shell subscribes with `onAny` and keeps the last 20 events for the inspector. Details and rejected alternatives: [RFC 0006](docs/rfc/0006-data-between-remotes.md).
+
+## Versioned remotes
 
 A remote can be frozen into a release and the shell can switch to it at runtime, using only manifest URLs (RFC 0004).
 
@@ -149,7 +225,30 @@ A remote can be frozen into a release and the shell can switch to it at runtime,
 3. `pnpm --filter @mfe/products release 1.1.0`.
 4. With `pnpm dev` running, open `/inspector`, pick `1.0.0`, `1.1.0` or `dev` in the `Use` column for products, then open Home: the frame shows `build 1.1.0` and the change.
 
-The selection lives in memory only: a reload goes back to `dev`.
+The selection lives in memory only: a reload goes back to `dev`. To clean up, delete `apps/products/releases`.
+
+## Testing
+
+- **Unit and component (black-box):** `pnpm test` runs Vitest. API tests use Fastify `inject` with in-memory SQLite; frontend tests use Testing Library. Tests are written from the task contract in `docs/PLAN.md`, not from the implementation.
+- **E2E:** `pnpm e2e` runs one Playwright suite in `e2e/` against the dev servers in headless Chromium.
+- **E2E on Docker images:** `pnpm e2e:docker` runs the same specs against the compose stack.
+
+```bash
+pnpm exec playwright install chromium   # once
+pnpm e2e
+pnpm e2e:docker
+```
+
+Playwright starts the API (after seeding), products, dashboard and shell itself. Locally it reuses servers that are already running (for example from `pnpm dev`) and does not stop them; in CI (`CI` set) it always starts its own. The suite covers login, both remotes rendering, the shared login (a viewer cannot see "Add product", an editor can), the inspector, and the remote-down fallback, which is simulated by aborting requests to `:3001`. Before the tests, `e2e/global-setup.ts` freezes two products releases, `0.0.1-e2e` and `0.0.2-e2e`, for the version-switching spec; `e2e/global-teardown.ts` deletes them and their `releases/index.json` entries. `pnpm e2e:docker` runs the compose stack (`docker compose up --build`, which Playwright stops afterwards; local only, `act` cannot run Docker). It skips the release fixtures and `E-versions`, because nginx serves no `releases/`. The containers are stopped, not removed; `docker compose down -v` removes them and the DB volume, and is the cleanup after an aborted run. Reports and traces go to `playwright-report/` and `test-results/` (gitignored).
+
+## Docker
+
+```bash
+docker compose up --build -d   # shell :3000, products :3001, dashboard :3002
+docker compose down -v         # stop and drop the DB volume
+```
+
+One `Dockerfile`, three targets: `build` (install and build all apps), `api` (production deps only, seeds on start, then `node src/server.ts`) and `web` (nginx with build arg `APP`). nginx falls back to `index.html`, proxies `/api/` to the API with the prefix stripped, sends `Access-Control-Allow-Origin: *` and `no-store` for `mf-manifest.json` and `remoteEntry.js`. The API listens on `HOST` (default `127.0.0.1`, compose sets `0.0.0.0`) and is not published to the host. The compose `JWT_SECRET` is demo-only. Manifest URLs stay `localhost:3001/3002`, so this is a local setup. CI does not cover it: `act` runs inside Docker.
 
 ## API
 
@@ -189,29 +288,16 @@ Pagination defaults to `page=1&limit=20` (max `limit` 100); `sort` is one of `id
 
 Interactive OpenAPI docs: <http://localhost:4000/docs> (spec at `/docs/json`; both public).
 
-## E2E
+## RFCs
 
-One Playwright smoke suite in `e2e/` runs against the dev servers in headless Chromium. Install the browser once, then run:
-
-```bash
-pnpm exec playwright install chromium
-pnpm e2e
-```
-
-Playwright starts the API (after seeding), products, dashboard and shell itself. Locally it reuses servers that are already running (for example from `pnpm dev`) and does not stop them; in CI (`CI` set) it always starts its own. The suite covers login, both remotes rendering, the shared login (a viewer cannot see "Add product", an editor can), the inspector, and the remote-down fallback, which is simulated by aborting requests to `:3001`. Before the tests, `e2e/global-setup.ts` freezes two products releases, `0.0.1-e2e` and `0.0.2-e2e`, for the version-switching spec; `e2e/global-teardown.ts` deletes them and their `releases/index.json` entries. `pnpm e2e:docker` runs the same specs against the compose stack (`docker compose up --build`, which Playwright stops afterwards; local only, `act` cannot run Docker). It skips the release fixtures and `E-versions`, because nginx serves no `releases/`. The containers are stopped, not removed; `docker compose down -v` removes them and the DB volume, and is the cleanup after an aborted run. Reports and traces go to `playwright-report/` and `test-results/` (gitignored).
-
-## Run with Docker
-
-```bash
-docker compose up --build -d   # shell :3000, products :3001, dashboard :3002
-docker compose down -v         # stop and drop the DB volume
-```
-
-One `Dockerfile`, three targets: `build` (install and build all apps), `api` (production deps only, seeds on start, then `node src/server.ts`) and `web` (nginx with build arg `APP`). nginx falls back to `index.html`, proxies `/api/` to the API with the prefix stripped, sends `Access-Control-Allow-Origin: *` and `no-store` for `mf-manifest.json` and `remoteEntry.js`. The API listens on `HOST` (default `127.0.0.1`, compose sets `0.0.0.0`) and is not published to the host. The compose `JWT_SECRET` is demo-only. Manifest URLs stay `localhost:3001/3002`, so this is a local setup. CI does not cover it: `act` runs inside Docker.
-
-## Dependencies
-
-Dependabot (`.github/dependabot.yml`) opens weekly grouped PRs for npm and GitHub Actions. GitHub Actions minutes are unavailable, so CI does not run on GitHub. Check each Dependabot PR with local `act` from a fresh clone before merging (see "Run CI locally").
+| #    | Title                                                                                 | Status   | Decision                                                                                                                         |
+| ---- | ------------------------------------------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| 0001 | [Module Federation for the frontend](docs/rfc/0001-module-federation-for-frontend.md) | Accepted | One shell host and two remotes, built and served independently, joined at runtime with Rspack and `@module-federation/enhanced`. |
+| 0002 | [Sharing auth state](docs/rfc/0002-sharing-auth-state.md)                             | Accepted | The shell owns login; remotes read user and token from the `@mfe/auth-store` singleton; the token stays in memory.               |
+| 0003 | [Native Federation comparison](docs/rfc/0003-native-federation-comparison.md)         | Accepted | Stay on Module Federation 2; Native Federation would replace working code for little gain.                                       |
+| 0004 | [Versioned remotes](docs/rfc/0004-versioned-remotes.md)                               | Accepted | Freeze a remote into a static release; the shell switches versions by changing only the manifest URL.                            |
+| 0005 | [Prefetch remotes on idle](docs/rfc/0005-prefetch-remotes.md)                         | Accepted | After first render the shell preloads both remotes on idle; measured 1201 to 823 ms on Fast 4G.                                  |
+| 0006 | [Data between remotes](docs/rfc/0006-data-between-remotes.md)                         | Accepted | One TanStack Query client per remote, Redux Toolkit local to products, typed `window` events between remotes; nothing shared.    |
 
 ## Run CI locally
 
@@ -220,3 +306,7 @@ GitHub Actions minutes are unavailable, so run CI with [act](https://github.com/
 ```bash
 d=$(mktemp -d) && git clone -q -b <branch> "$PWD" "$d" && (cd "$d" && act pull_request -P ubuntu-latest=catthehacker/ubuntu:act-latest); rm -rf "$d"
 ```
+
+## Dependencies
+
+Dependabot (`.github/dependabot.yml`) opens weekly grouped PRs for npm and GitHub Actions. GitHub Actions minutes are unavailable, so CI does not run on GitHub. Check each Dependabot PR with local `act` from a fresh clone before merging (see "Run CI locally").
