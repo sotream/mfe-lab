@@ -11,6 +11,7 @@
   "dependencies": {
     "@mfe/api-client": "workspace:*",
     "@mfe/auth-store": "workspace:*",
+    "@mfe/events": "workspace:*",
     "@mfe/ui": "workspace:*",
     "react": "catalog:",
     "react-dom": "catalog:",

@@ -20,3 +20,4 @@ When an RFC is needed: anything that changes the architecture, a shared contract
 | 0003 | Native Federation comparison                 | Accepted |
 | 0004 | Versioned remotes via manifest               | Accepted |
 | 0005 | Prefetch remotes on idle                     | Accepted |
+| 0006 | Data between remotes                         | Accepted |
