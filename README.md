@@ -2,7 +2,7 @@
 
 Private learning lab: **Federated Micro Frontends** with React, Rspack Module Federation, and a small Fastify + SQLite API.
 
-The brief is in [`docs/BRIEF.md`](docs/BRIEF.md), the task plan in [`docs/PLAN.md`](docs/PLAN.md), and the design decisions in [`docs/rfc/`](docs/rfc/).
+The brief is in [`docs/BRIEF.md`](docs/BRIEF.md), the task plan in [`docs/PLAN.md`](docs/PLAN.md), and the design decisions in [`docs/rfc/`](docs/rfc/). Why Module Federation and not Native Federation: [RFC 0003](docs/rfc/0003-native-federation-comparison.md).
 
 Prerequisites: Node 26 (`nvm use`) and pnpm 12 (`packageManager` pins 12.21.0).
 

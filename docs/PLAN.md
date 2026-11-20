@@ -70,6 +70,11 @@ T0 ─┬─ T1 ── T2 ── T3 ───────┐
 - README with 3-command start, mermaid architecture, screenshots/GIF. Update RFC statuses to `Accepted`, fix any drift.
 - CI runs Playwright headless.
 
+## T11 Native Federation comparison RFC
+
+- **Goal:** record how Native Federation compares with Module Federation 2 for this repo, with sourced facts, a migration-cost estimate and the criteria for switching. Docs only, no code.
+- **Done when:** `docs/rfc/0003-native-federation-comparison.md` is `Accepted` (decision: stay on MF2), indexed in `docs/rfc/README.md`, and linked from the README.
+
 ## T13 Dependabot
 
 Goal: weekly grouped dependency update PRs via `.github/dependabot.yml`, with no Renovate app.
@@ -78,4 +83,4 @@ Goal: weekly grouped dependency update PRs via `.github/dependabot.yml`, with no
 
 ## Later (not now)
 
-Dockerfile + compose, Native Federation variant for comparison RFC, versioned remotes via manifest.
+Dockerfile + compose, versioned remotes via manifest.
