@@ -4,7 +4,7 @@
   justify-content: center;
   height: 36px;
   padding: 0 var(--ds1-space-sm);
-  border: 1px solid var(--ds1-rule-2);
+  border: 1px solid var(--ds1-control-edge);
   border-radius: var(--ds1-radius);
   background-color: var(--ds1-paper-2);
   color: var(--ds1-ink);
@@ -81,8 +81,8 @@
   background-color: var(--ds1-paper-3);
 }
 
-.ds1-table .ds1-mono,
-.ds1-table .ds1-num {
+.ds1-table td.ds1-mono,
+.ds1-table td.ds1-num {
   font-family: var(--ds1-font-mono);
   font-variant-numeric: tabular-nums;
 }
@@ -112,7 +112,7 @@
 .ds1-input {
   height: 36px;
   padding: 0 var(--ds1-space-sm);
-  border: 1px solid var(--ds1-rule);
+  border: 1px solid var(--ds1-control-edge);
   border-radius: var(--ds1-radius);
   background-color: var(--ds1-paper-3);
   color: var(--ds1-ink);
@@ -123,7 +123,7 @@
 
 .ds1-field input:hover,
 .ds1-input:hover {
-  border-color: var(--ds1-rule-2);
+  border-color: var(--ds1-muted);
 }
 
 .ds1-field input[aria-invalid='true'] {
@@ -156,8 +156,25 @@
 
 .ds1-readings dd {
   margin: var(--ds1-space-2xs) 0 0;
-  overflow-wrap: break-word;
+  white-space: nowrap;
   font-family: var(--ds1-font-mono);
   font-size: var(--ds1-text-2xl);
   font-variant-numeric: tabular-nums;
+}
+
+/* Wide tables scroll inside their panel instead of the page (WCAG 1.4.10 allows it for data tables). */
+.ds1-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+@media (max-width: 40rem) {
+  .ds1-readings dd {
+    font-size: var(--ds1-text-md);
+  }
+}
+
+.ds1-table .ds1-mono,
+.ds1-table .ds1-num {
+  white-space: nowrap;
 }

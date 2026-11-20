@@ -1,3 +1,7 @@
+/* Hallmark · shape: app screen · genre: modern-minimal · theme: Console (deal 2/3, seed developer-platform-demo-host-db1e·eae5feb8·2026-11-20·r0) · redesign: full
+ * nav: top bar, wordmark, four links, user chip · signature: the frame bar (name, :port, build) on every remote · states: loading, empty, error, full · console: graphite
+ * axes: dark/grotesk-sans/chromatic-amber · posture: restrained · contrast: pass · v2.0.0 */
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R5 V4 · weakest: S, panels could read as any dev console; the frame bar names the real port and build of each remote */
 .dashboard {
   container-type: inline-size;
   min-width: 0;
@@ -58,7 +62,8 @@
 .dashboard-chart .axis {
   fill: currentColor;
   font-family: var(--ds1-font-mono);
-  font-size: var(--ds1-text-xs);
+  /* SVG user units: the viewBox scales the chart down to the 5fr column, so this lands near 12px there. */
+  font-size: calc(var(--ds1-text-xs) * 1.4);
 }
 
 .dashboard-chart .bar {

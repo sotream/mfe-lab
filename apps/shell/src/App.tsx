@@ -12,6 +12,8 @@ declare const __BUILD_VERSION__: string;
 
 const Remote = ({ name, module }: { name: RemoteName; module?: string }) => (
   <RemoteFrame
+    // A new key per remote and module: a route change must not reuse the frame that loaded another remote.
+    key={`${name}:${module ?? ''}`}
     name={name}
     port={remotePort(name)}
     load={() => loadPage(name, module)}

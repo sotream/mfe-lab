@@ -292,7 +292,7 @@ function ProductsTable({
                 <button onClick={() => onSort(field)}>{label}</button>
               </th>
             ))}
-            {canWrite && <th>Actions</th>}
+            {canWrite && <th className="products-actions-head">Actions</th>}
           </tr>
         </thead>
         <tbody>

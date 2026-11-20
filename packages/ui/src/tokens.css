@@ -26,6 +26,8 @@
   --ds1-muted: oklch(71% 0.01 250);
   --ds1-rule: oklch(31% 0.01 250);
   --ds1-rule-2: oklch(42% 0.012 250);
+  /* Edge of a control (input, select, switch, secondary button): 3:1 or better on paper-2 and paper-3, WCAG 1.4.11. */
+  --ds1-control-edge: oklch(54% 0.012 250);
   --ds1-accent: oklch(82% 0.15 80);
   --ds1-accent-ink: oklch(18% 0.04 75);
   --ds1-accent-soft: oklch(29% 0.05 80);
@@ -76,4 +78,17 @@
   --ds1-tracking-display: -0.03em;
   --ds1-container: 1440px;
   --ds1-gutter: 64px;
+}
+
+/* After :root so the narrow gutters win over the default. */
+@media (max-width: 60rem) {
+  :root {
+    --ds1-gutter: 24px;
+  }
+}
+
+@media (max-width: 40rem) {
+  :root {
+    --ds1-gutter: 16px;
+  }
 }

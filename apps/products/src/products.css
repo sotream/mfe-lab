@@ -1,3 +1,7 @@
+/* Hallmark · shape: app screen · genre: modern-minimal · theme: Console (deal 2/3, seed developer-platform-demo-host-db1e·eae5feb8·2026-11-20·r0) · redesign: full
+ * nav: top bar, wordmark, four links, user chip · signature: the frame bar (name, :port, build) on every remote · states: loading, empty, error, full · console: graphite
+ * axes: dark/grotesk-sans/chromatic-amber · posture: restrained · contrast: pass · v2.0.0 */
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R5 V4 · weakest: S, panels could read as any dev console; the frame bar names the real port and build of each remote */
 .products {
   min-width: 0;
 }
@@ -78,7 +82,7 @@
 }
 
 .products-dialog {
-  width: min(32rem, calc(100vw - 2 * var(--ds1-gutter)));
+  width: min(32rem, calc(100% - 2 * var(--ds1-gutter)));
   padding: var(--ds1-space-lg);
   border: 1px solid var(--ds1-rule-2);
   border-radius: var(--ds1-radius-card);
@@ -130,17 +134,23 @@
   font-size: var(--ds1-text-3xl);
 }
 
-.product-readings {
-  --ds1-cols: 4;
+.product-readings.ds1-readings {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
 }
 
+/* The one reading set large on this page. */
 .product-readings .price dd {
-  font-size: var(--ds1-text-3xl);
+  font-size: calc(var(--ds1-text-3xl) * 1.6);
+  line-height: 1;
+}
+
+.products-actions-head {
+  text-align: right;
 }
 
 @media (max-width: 40rem) {
-  .product-readings {
-    --ds1-cols: 2;
+  .product-readings.ds1-readings {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .products-dialog form {

@@ -34,9 +34,13 @@
 
 .remote-frame-build {
   grid-column: 3;
+  min-width: 0;
+  overflow: hidden;
   color: var(--ds1-cool);
   font-family: var(--ds1-font-mono);
   text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 [data-remote] > .remote-frame-body,
