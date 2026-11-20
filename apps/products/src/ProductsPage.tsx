@@ -66,10 +66,13 @@ const COLUMNS: { label: string; field: Sort }[] = [
 function Modal({
   title,
   onClose,
+  returnTo,
   children,
 }: {
   title: string;
   onClose: () => void;
+  // Where focus goes on unmount instead of the opener (the opener may be gone).
+  returnTo?: () => HTMLElement | null;
   children: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -77,8 +80,16 @@ function Modal({
   useEffect(() => {
     const dialog = ref.current;
     if (!dialog) return;
+    const opener = document.activeElement as HTMLElement | null;
     if (typeof dialog.showModal === 'function') dialog.showModal();
     else dialog.setAttribute('open', '');
+    // Closing by Save, Delete or Cancel unmounts the dialog, so the browser's own focus return
+    // (which only runs on dialog.close()) never happens: do it here.
+    return () => {
+      const target = returnTo?.() ?? opener;
+      if (target?.isConnected) target.focus();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- opener and returnTo are read once, on mount
   }, []);
   return (
     <dialog ref={ref} className="products-dialog" aria-labelledby={titleId} onClose={onClose}>
@@ -171,10 +182,12 @@ function DeleteDialog({
   product,
   onClose,
   onDelete,
+  returnTo,
 }: {
   product: Product;
   onClose: () => void;
   onDelete: () => Promise<unknown>;
+  returnTo: () => HTMLElement | null;
 }) {
   const [failure, setFailure] = useState<string | null>(null);
 
@@ -191,7 +204,7 @@ function DeleteDialog({
   }
 
   return (
-    <Modal title={`Delete ${product.name}?`} onClose={onClose}>
+    <Modal title={`Delete ${product.name}?`} onClose={onClose} returnTo={returnTo}>
       {failure && <p role="alert">{failure}</p>}
       <div className="products-dialog-actions">
         <Button onClick={onClose}>Cancel</Button>
@@ -376,6 +389,8 @@ export function ProductsContent({ base }: { base: string }) {
   const deleting = useAppSelector((s) => s.productsUi.deleting);
   const { query, data, failed, reload } = useProductList();
   const { create, update, remove } = useProductMutations();
+  const toolbar = useRef<HTMLDivElement>(null);
+  const deleted = useRef(false);
   useFlagsSync();
   const detailLinks = useFlag('products.detailPage', true);
 
@@ -399,7 +414,7 @@ export function ProductsContent({ base }: { base: string }) {
   return (
     <div className="products">
       <CrashWhenFlagged />
-      <div className="products-toolbar">
+      <div className="products-toolbar" ref={toolbar}>
         <input
           type="search"
           className="ds1-input"
@@ -424,7 +439,10 @@ export function ProductsContent({ base }: { base: string }) {
           detailLinks={detailLinks}
           onSort={(f) => dispatch(setSort(f))}
           onEdit={(p) => dispatch(openEdit(p))}
-          onDelete={(p) => dispatch(openDelete(p))}
+          onDelete={(p) => {
+            deleted.current = false;
+            dispatch(openDelete(p));
+          }}
         />
         <div className="products-pager">
           <Button disabled={query.page <= 1} onClick={() => dispatch(setPage(query.page - 1))}>
@@ -452,8 +470,13 @@ export function ProductsContent({ base }: { base: string }) {
         <DeleteDialog
           product={deleting}
           onClose={() => dispatch(closeDialogs())}
+          // The deleted row's button is gone, so focus goes to Add product.
+          returnTo={() =>
+            deleted.current ? (toolbar.current?.querySelector('button') ?? null) : null
+          }
           onDelete={async () => {
             await remove.mutateAsync(deleting);
+            deleted.current = true;
             afterDelete();
           }}
         />
