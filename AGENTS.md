@@ -9,7 +9,7 @@ Project: `mfe-lab`, a private learning monorepo for Federated Micro Frontends. R
 - Builder agents write code; a separate tester agent writes black-box tests from the plan contract; both land in the same PR.
 - Tests ship in the same change as the code. Run `pnpm lint && pnpm typecheck && pnpm test` before finishing.
 - One PR per task, squash merge, title in conventional commits (`feat(api): add products CRUD`). Few commits, no chains of tiny fixups.
-- GitHub Actions minutes are unavailable: before any push or merge, run CI locally from a fresh clone of the committed branch: `d=$(mktemp -d) && git clone -q -b <branch> "$PWD" "$d" && (cd "$d" && act pull_request -P ubuntu-latest=catthehacker/ubuntu:act-latest); rm -rf "$d"` and paste the result into the PR. Not from a worktree: its `.git` points to a host path that does not exist in the container; the clone also tests only committed state, like real CI.
+- CI runs on GitHub Actions for every PR; it must be green before merge. To reproduce it locally, run act from a fresh clone of the committed branch: `d=$(mktemp -d) && git clone -q -b <branch> "$PWD" "$d" && (cd "$d" && act pull_request -P ubuntu-latest=catthehacker/ubuntu:act-latest); rm -rf "$d"`. Not from a worktree: its `.git` points to a host path that does not exist in the container.
 - **No AI attribution** in commits or PR text: no `Co-Authored-By`, no "Generated with" lines.
 - `main` is protected: PR only. The owner merges unless told otherwise.
 - If the task conflicts with an RFC, stop and write the question in the PR; do not silently diverge. Decision changes = edit the RFC in the same PR.
