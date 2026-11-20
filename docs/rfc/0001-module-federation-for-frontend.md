@@ -30,13 +30,13 @@ flowchart LR
   S & P & D -- REST + JWT --> A[api :4000<br/>SQLite]
 ```
 
-- **Host:** `apps/shell`, `remotes: { products: 'products@http://localhost:3001/mf-manifest.json', dashboard: ... }`. Remote URLs come from env with local defaults, declared once in `remotes.ts`.
-- **Remotes:** expose one page component each (`./ProductsPage`, `./DashboardPage`). Own `index.tsx` for standalone development.
+- **Host:** `apps/shell`. The plugin has no `remotes` option; remotes are registered at runtime with `registerRemotes` in `apps/shell/src/remotes.ts`, which holds the one list of manifest URLs. The URLs default to `http://localhost:3001|3002/mf-manifest.json` and are baked in at build time; `MF_PRODUCTS_URL` / `MF_DASHBOARD_URL` override them.
+- **Remotes:** expose one page component each (`./ProductsPage`, `./DashboardPage`). Each app's `src/index.ts` dynamically imports `bootstrap.tsx` (the async boundary that lets shared modules resolve) and, run on its own, mounts the page with a small dev-only sign-in bar.
 - **Shared:** `react`, `react-dom`, `react-router` (v8 ships no `react-router-dom`), `@mfe/auth-store` (added in T5) with `singleton: true`. One list in the root `federation.shared.ts`, imported by all three Rspack configs. Versions are pinned once in the pnpm `catalog:`; Module Federation cannot read `catalog:` specifiers, so `requiredVersion` is derived from the installed package version (`^x.y.z`) in that file.
 - **Isolation:** every remote mounts inside `RemoteFrame` = error boundary + Suspense + visible frame. The shell loads remotes with the runtime `loadRemote()`, not `React.lazy(import())`, because `React.lazy` caches a rejection forever and Retry would never refetch. A failed `import()` renders a fallback with a retry button, never a blank page. After a failure the shell re-registers the remote with `force: true`, which drops the cached manifest state, so Retry refetches once the remote is back.
 - **Types:** `dts: false`; remote module types are declared by hand in `apps/shell/src/remotes.d.ts`.
 - **Contract:** the exposed module is the only public surface. Props: none for pages (they read auth from the shared store and router from the shared singleton). Adding props needs a new RFC.
-- **Versioning (lab level):** each build writes `mf-manifest.json` with a build stamp; the inspector page reads it. No semver negotiation between remotes.
+- **Versioning (lab level):** the build stamp is `MF_BUILD_VERSION` if set, else the UTC build time. It goes into `mf-manifest.json` (`metaData.buildInfo.buildVersion`), is baked in as `__BUILD_VERSION__`, and is shown in each remote frame and the shell footer. The inspector reads the manifests and the share scope. No semver negotiation between remotes.
 
 ## Alternatives considered
 
@@ -52,14 +52,14 @@ flowchart LR
 
 ## Trade-offs and risks
 
-- Version drift of shared singletons causes runtime warnings or two copies of React. Mitigation: one shared list, inspector shows loaded versions.
+- Version drift of shared singletons causes runtime warnings or two copies of React. Mitigation: one shared list, and the inspector shows the loaded versions and flags anything not `loaded once`.
 - Remote types are not shared automatically. Mitigation: `@module-federation/enhanced` type generation, or a local `remotes.d.ts` declared in the shell.
 - More moving parts than a monolith for a small app. Accepted: that is the lesson.
-- Debugging across three dev servers. Mitigation: single `pnpm dev`, fixed ports.
+- Debugging across three dev servers. Mitigation: single `pnpm dev`, fixed ports, and the inspector shows which remote is up and which build it serves.
 
 ## Rollout
 
-T4 (host + stubs), T6 and T7 (real remotes), T8 (inspector). See `docs/PLAN.md`.
+T4 (host + stubs), T6 and T7 (real remotes), T8 (inspector, build stamps), T9 (Playwright smoke, final docs). See `docs/PLAN.md`.
 
 ## Open questions
 
@@ -69,3 +69,5 @@ T4 (host + stubs), T6 and T7 (real remotes), T8 (inspector). See `docs/PLAN.md`.
 
 - 2026-11-18: stack bumped to React 19 + react-router 8; shared list uses `react-router`.
 - 2026-11-18: T4: root `federation.shared.ts` with catalog versions, `loadRemote()` instead of `React.lazy`, local `remotes.d.ts` with `dts: false`.
+- 2026-11-20: T8: inspector and build stamps as described under Versioning.
+- 2026-11-20: T9: Proposal synced with the code (runtime `registerRemotes`, `bootstrap.tsx`, build stamp source). The Playwright smoke test covers the remote-down fallback by aborting requests to `:3001`.

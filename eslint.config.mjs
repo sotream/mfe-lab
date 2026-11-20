@@ -32,7 +32,7 @@ export default defineConfig(
     languageOptions: { globals: globals.browser },
   },
   {
-    files: ['apps/api/**/*.ts', 'tests/**/*.ts', '*.{mjs,ts}'],
+    files: ['apps/api/**/*.ts', 'tests/**/*.ts', 'e2e/**/*.ts', '*.{mjs,ts}'],
     languageOptions: { globals: globals.node },
   },
   prettier,
