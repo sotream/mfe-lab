@@ -92,7 +92,7 @@ describe('ProductDetail via ProductsApp', () => {
   it('Q-product-detail: found renders name, fields and requests /products/7', async () => {
     const api = server();
     await mount('/7');
-    expect(screen.getByRole('heading', { level: 2, name: 'Product 7' })).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 3, name: 'Product 7' })).toBeTruthy();
     const dl = document.querySelector('dl') as HTMLElement;
     const dd = (label: string) =>
       Array.from(dl.querySelectorAll('dt')).find((t) => t.textContent === label)?.nextElementSibling
@@ -119,7 +119,7 @@ describe('ProductDetail via ProductsApp', () => {
     status = 200;
     await click(screen.getByRole('button', { name: 'Retry' }));
     expect(api.paths.filter((p) => p.endsWith('/products/7')).length).toBe(before + 1);
-    expect(screen.getByRole('heading', { level: 2, name: 'Product 7' })).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 3, name: 'Product 7' })).toBeTruthy();
   });
 
   it('Q-product-detail: non-numeric id shows Product not found, no request', async () => {
@@ -135,7 +135,7 @@ describe('ProductDetail via ProductsApp', () => {
     await click(screen.getByRole('button', { name: 'Next' }));
     expect(screen.getByText('Page 2 of 3')).toBeTruthy();
     await click(screen.getByRole('link', { name: 'Product 11' }));
-    expect(screen.getByRole('heading', { level: 2, name: 'Product 11' })).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 3, name: 'Product 11' })).toBeTruthy();
     await click(screen.getByRole('link', { name: 'Back to products' }));
     expect(screen.getByText('Page 2 of 3')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Product 11' })).toBeTruthy();
@@ -156,5 +156,27 @@ describe('ProductsPage links', () => {
     });
     const link = screen.getByRole('link', { name: 'Product 3' });
     expect(link.getAttribute('href')).toBe('/products/3');
+  });
+});
+
+describe('ProductDetail a11y', () => {
+  it('Q-title: found sets "<name> – Products – mfe-lab"', async () => {
+    server();
+    await mount('/7');
+    expect(document.title).toBe('Product 7 – Products – mfe-lab');
+  });
+
+  it('Q-title: not found sets "Product not found – Products – mfe-lab"', async () => {
+    server(() => 404);
+    await mount('/7');
+    expect(document.title).toBe('Product not found – Products – mfe-lab');
+  });
+
+  it('Q-headings: the product name is an h3, not an h1 or h2', async () => {
+    server();
+    await mount('/7');
+    expect(screen.getByRole('heading', { level: 3, name: 'Product 7' })).toBeTruthy();
+    expect(screen.queryAllByRole('heading', { level: 1 })).toEqual([]);
+    expect(screen.queryByRole('heading', { level: 2, name: 'Product 7' })).toBeNull();
   });
 });

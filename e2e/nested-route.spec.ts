@@ -17,7 +17,7 @@ test('E-nested-route: list -> detail -> back, then cold deep link via login', as
   const products = page.locator('section[data-remote="products"]');
   await products.locator('tbody tr').first().getByRole('link').first().click();
   await expect(page).toHaveURL(/\/products\/\d+$/);
-  await expect(products.getByRole('heading', { level: 2 })).toBeVisible();
+  await expect(products.getByRole('heading', { level: 3 })).toBeVisible();
   const deep = page.url();
   const id = deep.split('/').at(-1);
 
@@ -29,5 +29,5 @@ test('E-nested-route: list -> detail -> back, then cold deep link via login', as
   expect(new URL(page.url()).searchParams.get('next')).toBe(`/products/${id}`);
   await signIn();
   await expect(page).toHaveURL(deep);
-  await expect(products.getByRole('heading', { level: 2 })).toBeVisible();
+  await expect(products.getByRole('heading', { level: 3 })).toBeVisible();
 });

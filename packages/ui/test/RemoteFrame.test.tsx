@@ -94,6 +94,27 @@ describe('RemoteFrame', () => {
     expect(load).toHaveBeenCalledTimes(2);
   });
 
+  it('Q-retry-focus: after Retry fails again, focus is on the Retry button', async () => {
+    const load = loader().mockImplementation(fail);
+    await mount(<RemoteFrame name="products" port={3001} load={load} />);
+    const first = await findAlert('products');
+    const retry = within(first).getByRole('button', { name: 'Retry' });
+    retry.focus();
+    await click(retry);
+    await waitFor(() => expect(load).toHaveBeenCalledTimes(2));
+    const again = await findAlert('products');
+    expect(document.activeElement).toBe(within(again).getByRole('button', { name: 'Retry' }));
+  });
+
+  it('Q-frame-heading: the remote name is an h2 in the bar', async () => {
+    await mount(
+      <RemoteFrame name="products" port={3001} load={() => Promise.resolve({ default: Ok })} />,
+    );
+    const section = screen.getByRole('region', { name: 'products remote' });
+    expect(within(section).getByRole('heading', { level: 2, name: 'products' })).toBeTruthy();
+    await screen.findByText('remote ok');
+  });
+
   it('Q-isolation: a failed frame does not break its sibling', async () => {
     await mount(
       <>

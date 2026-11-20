@@ -60,6 +60,32 @@ describe('Table', () => {
   });
 });
 
+describe('Table region', () => {
+  const body = (
+    <tbody>
+      <tr>
+        <td>cell</td>
+      </tr>
+    </tbody>
+  );
+
+  it('Q-table-region: with label, a focusable region named by it wraps the table', () => {
+    render(<Table label="Products">{body}</Table>);
+    const region = screen.getByRole('region', { name: 'Products' });
+    expect(region.getAttribute('tabindex')).toBe('0');
+    expect(region.classList.contains('ds1-table-wrap')).toBe(true);
+    expect(region.contains(screen.getByRole('table'))).toBe(true);
+  });
+
+  it('Q-table-region: without label, no region and no tabindex', () => {
+    const { container } = render(<Table>{body}</Table>);
+    expect(screen.queryByRole('region')).toBeNull();
+    const wrap = container.querySelector('.ds1-table-wrap') as HTMLElement;
+    expect(wrap.hasAttribute('role')).toBe(false);
+    expect(wrap.hasAttribute('tabindex')).toBe(false);
+  });
+});
+
 describe('Field', () => {
   it('Q-ds-field: label is tied to the input, wrapper has data-ds, no error means no aria-invalid', () => {
     const { container } = render(<Field label="Name" defaultValue="x" />);
