@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  centsToPriceInput,
-  formatPrice,
-  validateProductForm,
-  type FormValues,
-} from '../src/productForm.ts';
+import { centsToPriceInput, validateProductForm, type FormValues } from '../src/productForm.ts';
 
 const valid: FormValues = { sku: 'SKU-1', name: 'Thing', price: '12.34', stock: '5' };
 const errorsFor = (patch: Partial<FormValues>) => validateProductForm({ ...valid, ...patch });
@@ -70,10 +65,9 @@ describe('productForm', () => {
     }
   });
 
-  it('Q-format: formatPrice and centsToPriceInput examples', () => {
-    expect(formatPrice(1234)).toBe('$12.34');
-    expect(formatPrice(0)).toBe('$0.00');
-    expect(formatPrice(100_000)).toBe('$1,000.00');
+  it('Q-format: centsToPriceInput example (formatPrice moved to formatMoney in @mfe/ui)', () => {
     expect(centsToPriceInput(1234)).toBe('12.34');
+    expect(centsToPriceInput(67428, 'en')).toBe('674.28');
+    expect(centsToPriceInput(67428, 'de')).toBe('674,28');
   });
 });

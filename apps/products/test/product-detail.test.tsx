@@ -99,8 +99,8 @@ describe('ProductDetail via ProductsApp', () => {
         ?.textContent;
     expect(dd('SKU')).toBe('SKU-0007');
     expect(dd('Stock')).toBe('7');
-    expect(dd('Price')).toBe('$7.00');
-    expect(dd('Created')).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(dd('Price')).toMatch(/^€7\.00/); // the VAT note follows in a <small>
+    expect(dd('Created')).toBe('01/10/2026');
     expect(api.paths.some((p) => p.endsWith('/products/7'))).toBe(true);
   });
 

@@ -1,18 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { fillDays, formatCents, niceMax, totalRevenue, yTicks } from '../src/stats.ts';
+import { fillDays, niceMax, totalRevenue, yTicks } from '../src/stats.ts';
 
 const DAY = 86_400_000;
 const utc = (date: string) => Date.parse(`${date}T00:00:00.000Z`);
 const day = (date: string, count: number) => ({ date, count });
 
 describe('stats mapping', () => {
-  it('Q-format-cents: dollars with thousands separators, no float drift', () => {
-    expect(formatCents(0)).toBe('$0.00');
-    expect(formatCents(10)).toBe('$0.10');
-    expect(formatCents(1_234_567)).toBe('$12,345.67');
-    expect(formatCents(123_456_789)).toBe('$1,234,567.89');
-  });
-
   it('Q-fill-gaps: missing days are 0, input is sorted, empty stays empty', () => {
     const want = [
       day('2026-10-01', 2),

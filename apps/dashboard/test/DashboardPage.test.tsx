@@ -5,7 +5,8 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import DashboardPage from '../src/DashboardPage.tsx';
-import { fillDays, formatCents, totalRevenue, yTicks } from '../src/stats.ts';
+import { formatDate, formatMoney } from '@mfe/ui';
+import { fillDays, totalRevenue, yTicks } from '../src/stats.ts';
 
 const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
@@ -117,10 +118,10 @@ describe('DashboardPage', () => {
     expect(pairs).toMatchObject({
       Products: '30',
       Orders: '60',
-      Revenue: formatCents(totalRevenue(sample.revenue_by_status)),
-      'Paid revenue': formatCents(500_000),
+      Revenue: formatMoney(totalRevenue(sample.revenue_by_status), 'en'),
+      'Paid revenue': formatMoney(500_000, 'en'),
     });
-    expect(pairs.Revenue).toBe('$7,623.45');
+    expect(pairs.Revenue).toBe('€7,623.45');
   });
 
   it('Q-page-chart: gap-filled columns, proportional heights, label, y ticks', async () => {
@@ -145,7 +146,7 @@ describe('DashboardPage', () => {
 
     expect(
       screen.getByRole('img', {
-        name: 'Orders per day, 2026-10-01 to 2026-10-04: 8 orders, peak 5 on 2026-10-03',
+        name: 'Orders per day, 01/10/2026 to 04/10/2026: 8 orders, peak 5 on 03/10/2026',
       }),
     ).toBeTruthy();
     expect(yLabels()).toEqual(yTicks(5));
@@ -160,7 +161,7 @@ describe('DashboardPage', () => {
     await act(async () => void fireEvent.mouseEnter(peak));
     let tips = screen.getAllByRole('tooltip');
     expect(tips).toHaveLength(1);
-    expect(tips[0]?.textContent).toContain('2026-10-03: 5 orders');
+    expect(tips[0]?.textContent).toContain('03/10/2026: 5 orders');
 
     await act(async () => {
       fireEvent.mouseLeave(peak);
@@ -168,7 +169,7 @@ describe('DashboardPage', () => {
     });
     tips = screen.getAllByRole('tooltip');
     expect(tips).toHaveLength(1);
-    expect(tips[0]?.textContent).toContain('2026-10-01: 2 orders');
+    expect(tips[0]?.textContent).toContain('01/10/2026: 2 orders');
   });
 
   it('Q-chart-summary: label is the summary; bars have no aria-label and no tabindex', async () => {
@@ -176,7 +177,7 @@ describe('DashboardPage', () => {
     await mount();
     const svg = figure().querySelector('svg[role="img"]') as SVGElement;
     expect(svg.getAttribute('aria-label')).toBe(
-      'Orders per day, 2026-10-01 to 2026-10-04: 8 orders, peak 5 on 2026-10-03',
+      'Orders per day, 01/10/2026 to 04/10/2026: 8 orders, peak 5 on 03/10/2026',
     );
     const rects = columns();
     expect(rects.length).toBeGreaterThan(0);
@@ -196,7 +197,7 @@ describe('DashboardPage', () => {
     const at = ['new', 'paid', 'shipped'].map((s) => text.indexOf(s));
     expect(at.every((i) => i >= 0)).toBe(true);
     expect([...at].sort((a, b) => a - b)).toEqual(at);
-    for (const v of [12_345, 500_000, 250_000]) expect(text).toContain(formatCents(v));
+    for (const v of [12_345, 500_000, 250_000]) expect(text).toContain(formatMoney(v, 'en'));
 
     // A bar is an svg rect with a width attribute or an element with an inline style width.
     const bars = Array.from(
@@ -222,7 +223,9 @@ describe('DashboardPage', () => {
     const body = Array.from(table?.querySelectorAll('tbody tr') ?? []).map((tr) =>
       Array.from(tr.querySelectorAll('td, th')).map((c) => c.textContent?.trim()),
     );
-    expect(body).toEqual(fillDays(sample.orders_per_day).map((d) => [d.date, String(d.count)]));
+    expect(body).toEqual(
+      fillDays(sample.orders_per_day).map((d) => [formatDate(d.date, 'en'), String(d.count)]),
+    );
   });
 
   it('Q-page-empty: no orders shows the empty text and no svg', async () => {
@@ -240,7 +243,7 @@ describe('DashboardPage', () => {
     expect(num(rects[0] as Element, 'height')).toBeGreaterThan(0);
     expect(
       screen.getByRole('img', {
-        name: 'Orders per day, 2026-10-02 to 2026-10-02: 7 orders, peak 7 on 2026-10-02',
+        name: 'Orders per day, 02/10/2026 to 02/10/2026: 7 orders, peak 7 on 02/10/2026',
       }),
     ).toBeTruthy();
     noNaN(figure());

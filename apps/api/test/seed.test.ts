@@ -94,5 +94,9 @@ describe('seed names', () => {
     const old =
       /^(Compact|Rugged|Smart|Classic|Mini) (Widget|Gadget|Gizmo|Bracket|Cable|Lamp|Valve|Sensor)$/;
     expect(names.filter((n) => old.test(n))).toEqual([]);
+    expect(db.prepare("SELECT name FROM products WHERE sku = 'SKU-0001'").get()).toEqual({
+      name: 'Drucksensor', // German market (T27)
+    });
+    expect(names).not.toContain('Pressure Sensor');
   });
 });

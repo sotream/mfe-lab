@@ -144,7 +144,7 @@ describe('ProductsPage: list', () => {
     expect(api.urls()[0]).toBe('/api/products?page=1&limit=10&sort=id&order=asc');
     expect(rows()).toHaveLength(10);
     const first = rows()[0]?.textContent ?? '';
-    for (const s of ['SKU-0001', 'Product 1', '$12.34', '2026-10-01']) expect(first).toContain(s);
+    for (const s of ['SKU-0001', 'Product 1', '€12.34', '01/10/2026']) expect(first).toContain(s);
     expect(screen.getByText('Page 1 of 3')).toBeTruthy();
     expect((button('Previous') as HTMLButtonElement).disabled).toBe(true);
     expect((button('Next') as HTMLButtonElement).disabled).toBe(false);
