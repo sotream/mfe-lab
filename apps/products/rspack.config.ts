@@ -38,7 +38,10 @@ export default defineConfig({
     new ModuleFederationPlugin({
       name: 'products',
       filename: 'remoteEntry.js',
-      exposes: { './ProductsPage': './src/ProductsPage.tsx' },
+      exposes: {
+        './ProductsPage': './src/ProductsPage.tsx',
+        './ProductsApp': './src/ProductsApp.tsx',
+      },
       shared,
       manifest: true,
       dts: false,

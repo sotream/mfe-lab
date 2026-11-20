@@ -77,6 +77,7 @@ export type ProductQuery = {
 };
 
 export const listProducts = (query: ProductQuery) => request<Page<Product>>('/products', { query });
+export const getProduct = (id: number) => request<Product>(`/products/${id}`);
 export const createProduct = (input: ProductInput) =>
   request<Product>('/products', { method: 'POST', body: input });
 export const updateProduct = (id: number, patch: Partial<ProductInput>) =>

@@ -1,7 +1,7 @@
 import { login, useAuth } from '@mfe/auth-store';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter } from 'react-router';
-import ProductsPage from './ProductsPage.tsx';
+import { BrowserRouter, Route, Routes } from 'react-router';
+import ProductsApp from './ProductsApp.tsx';
 
 const ROLES = ['admin', 'editor', 'viewer'] as const;
 
@@ -22,17 +22,11 @@ function StandaloneBar() {
   );
 }
 
-function Standalone() {
-  return (
-    <>
-      <StandaloneBar />
-      <ProductsPage />
-    </>
-  );
-}
-
 createRoot(document.getElementById('root')!).render(
   <BrowserRouter>
-    <Standalone />
+    <StandaloneBar />
+    <Routes>
+      <Route path="/*" element={<ProductsApp />} />
+    </Routes>
   </BrowserRouter>,
 );
