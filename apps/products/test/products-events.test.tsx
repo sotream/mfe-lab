@@ -81,7 +81,9 @@ const mount = async () => {
     await sleep(20);
   });
   events.length = 0;
-  off = onAny((e) => events.push({ name: e.name, detail: e.detail }));
+  off = onAny((e) => {
+    if (e.name === 'products:changed') events.push({ name: e.name, detail: e.detail });
+  });
 };
 let server_ready = () => {};
 

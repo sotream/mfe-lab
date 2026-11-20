@@ -66,10 +66,13 @@ const COLUMNS: { label: string; field: Sort }[] = [
 function Modal({
   title,
   onClose,
+  returnTo,
   children,
 }: {
   title: string;
   onClose: () => void;
+  // Where focus goes on unmount instead of the opener (the opener may be gone).
+  returnTo?: () => HTMLElement | null;
   children: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -77,8 +80,16 @@ function Modal({
   useEffect(() => {
     const dialog = ref.current;
     if (!dialog) return;
+    const opener = document.activeElement as HTMLElement | null;
     if (typeof dialog.showModal === 'function') dialog.showModal();
     else dialog.setAttribute('open', '');
+    // Closing by Save, Delete or Cancel unmounts the dialog, so the browser's own focus return
+    // (which only runs on dialog.close()) never happens: do it here.
+    return () => {
+      const target = returnTo?.() ?? opener;
+      if (target?.isConnected) target.focus();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- opener and returnTo are read once, on mount
   }, []);
   return (
     <dialog ref={ref} className="products-dialog" aria-labelledby={titleId} onClose={onClose}>
@@ -171,10 +182,12 @@ function DeleteDialog({
   product,
   onClose,
   onDelete,
+  returnTo,
 }: {
   product: Product;
   onClose: () => void;
   onDelete: () => Promise<unknown>;
+  returnTo: () => HTMLElement | null;
 }) {
   const [failure, setFailure] = useState<string | null>(null);
 
@@ -191,7 +204,7 @@ function DeleteDialog({
   }
 
   return (
-    <Modal title={`Delete ${product.name}?`} onClose={onClose}>
+    <Modal title={`Delete ${product.name}?`} onClose={onClose} returnTo={returnTo}>
       {failure && <p role="alert">{failure}</p>}
       <div className="products-dialog-actions">
         <Button onClick={onClose}>Cancel</Button>
@@ -235,21 +248,23 @@ function useProductList() {
 // On success: refresh this remote's own cache, then tell the other remotes (RFC 0006).
 function useProductMutations() {
   const client = useQueryClient();
-  const changed = (id: number, kind: 'created' | 'updated' | 'deleted') => {
+  const changed = (id: number, kind: 'created' | 'updated' | 'deleted', sku: string) => {
     void client.invalidateQueries({ queryKey: ['products'] });
     emit('products:changed', { id, kind });
+    // The shell owns the live region (RFC 0011); standalone nobody listens.
+    emit('a11y:announce', { message: `Product ${sku} ${kind === 'updated' ? 'saved' : kind}` });
   };
   const create = useMutation({
     mutationFn: createProduct,
-    onSuccess: (p) => changed(p.id, 'created'),
+    onSuccess: (p) => changed(p.id, 'created', p.sku),
   });
   const update = useMutation({
     mutationFn: ({ id, input }: { id: number; input: ProductInput }) => updateProduct(id, input),
-    onSuccess: (_, { id }) => changed(id, 'updated'),
+    onSuccess: (_, { id, input }) => changed(id, 'updated', input.sku),
   });
   const remove = useMutation({
-    mutationFn: deleteProduct,
-    onSuccess: (_, id) => changed(id, 'deleted'),
+    mutationFn: (p: Product) => deleteProduct(p.id),
+    onSuccess: (_, p) => changed(p.id, 'deleted', p.sku),
   });
   return { create, update, remove };
 }
@@ -280,7 +295,7 @@ function ProductsTable({
   };
   return (
     <div className="products-table">
-      <Table>
+      <Table label="Products">
         <thead>
           <tr>
             {COLUMNS.map(({ label, field }) => (
@@ -374,6 +389,8 @@ export function ProductsContent({ base }: { base: string }) {
   const deleting = useAppSelector((s) => s.productsUi.deleting);
   const { query, data, failed, reload } = useProductList();
   const { create, update, remove } = useProductMutations();
+  const toolbar = useRef<HTMLDivElement>(null);
+  const deleted = useRef(false);
   useFlagsSync();
   const detailLinks = useFlag('products.detailPage', true);
 
@@ -397,7 +414,7 @@ export function ProductsContent({ base }: { base: string }) {
   return (
     <div className="products">
       <CrashWhenFlagged />
-      <div className="products-toolbar">
+      <div className="products-toolbar" ref={toolbar}>
         <input
           type="search"
           className="ds1-input"
@@ -422,7 +439,10 @@ export function ProductsContent({ base }: { base: string }) {
           detailLinks={detailLinks}
           onSort={(f) => dispatch(setSort(f))}
           onEdit={(p) => dispatch(openEdit(p))}
-          onDelete={(p) => dispatch(openDelete(p))}
+          onDelete={(p) => {
+            deleted.current = false;
+            dispatch(openDelete(p));
+          }}
         />
         <div className="products-pager">
           <Button disabled={query.page <= 1} onClick={() => dispatch(setPage(query.page - 1))}>
@@ -450,8 +470,13 @@ export function ProductsContent({ base }: { base: string }) {
         <DeleteDialog
           product={deleting}
           onClose={() => dispatch(closeDialogs())}
+          // The deleted row's button is gone, so focus goes to Add product.
+          returnTo={() =>
+            deleted.current ? (toolbar.current?.querySelector('button') ?? null) : null
+          }
           onDelete={async () => {
-            await remove.mutateAsync(deleting.id);
+            await remove.mutateAsync(deleting);
+            deleted.current = true;
             afterDelete();
           }}
         />

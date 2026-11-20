@@ -151,6 +151,11 @@ Goal: weekly grouped dependency update PRs via `.github/dependabot.yml`, with no
 - **Goal:** one dark "Console" look across shell, products and dashboard, owned by `@mfe/ui` 1.2.0 (tokens `--ds1-*`, `base.css`, self-hosted OFL fonts): a frame bar that shows each remote's name, port and build, readings instead of cards, an inspector with a readings strip, and 30 unique lab-hardware product names in the seed (RFC 0008).
 - **Done when:** every colour and font family is declared only in `packages/ui/src/tokens.css`; the three apps emit the `.woff2` files and make no request outside localhost; the Home frame bars sit level; `@mfe/ui` is 1.2.0 with a changelog entry and `requiredVersion` stays `^1.0.0`; the seed has 30 unique product names; roles, labels and routes are unchanged apart from the copy listed for T25; `pnpm lint && pnpm typecheck && pnpm test` pass.
 
+## T26 Accessibility across remotes
+
+- **Goal:** an ownership contract for page-level accessibility, WCAG 2.2 AA structure: the shell sets route titles, moves focus to the `h1` after navigation, renders the skip link and one live region; remotes own their subtree, start headings at `h3` and announce through `a11y:announce`; `@mfe/ui` 1.3.0 adds `Table` `label` and the frame `h2` (RFC 0011). `eslint-plugin-jsx-a11y` and `@axe-core/playwright` guard it.
+- **Done when:** each top-level route has its title and the product detail sets its own; after a client navigation focus is on the page `h1`; the skip link is the first tab stop and focuses `main`; each page has one `h1`, frame names are `h2` and remote headings `h3`; the chart label is a summary and bars are not focusable; creating, saving and deleting a product and toggling a flag are announced in the shell's live region; after a failed Retry focus stays on Retry; `E-a11y` finds no serious or critical axe violation on the main pages; `@mfe/ui` is 1.3.0 with a changelog entry and `requiredVersion` stays `^1.0.0`; `pnpm lint && pnpm typecheck && pnpm test` pass.
+
 ## Later (not now)
 
 Nothing planned.

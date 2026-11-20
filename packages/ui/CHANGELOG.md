@@ -2,6 +2,11 @@
 
 Breaking changes need a major bump, a new CSS prefix (`ds2-`) and an entry here (RFC 0008).
 
+## 1.3.0
+
+- `Table` takes an optional `label`: the scroll wrapper becomes a focusable `region` named by it (keyboard scrolling, WCAG 2.1.1). Without `label` nothing changes.
+- `RemoteFrame` renders the remote name as an `h2` in its bar (was a `span`), same look. Additive for consumers; a host's page `h1` then a frame `h2` is the heading contract in RFC 0011.
+
 ## 1.2.0
 
 - Console theme: dark graphite palette, Host Grotesk and Atkinson Hyperlegible Mono (OFL, self-hosted woff2 in `src/fonts/`). New tokens `--ds1-paper`, `--ds1-ink`, `--ds1-accent`, `--ds1-cool`, `--ds1-bad` and others, plus the space, text, duration and ease scale; the 1.0.0 `--ds1-color-*` names stay and map onto them.

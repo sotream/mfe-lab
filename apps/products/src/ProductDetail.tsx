@@ -1,6 +1,7 @@
 import { ApiError, getProduct } from '@mfe/api-client';
 import { Button } from '@mfe/ui';
 import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { Link, useParams } from 'react-router';
 import { formatPrice } from './productForm.ts';
 
@@ -14,8 +15,15 @@ export default function ProductDetail() {
     enabled: valid,
   });
 
+  const notFound = !valid || (error instanceof ApiError && error.status === 404);
+  // The remote owns the title of its subtree; the shell sets "Products – mfe-lab" on navigation (RFC 0011).
+  const title = notFound ? 'Product not found' : data?.name;
+  useEffect(() => {
+    if (title) document.title = `${title} – Products – mfe-lab`;
+  }, [title]);
+
   let body;
-  if (!valid || (error instanceof ApiError && error.status === 404)) {
+  if (notFound) {
     body = <p>Product not found</p>;
   } else if (error) {
     body = (
@@ -29,7 +37,7 @@ export default function ProductDetail() {
   } else {
     body = (
       <>
-        <h2 className="product-name">{data.name}</h2>
+        <h3 className="product-name">{data.name}</h3>
         <dl className="ds1-readings product-readings">
           <div>
             <dt>SKU</dt>

@@ -144,23 +144,18 @@ describe('DashboardPage', () => {
     expect(num(rects[1] as Element, 'height')).toBe(0);
 
     expect(
-      screen.getByRole('img', { name: 'Orders per day, 2026-10-01 to 2026-10-04' }),
+      screen.getByRole('img', {
+        name: 'Orders per day, 2026-10-01 to 2026-10-04: 8 orders, peak 5 on 2026-10-03',
+      }),
     ).toBeTruthy();
     expect(yLabels()).toEqual(yTicks(5));
     noNaN(figure());
   });
 
-  it('Q-page-tooltip: hover and keyboard focus show one tooltip per column', async () => {
+  it('Q-page-tooltip: hover shows one tooltip per column', async () => {
     server();
     await mount();
-    const rects = columns();
-    rects.forEach((r) => {
-      expect(r.getAttribute('tabindex')).toBe('0');
-      expect(r.getAttribute('aria-label')).toBe(
-        `${r.getAttribute('data-date')}: ${r.getAttribute('data-count')} orders`,
-      );
-    });
-    const [first, , peak] = rects as [SVGRectElement, SVGRectElement, SVGRectElement];
+    const [first, , peak] = columns() as [SVGRectElement, SVGRectElement, SVGRectElement];
 
     await act(async () => void fireEvent.mouseEnter(peak));
     let tips = screen.getAllByRole('tooltip');
@@ -169,11 +164,27 @@ describe('DashboardPage', () => {
 
     await act(async () => {
       fireEvent.mouseLeave(peak);
-      first.focus();
+      fireEvent.mouseEnter(first);
     });
     tips = screen.getAllByRole('tooltip');
     expect(tips).toHaveLength(1);
     expect(tips[0]?.textContent).toContain('2026-10-01: 2 orders');
+  });
+
+  it('Q-chart-summary: label is the summary; bars have no aria-label and no tabindex', async () => {
+    server();
+    await mount();
+    const svg = figure().querySelector('svg[role="img"]') as SVGElement;
+    expect(svg.getAttribute('aria-label')).toBe(
+      'Orders per day, 2026-10-01 to 2026-10-04: 8 orders, peak 5 on 2026-10-03',
+    );
+    const rects = columns();
+    expect(rects.length).toBeGreaterThan(0);
+    for (const r of rects) {
+      expect(r.hasAttribute('aria-label')).toBe(false);
+      expect(r.hasAttribute('tabindex')).toBe(false);
+    }
+    expect(svg.querySelector('[tabindex]')).toBeNull();
   });
 
   it('Q-page-revenue: new, paid, shipped in order with values; widest bar is the largest', async () => {
@@ -228,7 +239,9 @@ describe('DashboardPage', () => {
     expect(rects).toHaveLength(1);
     expect(num(rects[0] as Element, 'height')).toBeGreaterThan(0);
     expect(
-      screen.getByRole('img', { name: 'Orders per day, 2026-10-02 to 2026-10-02' }),
+      screen.getByRole('img', {
+        name: 'Orders per day, 2026-10-02 to 2026-10-02: 7 orders, peak 7 on 2026-10-02',
+      }),
     ).toBeTruthy();
     noNaN(figure());
   });

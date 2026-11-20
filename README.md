@@ -40,6 +40,7 @@ Every answer is running code, covered by black-box tests and argued in a short R
 - **Versioned design system.** `@mfe/ui` is shared as a non-singleton with a semver range. Compatible versions dedupe, and majors live side by side. ([RFC 0008](docs/rfc/0008-design-system-versioning.md))
 - **Feature flags.** Flags are served by the API and toggled live. Each remote reads only its own. ([RFC 0009](docs/rfc/0009-feature-flags.md))
 - **Error tracking per remote.** Errors are attributed to the remote and build that threw them. ([RFC 0010](docs/rfc/0010-error-tracking.md))
+- **Accessibility across remotes.** One owner per concern: the shell owns title, focus and the live region, remotes announce through a typed event, and lint and axe guard it. ([RFC 0011](docs/rfc/0011-accessibility-across-remotes.md))
 - **Prefetch on idle.** Measured first: −31.5% median time to the first product row on Fast 4G. ([RFC 0005](docs/rfc/0005-prefetch-remotes.md))
 - **An inspector page.** It shows remotes, versions, shared dependencies, flags, errors and a live event log.
 
@@ -108,6 +109,7 @@ packages/        auth-store, api-client, events, ui, telemetry
 | 0008 | [Design system versioning](docs/rfc/0008-design-system-versioning.md)                 | `@mfe/ui` is a non-singleton semver share; CSS carries a major prefix (`ds1-`), so two versions can coexist.                     |
 | 0009 | [Feature flags](docs/rfc/0009-feature-flags.md)                                       | Flags live in the API; each remote reads them with its own query client; `flags:changed` refreshes them without a reload.        |
 | 0010 | [Error tracking per remote](docs/rfc/0010-error-tracking.md)                          | Frames and `window` handlers report to the API with remote and build; admins read them in the inspector.                         |
+| 0011 | [Accessibility across remotes](docs/rfc/0011-accessibility-across-remotes.md)         | The shell owns title, focus, skip link, `h1` and the live region; remotes own their subtree and announce through an event.       |
 
 ## How it was built
 
