@@ -7,7 +7,6 @@ import {
   type Page,
   type Product,
   type ProductInput,
-  type ProductQuery,
 } from '@mfe/api-client';
 import { useAuth } from '@mfe/auth-store';
 import { emit } from '@mfe/events';
@@ -28,12 +27,28 @@ import {
   type FormErrors,
   type FormValues,
 } from './productForm.ts';
+import { Provider, useDispatch, useSelector } from 'react-redux';
+import {
+  closeDialogs,
+  makeStore,
+  openDelete,
+  openEdit,
+  openNew,
+  selectListQuery,
+  setPage,
+  setQuery,
+  setSort,
+  type AppDispatch,
+  type ListQuery,
+  type RootState,
+  type Sort,
+} from './store.ts';
 import './products.css';
 
 const LIMIT = 10;
 
-type Sort = NonNullable<ProductQuery['sort']>;
-type Query = { page: number; sort: Sort; order: 'asc' | 'desc'; q: string };
+const useAppDispatch = useDispatch.withTypes<AppDispatch>();
+const useAppSelector = useSelector.withTypes<RootState>();
 
 const COLUMNS: { label: string; field: Sort }[] = [
   { label: 'SKU', field: 'sku' },
@@ -197,7 +212,8 @@ function DeleteDialog({
 }
 
 function useProductList() {
-  const [query, setQuery] = useState<Query>({ page: 1, sort: 'id', order: 'asc', q: '' });
+  const dispatch = useAppDispatch();
+  const query = useAppSelector(selectListQuery);
   const { data, isError, refetch } = useQuery({
     queryKey: ['products', query],
     queryFn: async () => {
@@ -213,7 +229,7 @@ function useProductList() {
       // A page past the end (for example after a delete elsewhere) steps back to the last page.
       if (d.items.length === 0 && d.total > 0 && d.page > 1) {
         const last = Math.ceil(d.total / d.limit);
-        setQuery((p) => ({ ...p, page: last }));
+        dispatch(setPage(last));
         return list(last);
       }
       return d;
@@ -221,7 +237,7 @@ function useProductList() {
     placeholderData: keepPreviousData,
   });
 
-  return { query, setQuery, data: data ?? null, failed: isError, reload: () => void refetch() };
+  return { query, data: data ?? null, failed: isError, reload: () => void refetch() };
 }
 
 // On success: refresh this remote's own cache, then tell the other remotes (RFC 0006).
@@ -255,7 +271,7 @@ function ProductsTable({
   onDelete,
 }: {
   items: Product[];
-  query: Query;
+  query: ListQuery;
   canWrite: boolean;
   onSort: (field: Sort) => void;
   onEdit: (p: Product) => void;
@@ -333,31 +349,25 @@ function ProductsContent() {
   const role = useAuth((s) => s.user?.role);
   const canWrite = role === 'admin' || role === 'editor';
   const [text, setText] = useState('');
-  const [editing, setEditing] = useState<Product | 'new' | null>(null);
-  const [deleting, setDeleting] = useState<Product | null>(null);
-  const { query, setQuery, data, failed, reload } = useProductList();
+  const dispatch = useAppDispatch();
+  const editing = useAppSelector((s) => s.productsUi.editing);
+  const deleting = useAppSelector((s) => s.productsUi.deleting);
+  const { query, data, failed, reload } = useProductList();
   const { create, update, remove } = useProductMutations();
 
   // Debounce: one request 300 ms after the last keystroke; a new search goes back to page 1.
   useEffect(() => {
     const timer = setTimeout(() => {
       const q = text.trim();
-      setQuery((p) => (p.q === q ? p : { ...p, q, page: 1 }));
+      dispatch(setQuery(q));
     }, 300);
     return () => clearTimeout(timer);
-  }, [text, setQuery]);
-
-  const sortBy = (field: Sort) =>
-    setQuery((p) =>
-      p.sort === field
-        ? { ...p, order: p.order === 'asc' ? 'desc' : 'asc', page: 1 }
-        : { ...p, sort: field, order: 'asc', page: 1 },
-    );
+  }, [text, dispatch]);
 
   // Deleting the only item on the last page steps back one page instead of showing an empty one.
   const afterDelete = () => {
-    setDeleting(null);
-    if (data?.items.length === 1 && query.page > 1) setQuery((p) => ({ ...p, page: p.page - 1 }));
+    dispatch(closeDialogs());
+    if (data?.items.length === 1 && query.page > 1) dispatch(setPage(query.page - 1));
   };
 
   const pages = data ? Math.max(1, Math.ceil(data.total / data.limit)) : 1;
@@ -372,7 +382,7 @@ function ProductsContent() {
           value={text}
           onChange={(e) => setText(e.target.value)}
         />
-        {canWrite && <button onClick={() => setEditing('new')}>Add product</button>}
+        {canWrite && <button onClick={() => dispatch(openNew())}>Add product</button>}
       </div>
 
       <Content data={data} failed={failed} onRetry={reload}>
@@ -380,22 +390,16 @@ function ProductsContent() {
           items={data?.items ?? []}
           query={query}
           canWrite={canWrite}
-          onSort={sortBy}
-          onEdit={setEditing}
-          onDelete={setDeleting}
+          onSort={(f) => dispatch(setSort(f))}
+          onEdit={(p) => dispatch(openEdit(p))}
+          onDelete={(p) => dispatch(openDelete(p))}
         />
         <div className="products-pager">
-          <button
-            disabled={query.page <= 1}
-            onClick={() => setQuery((p) => ({ ...p, page: p.page - 1 }))}
-          >
+          <button disabled={query.page <= 1} onClick={() => dispatch(setPage(query.page - 1))}>
             Previous
           </button>
           <span>{`Page ${query.page} of ${pages}`}</span>
-          <button
-            disabled={query.page >= pages}
-            onClick={() => setQuery((p) => ({ ...p, page: p.page + 1 }))}
-          >
+          <button disabled={query.page >= pages} onClick={() => dispatch(setPage(query.page + 1))}>
             Next
           </button>
         </div>
@@ -404,18 +408,18 @@ function ProductsContent() {
       {editing && (
         <ProductDialog
           product={editing === 'new' ? null : editing}
-          onClose={() => setEditing(null)}
+          onClose={() => dispatch(closeDialogs())}
           onSave={async (input) => {
             if (editing === 'new') await create.mutateAsync(input);
             else await update.mutateAsync({ id: editing.id, input });
-            setEditing(null);
+            dispatch(closeDialogs());
           }}
         />
       )}
       {deleting && (
         <DeleteDialog
           product={deleting}
-          onClose={() => setDeleting(null)}
+          onClose={() => dispatch(closeDialogs())}
           onDelete={async () => {
             await remove.mutateAsync(deleting.id);
             afterDelete();
@@ -429,7 +433,7 @@ function ProductsContent() {
 // Deliver cache updates in a microtask, not a macrotask: results render in the same tick as the fetch.
 notifyManager.setScheduler(queueMicrotask);
 
-// One QueryClient per mount and per user: a user change remounts this, so no cache is shared.
+// One QueryClient and one UI store per mount and per user: a user change remounts this, so no cache is shared.
 // retry/refocus off keeps the explicit Retry button and today's behaviour.
 function ProductsRoot() {
   const [client] = useState(
@@ -438,10 +442,13 @@ function ProductsRoot() {
         defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } },
       }),
   );
+  const [store] = useState(makeStore);
   return (
-    <QueryClientProvider client={client}>
-      <ProductsContent />
-    </QueryClientProvider>
+    <Provider store={store}>
+      <QueryClientProvider client={client}>
+        <ProductsContent />
+      </QueryClientProvider>
+    </Provider>
   );
 }
 
