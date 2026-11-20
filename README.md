@@ -111,8 +111,12 @@ packages/        auth-store, api-client, events, ui, telemetry
 
 ## How it was built
 
-Each task in [`docs/PLAN.md`](docs/PLAN.md) goes through its own PR. A builder writes the code. A tester writes black-box tests from the task's contract without reading the implementation. CI runs lint, typecheck, unit and e2e tests on every PR, and [act](https://github.com/nektos/act) reproduces it locally. Dependabot opens weekly grouped updates.
+Each task in [`docs/PLAN.md`](docs/PLAN.md) goes through its own PR. A builder writes the code. A tester writes black-box tests from the task's contract without reading the implementation. CI runs lint, typecheck, unit and e2e tests on every PR, and [act](https://github.com/nektos/act) reproduces it locally. Dependabot opens weekly grouped updates, and minor and patch ones merge automatically once CI is green.
 
 ## Author
 
 Built by Andrii Prisniak ([@sotream](https://github.com/sotream)).
+
+## License
+
+[MIT](LICENSE).
