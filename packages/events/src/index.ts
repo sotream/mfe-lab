@@ -3,6 +3,7 @@
 // Adding an event = extend EventMap + a changelog line in RFC 0006.
 export type EventMap = {
   'products:changed': { id: number; kind: 'created' | 'updated' | 'deleted' };
+  'flags:changed': { name: string; enabled: boolean };
 };
 export type EventName = keyof EventMap;
 export type MfeEvent = {

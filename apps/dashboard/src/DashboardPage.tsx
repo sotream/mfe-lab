@@ -10,6 +10,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import { useFlag, useFlagsSync } from './flags.ts';
 import { fillDays, formatCents, niceMax, totalRevenue, yTicks } from './stats.ts';
 import './dashboard.css';
 
@@ -213,6 +214,8 @@ export const buildVersion: string = __BUILD_VERSION__;
 
 function DashboardContent() {
   const { stats, failed, reload } = useStats();
+  useFlagsSync();
+  const showRevenue = useFlag('dashboard.revenue', true);
 
   if (failed) {
     return (
@@ -232,7 +235,7 @@ function DashboardContent() {
         <figcaption>Orders per day</figcaption>
         {days.length === 0 ? <p>No orders yet</p> : <OrdersChart days={days} />}
       </figure>
-      <RevenueByStatus revenue={stats.revenue_by_status} />
+      {showRevenue && <RevenueByStatus revenue={stats.revenue_by_status} />}
       {days.length > 0 && <DataTable days={days} />}
     </div>
   );

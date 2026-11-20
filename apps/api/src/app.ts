@@ -9,6 +9,7 @@ import {
 import { registerAuth } from './auth.ts';
 import { migrate, openDb, type Database } from './db.ts';
 import { registerErrorHandler } from './errors.ts';
+import { flagRoutes } from './flags.ts';
 import { orderRoutes } from './orders.ts';
 import { productRoutes } from './products.ts';
 import { statsRoutes } from './stats.ts';
@@ -56,6 +57,7 @@ export async function buildApp(opts: {
   await app.register(productRoutes);
   await app.register(orderRoutes);
   await app.register(statsRoutes);
+  await app.register(flagRoutes);
 
   return app;
 }

@@ -20,7 +20,9 @@ const server = (values: number[]) => {
   const fetch = vi.fn(async (url: string) =>
     url === '/api/auth/login'
       ? json(200, { token: 't', user: { id: 3, email: 'viewer@lab.test', role: 'viewer' } })
-      : json(200, stats(values.shift() ?? 0)),
+      : url === '/api/flags'
+        ? json(404, { error: 'not_found' })
+        : json(200, stats(values.shift() ?? 0)),
   );
   vi.stubGlobal('fetch', fetch);
   return () => fetch.mock.calls.filter(([u]) => u === '/api/stats').length;
