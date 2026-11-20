@@ -106,6 +106,11 @@ Goal: weekly grouped dependency update PRs via `.github/dependabot.yml`, with no
 - **Goal:** the shell prefetches both remotes on idle after the first render, decided by measurement (RFC 0005).
 - **Done when:** with the compose stack, the first click on `Products` after 1 s idle takes at least 30% less time on Fast 4G than without prefetch (measured 1201 to 823 ms), and the products entry and expose chunk requests happen before the click.
 
+## T17 Typed events and inspector log
+
+- **Goal:** `@mfe/events` is a typed contract over `window` CustomEvent for cross-remote messages (not a federation singleton). The shell keeps the last 20 events in memory and the inspector shows them live in an `Events` table (RFC 0006).
+- **Done when:** evaluating `window.dispatchEvent(new CustomEvent('mfe:*', {detail:{name:'products:changed',detail:{id:1,kind:'updated'},at:Date.now()}}))` on `/inspector` adds a `products:changed` row with its payload; `@mfe/events` is absent from `federation.shared.ts`.
+
 ## Later (not now)
 
 Nothing planned.

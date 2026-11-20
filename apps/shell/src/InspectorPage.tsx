@@ -1,5 +1,6 @@
 import { getInstance } from '@module-federation/enhanced/runtime';
 import { useEffect, useState, useSyncExternalStore } from 'react';
+import { eventLog, subscribeEventLog } from './eventLog.ts';
 import {
   releaseManifestUrl,
   releasesUrl,
@@ -56,6 +57,7 @@ function VersionSelect({ name }: { name: RemoteName }) {
 const readShared = () => sharedRows(getInstance()?.shareScopeMap.default as ShareScope | undefined);
 
 export default function InspectorPage() {
+  const events = useSyncExternalStore(subscribeEventLog, eventLog);
   const [pings, setPings] = useState<Record<string, Ping>>({});
   // Re-run the ping effect (and show the right Manifest) whenever a selection changes.
   const entries = useSyncExternalStore(subscribeRemotes, () =>
@@ -133,6 +135,32 @@ export default function InspectorPage() {
               <td>{r.loaded.join(', ') || '—'}</td>
               <td>{r.singleton ? 'yes' : 'no'}</td>
               <td>{r.status}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <h2>Events</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Event</th>
+            <th>Payload</th>
+          </tr>
+        </thead>
+        <tbody>
+          {events.length === 0 && (
+            <tr>
+              <td colSpan={3}>No events yet</td>
+            </tr>
+          )}
+          {events.map((e) => (
+            <tr key={`${e.at}-${e.name}-${JSON.stringify(e.detail)}`}>
+              <td>{new Date(e.at).toLocaleTimeString('en-GB')}</td>
+              <td>{e.name}</td>
+              <td>
+                <code>{JSON.stringify(e.detail)}</code>
+              </td>
             </tr>
           ))}
         </tbody>
