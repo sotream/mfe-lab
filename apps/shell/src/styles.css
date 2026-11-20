@@ -141,6 +141,7 @@ main {
 
 footer {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--ds1-space-sm);
   padding-block: var(--ds1-space-md) var(--ds1-space-lg);
   border-top: 1px solid var(--ds1-rule);
