@@ -235,13 +235,13 @@ The selection lives in memory only: a reload goes back to `dev`. To clean up, de
 
 `@mfe/ui` (`Button`, `Table`, `Field`) is shared with `singleton: false` and `requiredVersion: '^1.0.0'`, so each remote may use its own compatible version (RFC 0008). Styles use `--ds1-*` tokens and `ds1-*` classes: a breaking change means a major bump and a new prefix. See `packages/ui/CHANGELOG.md`.
 
-Walkthrough with two versions on one page (do not commit step 2):
+Walkthrough (edit nothing you commit; revert at the end):
 
-1. `pnpm --filter @mfe/products release 1.0.0-ds`.
-2. In `packages/ui/package.json` set `"version": "1.1.0"`, add a `Badge` component to `packages/ui/src`, export it, and use it in `apps/dashboard/src/DashboardPage.tsx`.
-3. With `pnpm dev` running, open `/inspector` and pick `1.0.0-ds` for products.
+1. `pnpm --filter @mfe/products release 1.0.0-ds` freezes products with `@mfe/ui` 1.0.0.
+2. **Compatible upgrade.** Set `"version": "1.1.0"` in `packages/ui/package.json` and run `pnpm dev`. In `/inspector`, pick `1.0.0-ds` for products and open Home. The Shared table still lists one `@mfe/ui` (1.1.0, loaded once): the old release asks for `^1.0.0`, the shell already provides 1.1.0, so the release reuses it. One copy, no duplicate bytes.
+3. **Breaking upgrade.** Set the version to `2.0.0` and the `@mfe/ui` `requiredVersion` in `federation.shared.ts` to `^2.0.0`, restart `pnpm dev` and repeat. Now the table lists `1.0.0, 2.0.0`, `loaded 2 times`: the old release cannot use 2.x, so it loads its own bundled 1.0.0 next to the shell's 2.0.0. A real 2.0.0 would also move to the `ds2-` prefix, so the two copies cannot restyle each other.
 
-The Shared table now lists `@mfe/ui` with two loaded versions (1.0.0 from the release, 1.1.0 from the shell and dashboard) and `Singleton` `no`. Revert the `packages/ui` and dashboard edits and delete `apps/products/releases` to clean up.
+Clean up with `git checkout -- packages/ui/package.json federation.shared.ts` and `rm -rf apps/products/releases`.
 
 ## Testing
 
