@@ -88,6 +88,7 @@
 .standalone-bar {
   display: flex;
   gap: 0.5rem;
+  flex-wrap: wrap;
   align-items: center;
   padding: 0.5rem 1rem;
   border-bottom: 1px dashed var(--border, #888);

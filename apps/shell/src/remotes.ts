@@ -10,6 +10,11 @@ const entries = {
   dashboard: { entry: __MF_DASHBOARD_URL__, module: 'DashboardPage', port: 3002 },
 } as const;
 
+export const remoteManifests = Object.entries(entries).map(([name, { entry }]) => ({
+  name,
+  manifest: entry,
+}));
+
 export type RemoteName = keyof typeof entries;
 export const remotePort = (name: RemoteName): number => entries[name].port;
 

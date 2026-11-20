@@ -1,7 +1,7 @@
 import { defineConfig } from '@rspack/cli';
 import { rspack } from '@rspack/core';
 import { ModuleFederationPlugin } from '@module-federation/enhanced/rspack';
-import { shared } from '../../federation.shared.ts';
+import { buildVersion, shared } from '../../federation.shared.ts';
 
 // Remote manifest URLs, overridable at build time (see src/remotes.ts).
 const productsUrl = process.env.MF_PRODUCTS_URL ?? 'http://localhost:3001/mf-manifest.json';
@@ -31,6 +31,7 @@ export default defineConfig({
   plugins: [
     new ModuleFederationPlugin({ name: 'shell', shared, manifest: true, dts: false }),
     new rspack.DefinePlugin({
+      __BUILD_VERSION__: JSON.stringify(buildVersion),
       __MF_PRODUCTS_URL__: JSON.stringify(productsUrl),
       __MF_DASHBOARD_URL__: JSON.stringify(dashboardUrl),
     }),
