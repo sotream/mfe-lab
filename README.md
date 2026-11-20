@@ -196,6 +196,15 @@ pnpm e2e
 
 Playwright starts the API (after seeding), products, dashboard and shell itself. Locally it reuses servers that are already running (for example from `pnpm dev`) and does not stop them; in CI (`CI` set) it always starts its own. The suite covers login, both remotes rendering, the shared login (a viewer cannot see "Add product", an editor can), the inspector, and the remote-down fallback, which is simulated by aborting requests to `:3001`. Reports and traces go to `playwright-report/` and `test-results/` (gitignored).
 
+## Run with Docker
+
+```bash
+docker compose up --build -d   # shell :3000, products :3001, dashboard :3002
+docker compose down -v         # stop and drop the DB volume
+```
+
+One `Dockerfile`, three targets: `build` (install and build all apps), `api` (production deps only, seeds on start, then `node src/server.ts`) and `web` (nginx with build arg `APP`). nginx falls back to `index.html`, proxies `/api/` to the API with the prefix stripped, sends `Access-Control-Allow-Origin: *` and `no-store` for `mf-manifest.json` and `remoteEntry.js`. The API listens on `HOST` (default `127.0.0.1`, compose sets `0.0.0.0`) and is not published to the host. The compose `JWT_SECRET` is demo-only. Manifest URLs stay `localhost:3001/3002`, so this is a local setup. CI does not cover it: `act` runs inside Docker.
+
 ## Dependencies
 
 Dependabot (`.github/dependabot.yml`) opens weekly grouped PRs for npm and GitHub Actions. GitHub Actions minutes are unavailable, so CI does not run on GitHub. Check each Dependabot PR with local `act` from a fresh clone before merging (see "Run CI locally").
