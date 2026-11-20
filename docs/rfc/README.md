@@ -23,3 +23,4 @@ When an RFC is needed: anything that changes the architecture, a shared contract
 | 0006 | Data between remotes                         | Accepted |
 | 0007 | Routing inside remotes                       | Accepted |
 | 0008 | Design system versioning                     | Draft    |
+| 0009 | Feature flags                                | Accepted |

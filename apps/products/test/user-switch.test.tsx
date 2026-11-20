@@ -37,6 +37,7 @@ describe('ProductsPage user switch', () => {
         const id = email.startsWith('editor') ? 2 : 3;
         return json(200, { token: `t-${id}`, user: { id, email, role: email.split('@')[0] } });
       }
+      if (url === '/api/flags') return json(404, { error: 'not_found' });
       lists++;
       const mine = current;
       if (lists > 1) await gate;

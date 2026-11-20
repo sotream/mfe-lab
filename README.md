@@ -214,7 +214,7 @@ Server state: products and dashboard each fetch through their own TanStack Query
 
 UI state: the products page keeps page, sort, order, search and open dialogs in a Redux Toolkit slice `productsUi`, in a store created per mount (`makeStore()`), local to products.
 
-Between remotes: `@mfe/events` wraps `window` `CustomEvent`, so each remote may bundle its own copy and they still talk. The contract is the `EventMap` type in `packages/events/src/index.ts`; today it has one event, `products:changed` with `{ id, kind: 'created' | 'updated' | 'deleted' }`. `emit` with an unknown name is a TypeScript error. Products emits it after a successful create, update or delete; the dashboard calls `invalidateQueries({ queryKey: ['stats'] })`. The shell subscribes with `onAny` and keeps the last 20 events for the inspector. Details and rejected alternatives: [RFC 0006](docs/rfc/0006-data-between-remotes.md).
+Between remotes: `@mfe/events` wraps `window` `CustomEvent`, so each remote may bundle its own copy and they still talk. The contract is the `EventMap` type in `packages/events/src/index.ts`; it has `products:changed` with `{ id, kind: 'created' | 'updated' | 'deleted' }` and `flags:changed` with `{ name, enabled }`. `emit` with an unknown name is a TypeScript error. Products emits it after a successful create, update or delete; the dashboard calls `invalidateQueries({ queryKey: ['stats'] })`. The shell subscribes with `onAny` and keeps the last 20 events for the inspector. Details and rejected alternatives: [RFC 0006](docs/rfc/0006-data-between-remotes.md).
 
 ## Nested routes
 
@@ -230,6 +230,12 @@ A remote can be frozen into a release and the shell can switch to it at runtime,
 4. With `pnpm dev` running, open `/inspector`, pick `1.0.0`, `1.1.0` or `dev` in the `Use` column for products, then open Home: the frame shows `build 1.1.0` and the change.
 
 The selection lives in memory only: a reload goes back to `dev`. To clean up, delete `apps/products/releases`.
+
+## Feature flags
+
+Flags live in the API (`GET /flags`, admin-only `PATCH /flags/:name`). Each remote reads them through `useFlag(name, fallback)` with its own query client; the fallback applies while loading, on error and when signed out, so a remote still works standalone. A toggle emits `flags:changed` and mounted remotes refetch. Seeded flags: `dashboard.revenue` (hides Revenue by status), `products.detailPage` (names become plain text), `products.crash` (ProductsPage throws, so the shell frame shows its error fallback). Details: [RFC 0009](docs/rfc/0009-feature-flags.md).
+
+Demo: sign in as `admin@lab.test`, open `/inspector`, uncheck `dashboard.revenue`, go Home: the Revenue by status section is gone. Check it again to bring it back. Turn on `products.crash` to see the Products frame fail while the rest of the page keeps working (Retry keeps failing until you turn it off). Viewers and editors see the checkboxes disabled.
 
 ## Design system versions
 
@@ -299,6 +305,8 @@ All routes except `GET /health`, `POST /auth/login` and `/docs*` need `Authoriza
 | `GET /orders`                           | any           | `?page&limit&status`; newest first                                                                             |
 | `POST /orders`, `PATCH /orders/:id`     | admin         | create sets status `new`; PATCH sets `status`                                                                  |
 | `GET /stats`                            | any           | counts, revenue by status, orders per day (UTC)                                                                |
+| `GET /flags`                            | any           | `{ name, enabled, description }[]` sorted by name                                                              |
+| `PATCH /flags/:name`                    | admin         | body `{ enabled }`; unknown name gives `404`                                                                   |
 
 Pagination defaults to `page=1&limit=20` (max `limit` 100); `sort` is one of `id, sku, name, price_cents, stock, created_at`.
 
@@ -316,6 +324,7 @@ Interactive OpenAPI docs: <http://localhost:4000/docs> (spec at `/docs/json`; bo
 | 0006 | [Data between remotes](docs/rfc/0006-data-between-remotes.md)                         | Accepted | One TanStack Query client per remote, Redux Toolkit local to products, typed `window` events between remotes; nothing shared.    |
 | 0007 | [Routing inside remotes](docs/rfc/0007-routing-inside-remotes.md)                     | Accepted | The shell mounts a remote at `<name>/*`; the remote owns the subtree with relative links, on the shared router.                  |
 | 0008 | [Design system versioning](docs/rfc/0008-design-system-versioning.md)                 | Draft    | `@mfe/ui` is a non-singleton semver share; CSS carries a major prefix (`ds1-`), so two versions can coexist.                     |
+| 0009 | [Feature flags](docs/rfc/0009-feature-flags.md)                                       | Accepted | Flags live in the API; each remote reads them with its own query client; `flags:changed` refreshes them without a reload.        |
 
 ## Run CI locally
 
