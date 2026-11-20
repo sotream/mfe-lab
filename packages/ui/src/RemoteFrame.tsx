@@ -1,7 +1,7 @@
 import { Component, Suspense, use, useState, type ComponentType, type ReactNode } from 'react';
 import './frame.css';
 
-export type RemoteModule = { default: ComponentType };
+export type RemoteModule = { default: ComponentType; buildVersion?: string };
 
 type Props = { name: string; port: number; load: () => Promise<RemoteModule> };
 
@@ -13,8 +13,13 @@ function start(load: Props['load']): Promise<RemoteModule> {
 }
 
 function Remote({ promise }: { promise: Promise<RemoteModule> }) {
-  const Page = use(promise).default;
-  return <Page />;
+  const { default: Page, buildVersion } = use(promise);
+  return (
+    <>
+      {buildVersion && <span className="remote-frame-build">{`build ${buildVersion}`}</span>}
+      <Page />
+    </>
+  );
 }
 
 class Boundary extends Component<

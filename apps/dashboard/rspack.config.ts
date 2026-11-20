@@ -1,7 +1,7 @@
 import { defineConfig } from '@rspack/cli';
 import { rspack } from '@rspack/core';
 import { ModuleFederationPlugin } from '@module-federation/enhanced/rspack';
-import { shared } from '../../federation.shared.ts';
+import { buildVersion, shared } from '../../federation.shared.ts';
 
 export default defineConfig({
   entry: './src/index.ts',
@@ -33,6 +33,7 @@ export default defineConfig({
       manifest: true,
       dts: false,
     }),
+    new rspack.DefinePlugin({ __BUILD_VERSION__: JSON.stringify(buildVersion) }),
     new rspack.HtmlRspackPlugin({ template: './index.html' }),
   ],
   devServer: {
