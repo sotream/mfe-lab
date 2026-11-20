@@ -34,7 +34,9 @@ test.describe('German browser', () => {
       await expect(n.getByRole('link', { name, exact: true })).toBeVisible();
     await expect(page).toHaveTitle('Startseite – mfe-lab');
     await expect(page.getByRole('group', { name: 'Sprache' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Deutsch' })).toHaveAttribute(
+    await expect(page.getByRole('group', { name: 'Sprache' }).getByRole('button')).toHaveCount(2);
+    await expect(page.locator('[aria-label="Deutsch"], [aria-label="English"]')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'DE', exact: true })).toHaveAttribute(
       'aria-pressed',
       'true',
     );
@@ -73,11 +75,11 @@ test.describe('German browser', () => {
     await expect(products(page).locator('tbody tr').first()).toBeVisible();
     await page.evaluate(() => ((window as unknown as { __kept: boolean }).__kept = true));
 
-    await page.getByRole('button', { name: 'English' }).click();
+    await page.getByRole('button', { name: 'EN', exact: true }).click();
     await expect(lang(page)).toHaveAttribute('lang', 'en');
     await expect(page.getByRole('heading', { level: 1, name: 'Products' })).toBeVisible();
     await expect(nav(page).getByRole('link', { name: 'Home', exact: true })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'English' })).toHaveAttribute(
+    await expect(page.getByRole('button', { name: 'EN', exact: true })).toHaveAttribute(
       'aria-pressed',
       'true',
     );
@@ -104,7 +106,7 @@ test.describe('German browser', () => {
 test('E-locale: an English browser stays English, and DE is one click away', async ({ page }) => {
   await login(page, 'viewer@lab.test');
   await expect(lang(page)).toHaveAttribute('lang', 'en');
-  await page.getByRole('button', { name: 'Deutsch' }).click();
+  await page.getByRole('button', { name: 'DE', exact: true }).click();
   await expect(lang(page)).toHaveAttribute('lang', 'de');
   await expect(nav(page).getByRole('link', { name: 'Produkte', exact: true })).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem('mfe-lab:locale'))).toBe('de');

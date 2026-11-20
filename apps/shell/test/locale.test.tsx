@@ -105,9 +105,11 @@ describe('locale switch', () => {
   it('Q-locale-switch: the group, its buttons and the initial state', async () => {
     await mount('/', 'admin');
     const group = screen.getByRole('group', { name: 'Language' });
-    const en = within(group).getByRole('button', { name: 'English' });
-    const de = within(group).getByRole('button', { name: 'Deutsch' });
+    const en = within(group).getByRole('button', { name: 'EN' });
+    const de = within(group).getByRole('button', { name: 'DE' });
     expect(en.textContent).toBe('EN');
+    expect(en.hasAttribute('aria-label')).toBe(false); // named by its visible text
+    expect(de.hasAttribute('aria-label')).toBe(false);
     expect(de.textContent).toBe('DE');
     expect(en.getAttribute('lang')).toBe('en');
     expect(de.getAttribute('lang')).toBe('de');
@@ -122,7 +124,7 @@ describe('locale switch', () => {
     const group = () => screen.getByRole('group', { name: /^(Language|Sprache)$/ });
 
     await act(async () => {
-      fireEvent.click(within(group()).getByRole('button', { name: 'Deutsch' }));
+      fireEvent.click(within(group()).getByRole('button', { name: 'DE' }));
       await sleep(30);
     });
     expect(document.documentElement.lang).toBe('de');
@@ -131,16 +133,12 @@ describe('locale switch', () => {
       { locale: 'de' },
     ]);
     expect(screen.getByRole('group', { name: 'Sprache' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Deutsch' }).getAttribute('aria-pressed')).toBe(
-      'true',
-    );
-    expect(screen.getByRole('button', { name: 'English' }).getAttribute('aria-pressed')).toBe(
-      'false',
-    );
+    expect(screen.getByRole('button', { name: 'DE' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('button', { name: 'EN' }).getAttribute('aria-pressed')).toBe('false');
 
     seen.length = 0;
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'English' }));
+      fireEvent.click(screen.getByRole('button', { name: 'EN' }));
       await sleep(30);
     });
     off();
@@ -150,9 +148,7 @@ describe('locale switch', () => {
       { locale: 'en' },
     ]);
     expect(screen.getByRole('group', { name: 'Language' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'English' }).getAttribute('aria-pressed')).toBe(
-      'true',
-    );
+    expect(screen.getByRole('button', { name: 'EN' }).getAttribute('aria-pressed')).toBe('true');
   });
 
   it('Q-locale-switch: shell text changes in place; route and focus are kept', async () => {
@@ -163,7 +159,7 @@ describe('locale switch', () => {
     const skip = document.querySelector('.skip-link') as HTMLElement;
     const router = await load();
 
-    const de = screen.getByRole('button', { name: 'Deutsch' });
+    const de = screen.getByRole('button', { name: 'DE' });
     de.focus();
     await act(async () => {
       fireEvent.click(de);
@@ -187,9 +183,7 @@ describe('locale switch', () => {
     document.documentElement.lang = 'de';
     localStorage.setItem(KEY, 'de');
     await mount('/', 'admin');
-    expect(screen.getByRole('button', { name: 'Deutsch' }).getAttribute('aria-pressed')).toBe(
-      'true',
-    );
+    expect(screen.getByRole('button', { name: 'DE' }).getAttribute('aria-pressed')).toBe('true');
   });
 });
 
