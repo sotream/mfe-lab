@@ -1,6 +1,7 @@
 import { getStats, type Stats } from '@mfe/api-client';
 import { useAuth } from '@mfe/auth-store';
 import { on } from '@mfe/events';
+import { Button, Table } from '@mfe/ui';
 import {
   notifyManager,
   QueryClient,
@@ -187,7 +188,7 @@ function DataTable({ days }: { days: Day[] }) {
   return (
     <details>
       <summary>Show data table</summary>
-      <table>
+      <Table>
         <thead>
           <tr>
             <th>Date</th>
@@ -202,7 +203,7 @@ function DataTable({ days }: { days: Day[] }) {
             </tr>
           ))}
         </tbody>
-      </table>
+      </Table>
     </details>
   );
 }
@@ -217,7 +218,7 @@ function DashboardContent() {
     return (
       <div role="alert">
         <p>Could not load dashboard</p>
-        <button onClick={reload}>Retry</button>
+        <Button onClick={reload}>Retry</Button>
       </div>
     );
   }

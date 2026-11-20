@@ -22,3 +22,4 @@ When an RFC is needed: anything that changes the architecture, a shared contract
 | 0005 | Prefetch remotes on idle                     | Accepted |
 | 0006 | Data between remotes                         | Accepted |
 | 0007 | Routing inside remotes                       | Accepted |
+| 0008 | Design system versioning                     | Draft    |

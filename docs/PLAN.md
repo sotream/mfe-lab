@@ -131,6 +131,11 @@ Goal: weekly grouped dependency update PRs via `.github/dependabot.yml`, with no
 - **Goal:** the products remote owns its sub-routes: the shell mounts it at `products/*` and the remote serves the list (`index`) and a product detail page (`:id`) with relative links (RFC 0007). Home keeps `ProductsPage`, with names linking to `/products/<id>`.
 - **Done when:** clicking a product name opens `/products/<id>` with its details, the back button returns to the list with the same page and sort, a cold load of `/products/<id>` works (after login), `:3001/5` shows the detail standalone, and `pnpm lint && pnpm typecheck && pnpm test` pass.
 
+## T22 Versioned design system
+
+- **Goal:** `@mfe/ui` gets a real version (1.0.0), a changelog, `ds1-` tokens and three components (`Button`, `Table`, `Field`), shared as a non-singleton so remotes can run different compatible versions (RFC 0008). Products and dashboard use the components; the inspector shows a `Singleton` column.
+- **Done when:** products and dashboard render `data-ds` components with unchanged roles and texts, the three `mf-manifest.json` list `@mfe/ui` 1.0.0 with `singleton: false`, the README "Design system versions" walkthrough works, and `pnpm lint && pnpm typecheck && pnpm test` pass.
+
 ## Later (not now)
 
 Nothing planned.

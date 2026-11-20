@@ -14,6 +14,9 @@ export const shared = {
   'react-dom': singleton('react-dom'),
   'react-router': singleton('react-router'),
   '@mfe/auth-store': singleton('@mfe/auth-store'),
+  // Design system: not a singleton. Each remote may bring its own compatible 1.x copy; a breaking
+  // change is a new major with a new CSS prefix, so two majors coexist (RFC 0008).
+  '@mfe/ui': { singleton: false, requiredVersion: '^1.0.0' },
 };
 
 // Build stamp: MF_BUILD_VERSION wins, else the current UTC time. Written back to the env so the
