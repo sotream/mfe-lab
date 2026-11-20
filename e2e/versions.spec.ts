@@ -1,0 +1,32 @@
+import { expect, test, type Page } from '@playwright/test';
+
+const BASE = 'http://localhost:3000';
+
+const products = (page: Page) => page.locator('section[data-remote="products"]');
+const dashboard = (page: Page) => page.locator('section[data-remote="dashboard"]');
+
+// Token and version selection live in memory: after login, move only via nav links.
+async function pickVersion(page: Page, version: string): Promise<void> {
+  await page.getByRole('link', { name: 'Inspector' }).click();
+  await page.getByLabel('products version').selectOption(version);
+  await page.getByRole('link', { name: 'Home' }).click();
+}
+
+test('E-versions: switching the products version changes the mounted build', async ({ page }) => {
+  await page.goto(`${BASE}/login`);
+  await page.getByLabel('Email').fill('viewer@lab.test');
+  await page.getByLabel('Password').fill('lab12345');
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await expect(page.getByText('viewer@lab.test · ')).toBeVisible();
+
+  for (const version of ['0.0.2-e2e', '0.0.1-e2e']) {
+    await pickVersion(page, version);
+    await expect(products(page)).toContainText(`build ${version}`);
+    await expect(dashboard(page).locator('svg[role="img"] rect[data-date]').first()).toBeVisible();
+  }
+
+  await pickVersion(page, '');
+  await expect(products(page)).toContainText('build ');
+  await expect(products(page)).not.toContainText('e2e');
+  await expect(dashboard(page).locator('svg[role="img"] rect[data-date]').first()).toBeVisible();
+});
