@@ -92,6 +92,21 @@ export type Stats = {
 
 export const getStats = () => request<Stats>('/stats');
 
+export type ErrorRow = {
+  id: number;
+  remote: string;
+  build: string;
+  kind: 'render' | 'load' | 'unhandled';
+  message: string;
+  stack: string | null;
+  url: string;
+  at: string;
+};
+
+export const listErrors = () => request<ErrorRow[]>('/errors');
+export const errorSummary = () => request<{ remote: string; count: number }[]>('/errors/summary');
+export const clearErrors = () => request<void>('/errors', { method: 'DELETE' });
+
 export type Flag = { name: string; enabled: boolean; description: string };
 
 export const listFlags = () => request<Flag[]>('/flags');

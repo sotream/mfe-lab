@@ -13,6 +13,7 @@ import { flagRoutes } from './flags.ts';
 import { orderRoutes } from './orders.ts';
 import { productRoutes } from './products.ts';
 import { statsRoutes } from './stats.ts';
+import { errorRoutes } from './telemetry.ts';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -58,6 +59,7 @@ export async function buildApp(opts: {
   await app.register(orderRoutes);
   await app.register(statsRoutes);
   await app.register(flagRoutes);
+  await app.register(errorRoutes);
 
   return app;
 }

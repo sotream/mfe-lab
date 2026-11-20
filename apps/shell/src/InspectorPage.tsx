@@ -1,4 +1,12 @@
-import { listFlags, setFlag, type Flag } from '@mfe/api-client';
+import {
+  clearErrors,
+  errorSummary,
+  listErrors,
+  listFlags,
+  setFlag,
+  type ErrorRow,
+  type Flag,
+} from '@mfe/api-client';
 import { useAuth } from '@mfe/auth-store';
 import { emit } from '@mfe/events';
 import { getInstance } from '@module-federation/enhanced/runtime';
@@ -128,6 +136,75 @@ function Flags() {
   );
 }
 
+function Errors() {
+  const isAdmin = useAuth((s) => s.user?.role === 'admin');
+  const [summary, setSummary] = useState<{ remote: string; count: number }[]>([]);
+  const [rows, setRows] = useState<ErrorRow[]>([]);
+  const [failed, setFailed] = useState(false);
+
+  const refresh = () =>
+    Promise.all([errorSummary(), listErrors()]).then(
+      ([s, r]) => (setSummary(s), setRows(r.slice(0, 20)), setFailed(false)),
+      () => setFailed(true),
+    );
+  const clear = () =>
+    clearErrors().then(
+      () => (setSummary([]), setRows([]), setFailed(false)),
+      () => setFailed(true),
+    );
+
+  useEffect(() => {
+    if (isAdmin) void refresh();
+  }, [isAdmin]);
+
+  return (
+    <>
+      <h2>Errors</h2>
+      {!isAdmin ? (
+        <p>Admins only</p>
+      ) : (
+        <>
+          {failed && <p>Could not load errors</p>}
+          <ul>
+            {summary.map((s) => (
+              <li key={s.remote}>{`${s.remote}: ${s.count}`}</li>
+            ))}
+          </ul>
+          <button onClick={() => void refresh()}>Refresh</button>
+          <button onClick={() => void clear()}>Clear</button>
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Remote</th>
+                <th>Build</th>
+                <th>Kind</th>
+                <th>Message</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.length === 0 && (
+                <tr>
+                  <td colSpan={5}>No errors</td>
+                </tr>
+              )}
+              {rows.map((e) => (
+                <tr key={e.id}>
+                  <td>{new Date(e.at).toLocaleTimeString('en-GB')}</td>
+                  <td>{e.remote}</td>
+                  <td>{e.build}</td>
+                  <td>{e.kind}</td>
+                  <td>{e.message}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
+    </>
+  );
+}
+
 export default function InspectorPage() {
   const events = useSyncExternalStore(subscribeEventLog, eventLog);
   const [pings, setPings] = useState<Record<string, Ping>>({});
@@ -212,6 +289,7 @@ export default function InspectorPage() {
         </tbody>
       </table>
       <Flags />
+      <Errors />
       <h2>Events</h2>
       <table>
         <thead>

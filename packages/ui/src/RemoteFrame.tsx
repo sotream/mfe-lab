@@ -3,12 +3,32 @@ import './frame.css';
 
 export type RemoteModule = { default: ComponentType; buildVersion?: string };
 
-type Props = { name: string; port: number; load: () => Promise<RemoteModule> };
+export type FrameError = {
+  remote: string;
+  build: string;
+  kind: 'render' | 'load';
+  message: string;
+  stack?: string;
+};
+
+type Props = {
+  name: string;
+  port: number;
+  load: () => Promise<RemoteModule>;
+  // Optional so that ui does not depend on @mfe/telemetry; the shell passes `report`.
+  report?: (e: FrameError) => void;
+};
+
+// Build of each module that resolved; a boundary catch with no entry here was a load failure.
+const builds = new WeakMap<Promise<RemoteModule>, string>();
 
 // A rejection is handled here: `use` reads the promise, the boundary renders the fallback.
 function start(load: Props['load']): Promise<RemoteModule> {
   const p = load();
-  p.catch(() => {});
+  p.then(
+    (m) => builds.set(p, m.buildVersion ?? 'unknown'),
+    () => {},
+  );
   return p;
 }
 
@@ -23,7 +43,7 @@ function Remote({ promise }: { promise: Promise<RemoteModule> }) {
 }
 
 class Boundary extends Component<
-  { fallback: ReactNode; children: ReactNode },
+  { fallback: ReactNode; children: ReactNode; onError: (error: unknown) => void },
   { failed: boolean }
 > {
   override state = { failed: false };
@@ -32,6 +52,7 @@ class Boundary extends Component<
   }
   override componentDidCatch(error: unknown) {
     console.error('[RemoteFrame]', error);
+    this.props.onError(error);
   }
   override render() {
     return this.state.failed ? this.props.fallback : this.props.children;
@@ -39,7 +60,7 @@ class Boundary extends Component<
 }
 
 // Not React.lazy: it caches a rejection forever. Here Retry calls load() again.
-export function RemoteFrame({ name, port, load }: Props) {
+export function RemoteFrame({ name, port, load, report }: Props) {
   const [attempt, setAttempt] = useState(0);
   const [promise, setPromise] = useState(() => start(load));
 
@@ -48,11 +69,24 @@ export function RemoteFrame({ name, port, load }: Props) {
     setAttempt(attempt + 1);
   };
 
+  const onError = (error: unknown) => {
+    const build = builds.get(promise);
+    const e = error instanceof Error ? error : new Error(String(error));
+    report?.({
+      remote: name,
+      build: build ?? 'unknown',
+      kind: build === undefined ? 'load' : 'render',
+      message: e.message,
+      stack: e.stack,
+    });
+  };
+
   return (
     <section data-remote={name} aria-label={`${name} remote`}>
       <span className="remote-frame-label">{`${name} · :${port}`}</span>
       <Boundary
         key={attempt}
+        onError={onError}
         fallback={
           <div role="alert" className="remote-frame-error">
             <p>{`${name} is unavailable`}</p>

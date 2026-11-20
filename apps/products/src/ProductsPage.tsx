@@ -47,6 +47,7 @@ import {
   type Sort,
 } from './store.ts';
 import './products.css';
+import './telemetry.ts';
 
 const LIMIT = 10;
 

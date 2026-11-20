@@ -1,4 +1,5 @@
 import { logout, useAuth } from '@mfe/auth-store';
+import { report } from '@mfe/telemetry';
 import { RemoteFrame } from '@mfe/ui';
 import { createBrowserRouter, NavLink, Outlet, useNavigate } from 'react-router';
 import InspectorPage from './InspectorPage.tsx';
@@ -9,7 +10,12 @@ import { loadPage, remotePort, type RemoteName } from './remotes.ts';
 declare const __BUILD_VERSION__: string;
 
 const Remote = ({ name, module }: { name: RemoteName; module?: string }) => (
-  <RemoteFrame name={name} port={remotePort(name)} load={() => loadPage(name, module)} />
+  <RemoteFrame
+    name={name}
+    port={remotePort(name)}
+    load={() => loadPage(name, module)}
+    report={report}
+  />
 );
 
 function Layout() {
