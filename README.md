@@ -136,6 +136,17 @@ It also runs on its own: `pnpm --filter @mfe/dashboard dev` serves it on `:3002`
 
 Every build gets a stamp: `MF_BUILD_VERSION` if set, else the UTC time (`YYYY-MM-DDTHH:MM:SSZ`). It is baked in as `__BUILD_VERSION__`, written to `mf-manifest.json` (`metaData.buildInfo.buildVersion`), exported as `buildVersion` by both exposed pages, and shown in each remote frame and in the shell footer. Rebuild one remote and its stamp changes while the shell's stays. `/inspector` (no login) lists the remotes with their live manifest version and up/down status (polled every 5 s) and the shared dependencies read from the runtime's share scope.
 
+### Versioned remotes
+
+A remote can be frozen into a release and the shell can switch to it at runtime, using only manifest URLs (RFC 0004).
+
+1. `pnpm --filter @mfe/products release 1.0.0` builds into `apps/products/releases/1.0.0/` and writes `releases/index.json` (gitignored; `dashboard` works the same).
+2. Change a visible string in `apps/products/src/ProductsPage.tsx`.
+3. `pnpm --filter @mfe/products release 1.1.0`.
+4. With `pnpm dev` running, open `/inspector`, pick `1.0.0`, `1.1.0` or `dev` in the `Use` column for products, then open Home: the frame shows `build 1.1.0` and the change.
+
+The selection lives in memory only: a reload goes back to `dev`.
+
 ## API
 
 SQLite file `apps/api/data/app.db` (gitignored; override with `DB_PATH`, relative paths resolve against `apps/api/`). Migrations in `apps/api/migrations/*.sql` run on start, tracked by `PRAGMA user_version`.

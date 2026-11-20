@@ -1,20 +1,76 @@
 import { getInstance } from '@module-federation/enhanced/runtime';
-import { useEffect, useState } from 'react';
-import { remoteManifests as remotes } from './remotes.ts';
+import { useEffect, useState, useSyncExternalStore } from 'react';
+import {
+  releaseManifestUrl,
+  releasesUrl,
+  remoteEntry,
+  remoteManifests,
+  setRemoteEntry,
+  subscribeRemotes,
+  type RemoteName,
+} from './remotes.ts';
 import { pingRemote, sharedRows, type Ping, type ShareScope } from './inspector.ts';
+
+const remotes = remoteManifests.map(({ name }) => name as RemoteName);
+
+// Versions listed in <remote>/releases/index.json; any failure just means only dev is offered.
+async function fetchVersions(name: RemoteName): Promise<string[]> {
+  try {
+    const res = await fetch(releasesUrl(name), { cache: 'no-store' });
+    if (!res.ok) return [];
+    return ((await res.json()) as { versions?: string[] }).versions ?? [];
+  } catch {
+    return [];
+  }
+}
+
+function VersionSelect({ name }: { name: RemoteName }) {
+  const [versions, setVersions] = useState<string[]>([]);
+  const current = useSyncExternalStore(subscribeRemotes, () => remoteEntry(name));
+  useEffect(() => {
+    let active = true;
+    void fetchVersions(name).then((v) => active && setVersions(v));
+    return () => {
+      active = false;
+    };
+  }, [name]);
+  const value = versions.find((v) => current === releaseManifestUrl(name, v)) ?? '';
+  return (
+    <select
+      aria-label={`${name} version`}
+      value={value}
+      onChange={(e) =>
+        setRemoteEntry(name, e.target.value ? releaseManifestUrl(name, e.target.value) : null)
+      }
+    >
+      <option value="">dev</option>
+      {versions.map((v) => (
+        <option key={v} value={v}>
+          {v}
+        </option>
+      ))}
+    </select>
+  );
+}
 
 const readShared = () => sharedRows(getInstance()?.shareScopeMap.default as ShareScope | undefined);
 
 export default function InspectorPage() {
   const [pings, setPings] = useState<Record<string, Ping>>({});
+  // Re-run the ping effect (and show the right Manifest) whenever a selection changes.
+  const entries = useSyncExternalStore(subscribeRemotes, () =>
+    remotes.map((n) => remoteEntry(n)).join('|'),
+  );
   const [rows, setRows] = useState(readShared);
 
   useEffect(() => {
     let active = true;
     const tick = () => {
       setRows(readShared());
-      for (const { name, manifest } of remotes) {
-        void pingRemote(manifest).then((p) => active && setPings((s) => ({ ...s, [name]: p })));
+      for (const name of remotes) {
+        void pingRemote(remoteEntry(name)).then(
+          (p) => active && setPings((s) => ({ ...s, [name]: p })),
+        );
       }
     };
     tick();
@@ -23,7 +79,7 @@ export default function InspectorPage() {
       active = false;
       clearInterval(id);
     };
-  }, []);
+  }, [entries]);
 
   return (
     <>
@@ -36,15 +92,19 @@ export default function InspectorPage() {
             <th>Manifest</th>
             <th>Version</th>
             <th>Status</th>
+            <th>Use</th>
           </tr>
         </thead>
         <tbody>
-          {remotes.map(({ name, manifest }) => (
+          {remotes.map((name) => (
             <tr key={name}>
               <td>{name}</td>
-              <td>{manifest}</td>
+              <td>{remoteEntry(name)}</td>
               <td>{pings[name]?.version ?? '—'}</td>
               <td>{pings[name]?.status ?? 'checking…'}</td>
+              <td>
+                <VersionSelect name={name} />
+              </td>
             </tr>
           ))}
         </tbody>
