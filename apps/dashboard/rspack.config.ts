@@ -7,7 +7,15 @@ import { buildVersion, shared } from '../../federation.shared.ts';
 export default defineConfig({
   entry: './src/index.ts',
   // MF_RELEASE_DIR is set by scripts/release.ts to freeze a build under releases/<version>/.
-  output: { path: process.env.MF_RELEASE_DIR, publicPath: 'auto', clean: true },
+  output: {
+    path: process.env.MF_RELEASE_DIR,
+    publicPath: 'auto',
+    clean: true,
+    // The chunk registry is a page global, by default the same for every build of this remote. A
+    // second release's remoteEntry would pick up the first release's same-id chunks from it and
+    // run the old code. One global per version keeps releases apart.
+    chunkLoadingGlobal: `rspackChunk_dashboard_${buildVersion}`,
+  },
   resolve: { extensions: ['.ts', '.tsx', '.js'] },
   experiments: { css: true },
   module: {
