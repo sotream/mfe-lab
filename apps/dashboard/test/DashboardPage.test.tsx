@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 import type { Stats } from '@mfe/api-client';
 import { login, logout } from '@mfe/auth-store';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import DashboardPage from '../src/DashboardPage.tsx';
@@ -226,6 +226,35 @@ describe('DashboardPage', () => {
     expect(body).toEqual(
       fillDays(sample.orders_per_day).map((d) => [formatDate(d.date, 'en'), String(d.count)]),
     );
+  });
+
+  it('Q-table-caption: the data table is named Orders per day', async () => {
+    server();
+    await mount();
+    const table = screen.getByRole('table', { name: 'Orders per day', hidden: true });
+    expect(table.querySelector('caption')?.textContent).toBe('Orders per day');
+    expect(table.closest('details')).not.toBeNull();
+  });
+
+  it('Q-row-headers and Q-time: dates are row headers holding time elements', async () => {
+    server();
+    await mount();
+    const table = screen.getByRole('table', { name: 'Orders per day', hidden: true });
+    const days = fillDays(sample.orders_per_day);
+    const heads = within(table).getAllByRole('rowheader', { hidden: true });
+    expect(heads.map((h) => h.textContent?.trim())).toEqual(
+      days.map((d) => formatDate(d.date, 'en')),
+    );
+    heads.forEach((h, i) => {
+      expect(h.tagName).toBe('TH');
+      expect(h.getAttribute('scope')).toBe('row');
+      const time = h.querySelector('time');
+      expect(time?.getAttribute('datetime')).toBe(days[i]?.date);
+      expect(time?.getAttribute('datetime')).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(time?.textContent).toBe(formatDate(days[i]?.date ?? '', 'en'));
+    });
+    for (const th of within(table).getAllByRole('columnheader', { hidden: true }))
+      expect(th.getAttribute('scope')).toBe('col');
   });
 
   it('Q-page-empty: no orders shows the empty text and no svg', async () => {

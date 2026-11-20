@@ -11,7 +11,7 @@ async function login(page: Page, email: string): Promise<void> {
 }
 
 const rowOf = (page: Page, name: string) =>
-  page.getByRole('row').filter({ has: page.getByRole('cell', { name, exact: true }) });
+  page.getByRole('row').filter({ has: page.getByRole('rowheader', { name, exact: true }) });
 const products = (page: Page) => page.locator('section[data-remote="products"]');
 const dashboard = (page: Page) => page.locator('section[data-remote="dashboard"]');
 

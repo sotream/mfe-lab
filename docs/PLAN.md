@@ -161,6 +161,11 @@ Goal: weekly grouped dependency update PRs via `.github/dependabot.yml`, with no
 - **Goal:** the lab reads as a product for the German market: German UI by default for German browsers with an EN switch in the top bar, EUR gross prices, German date, number and time formats, German seed names, and Impressum and Datenschutz pages. The shell owns the locale (`lang` plus `locale:changed`), each app owns its messages, `@mfe/ui` 1.4.0 holds the formatters (RFC 0012).
 - **Done when:** a browser with `de-DE` gets `<html lang="de">`, the German nav, titles and `674,28 €`; the switch changes every app in place without a reload, keeps the route and persists the choice in `localStorage['mfe-lab:locale']`; the product detail shows `inkl. 19 % MwSt.`; the price input accepts `674,28` and `674.28`; dates, chart axis and times follow the locale; the seed has 30 German names with `Drucksensor` first; `/impressum` and `/datenschutz` work signed out and are linked from the footer; `E-a11y` stays green in EN; `@mfe/ui` is 1.4.0 with a changelog entry and `requiredVersion` stays `^1.0.0`; `pnpm lint && pnpm typecheck && pnpm test` pass.
 
+## T28 Semantic HTML
+
+- **Goal:** the rendered DOM says what things are: a labelled `nav` that holds only the four links, named tables, dates as `<time>`, row headers, and a `search` landmark. `@mfe/ui` 1.5.0 renders the `Table` `label` as a visually hidden `<caption>` (RFC 0011).
+- **Done when:** `header` holds the wordmark, `nav` (`Hauptnavigation` / `Main`, one list of four links), the language group and the user block; every table has an accessible name; products and detail dates, dashboard table dates and inspector times are `time` elements with a machine `dateTime`; the SKU, dashboard date and inspector Remotes, Shared and Flags name cells are `th scope="row"` and header-row `th` have `scope="col"`; the products search sits in `search`; `@mfe/ui` is 1.5.0 with a changelog entry and `requiredVersion` stays `^1.0.0`; `E-a11y` stays green; `pnpm lint && pnpm typecheck && pnpm test` pass.
+
 ## Later (not now)
 
 Nothing planned.

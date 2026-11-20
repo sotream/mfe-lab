@@ -87,14 +87,26 @@ function Layout() {
         {t.skip}
       </a>
       <header className="topbar">
-        <nav className="container">
+        <div className="container">
           <Wordmark />
-          <NavLink to="/" end>
-            {t.nav.home}
-          </NavLink>
-          <NavLink to="/products">{t.nav.products}</NavLink>
-          <NavLink to="/dashboard">{t.nav.dashboard}</NavLink>
-          <NavLink to="/inspector">{t.nav.inspector}</NavLink>
+          <nav aria-label={t.mainNav}>
+            <ul>
+              <li>
+                <NavLink to="/" end>
+                  {t.nav.home}
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/products">{t.nav.products}</NavLink>
+              </li>
+              <li>
+                <NavLink to="/dashboard">{t.nav.dashboard}</NavLink>
+              </li>
+              <li>
+                <NavLink to="/inspector">{t.nav.inspector}</NavLink>
+              </li>
+            </ul>
+          </nav>
           <LanguageSwitch />
           {user ? (
             <div className="nav-user">
@@ -114,7 +126,7 @@ function Layout() {
               {t.login}
             </NavLink>
           )}
-        </nav>
+        </div>
       </header>
       <main id="main" tabIndex={-1} className="container">
         <Outlet />

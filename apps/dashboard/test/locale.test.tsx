@@ -126,6 +126,12 @@ describe('dashboard locale', () => {
     expect(first.map((c) => c.textContent?.trim())).toEqual(['04.10.2026', '4']);
   });
 
+  it('Q-table-caption: the data table caption is German in DE', async () => {
+    document.documentElement.lang = 'de';
+    await mount();
+    expect(screen.getByRole('table', { name: 'Bestellungen pro Tag', hidden: true })).toBeTruthy();
+  });
+
   it('Q-de-strings: status labels are neu, bezahlt, versandt in DE', async () => {
     await mount();
     // The German heading is not in the contract: find the section by its EN heading, then switch.

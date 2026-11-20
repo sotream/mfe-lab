@@ -137,6 +137,50 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+describe('ProductsPage: semantics', () => {
+  it('Q-table-caption: the table is reachable by its name', async () => {
+    server();
+    await mount();
+    const table = screen.getByRole('table', { name: 'Products' });
+    expect(table.querySelector('caption')?.textContent).toBe('Products');
+  });
+
+  it('Q-row-headers: SKUs are row headers, header th have scope=col', async () => {
+    server();
+    await mount();
+    const table = screen.getByRole('table', { name: 'Products' });
+    const heads = within(table).getAllByRole('rowheader');
+    expect(heads.map((h) => h.textContent)).toEqual(
+      Array.from({ length: 10 }, (_, i) => `SKU-${String(i + 1).padStart(4, '0')}`),
+    );
+    expect(heads.every((h) => h.tagName === 'TH' && h.getAttribute('scope') === 'row')).toBe(true);
+    for (const th of within(table).getAllByRole('columnheader'))
+      expect(th.getAttribute('scope')).toBe('col');
+  });
+
+  it('Q-time: created cell is a time element with a date-only dateTime and the localized text', async () => {
+    server();
+    await mount();
+    const row = rows()[0] as HTMLElement;
+    const time = within(row).getByText('01/10/2026').closest('time');
+    expect(time).not.toBeNull();
+    expect(time?.getAttribute('datetime')).toBe('2026-10-01');
+    expect(time?.getAttribute('datetime')).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(time?.textContent).toBe('01/10/2026');
+  });
+
+  it('Q-search-landmark: a search landmark contains the search box', async () => {
+    server();
+    await mount();
+    const box = screen.getByRole('searchbox');
+    // jsdom may not map <search> to role=search, so accept the element or the role attribute
+    const landmark = box.closest('search, [role=search]');
+    expect(landmark).not.toBeNull();
+    expect(landmark?.contains(box)).toBe(true);
+    expect(box.getAttribute('aria-label')).toBeTruthy();
+  });
+});
+
 describe('ProductsPage: list', () => {
   it('Q-page-load: first request, rows, page count, Previous disabled', async () => {
     const api = server();

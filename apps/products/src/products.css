@@ -9,15 +9,19 @@
 .products-toolbar {
   display: flex;
   gap: var(--ds1-space-md);
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   margin-bottom: var(--ds1-space-md);
 }
 
-.products-toolbar input[type='search'] {
-  flex: 1;
-  min-width: 0;
+.products-toolbar search {
+  flex: 1 1 12rem;
   max-width: 22rem;
+}
+
+.products-toolbar input[type='search'] {
+  width: 100%;
 }
 
 .products-table {

@@ -36,6 +36,7 @@ A page built from independently deployed apps has no single author, so page-leve
 | Live region                       | shell     | One `role="status"` region, visually hidden, outside `main`, always in the DOM                                                      |
 | Announcements                     | remote    | `emit('a11y:announce', { message })`; products on create, save and delete, the inspector on flag toggles and Clear errors           |
 | Focus styles, contrast, semantics | `@mfe/ui` | `:focus-visible` ring, `--ds1-*` tokens, `Table` `label` makes a scrollable table a focusable region                                |
+| Table semantics                   | `@mfe/ui` | `Table` `label` also renders a visually hidden `<caption>`; body row headers are `th scope="row"` (1.5.0)                           |
 
 **Language.** Titles, announcements and the chart label are translated ([RFC 0012](0012-locale-across-remotes.md)); the English strings here are the `en` catalog and `<html lang>` follows the locale.
 

@@ -54,5 +54,13 @@ describe('InspectorPage events', () => {
     expect(cells[0]).toMatch(/^\d{2}:\d{2}:\d{2}$/);
     expect(cells[1]).toBe('products:changed');
     expect(cells[2]).toBe(JSON.stringify({ id: 42, kind: 'updated' }));
+
+    expect(screen.getByRole('table', { name: 'Events' })).toBe(table);
+    const time = within(row)
+      .getByText(cells[0] as string)
+      .closest('time');
+    expect(time?.getAttribute('datetime')).toMatch(
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/,
+    );
   });
 });

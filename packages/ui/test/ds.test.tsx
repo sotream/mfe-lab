@@ -86,6 +86,38 @@ describe('Table region', () => {
   });
 });
 
+describe('Table caption and scope', () => {
+  const head = (
+    <>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Qty</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>a</td>
+          <td>1</td>
+        </tr>
+      </tbody>
+    </>
+  );
+
+  it('Q-table-caption: with label, the table is named by a caption that is its first child', () => {
+    render(<Table label="Orders per day">{head}</Table>);
+    const table = screen.getByRole('table', { name: 'Orders per day' });
+    const first = table.firstElementChild as HTMLElement;
+    expect(first.tagName).toBe('CAPTION');
+    expect(first.textContent).toBe('Orders per day');
+  });
+
+  it('Q-table-caption: without label there is no caption', () => {
+    const { container } = render(<Table>{head}</Table>);
+    expect(container.querySelector('caption')).toBeNull();
+  });
+});
+
 describe('Field', () => {
   it('Q-ds-field: label is tied to the input, wrapper has data-ds, no error means no aria-invalid', () => {
     const { container } = render(<Field label="Name" defaultValue="x" />);

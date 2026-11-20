@@ -50,7 +50,7 @@ describe('InspectorPage', () => {
       expect(within(remotesTable()).getByRole('columnheader', { name: h })).toBeTruthy();
     }
     const initial = within(remotesTable()).getAllByRole('row').slice(1);
-    expect(initial.map((r) => within(r).getAllByRole('cell')[0]?.textContent)).toEqual([
+    expect(initial.map((r) => within(r).getByRole('rowheader').textContent)).toEqual([
       'products',
       'dashboard',
     ]);
@@ -111,10 +111,13 @@ describe('InspectorPage', () => {
     for (const h of ['Package', 'Required', 'Loaded', 'Singleton', 'Status']) {
       expect(within(sharedTable()).getByRole('columnheader', { name: h })).toBeTruthy();
     }
-    const cells = (name: string) =>
-      within(within(sharedTable()).getByText(name).closest('tr') as HTMLElement)
-        .getAllByRole('cell')
-        .map((c) => c.textContent);
+    const cells = (name: string) => {
+      const row = within(within(sharedTable()).getByText(name).closest('tr') as HTMLElement);
+      return [
+        row.getByRole('rowheader').textContent,
+        ...row.getAllByRole('cell').map((c) => c.textContent),
+      ];
+    };
     expect(cells('react')).toEqual(['react', '^19.0.0', '19.1.0', 'yes', 'loaded once']);
     expect(cells('lodash')).toEqual(['lodash', '—', '—', 'no', 'not loaded']);
   });
@@ -141,10 +144,11 @@ describe('InspectorPage', () => {
       .getAllByRole('columnheader')
       .findIndex((h) => h.textContent === 'Singleton');
     expect(col).toBeGreaterThanOrEqual(0);
+    // the Package column is now the row header, so body cells start one column later
     const cell = (name: string) =>
       within(within(sharedTable()).getByText(name).closest('tr') as HTMLElement).getAllByRole(
         'cell',
-      )[col]?.textContent;
+      )[col - 1]?.textContent;
     expect(cell('react')).toBe('yes');
     expect(cell('@mfe/ui')).toBe('no');
   });
@@ -154,6 +158,31 @@ describe('InspectorPage', () => {
     rt.instance = null;
     await mount();
     expect(within(sharedTable()).getByText('No shared modules registered yet')).toBeTruthy();
+  });
+
+  it('Q-table-caption and Q-row-headers: Remotes and Shared are named, with row headers and col scopes', async () => {
+    stubFetch(() => manifest('v'));
+    rt.instance = {
+      shareScopeMap: {
+        default: { react: { '19.1.0': { from: 'shell', shareConfig: { singleton: true } } } },
+      },
+    };
+    await mount();
+    const remotes = screen.getByRole('table', { name: 'Remotes' });
+    const shared = screen.getByRole('table', { name: 'Shared dependencies' });
+    expect(
+      within(remotes)
+        .getAllByRole('rowheader')
+        .map((h) => h.textContent),
+    ).toEqual(['products', 'dashboard']);
+    expect(
+      within(shared)
+        .getAllByRole('rowheader')
+        .map((h) => h.textContent),
+    ).toEqual(['react']);
+    for (const t of [remotes, shared])
+      for (const th of within(t).getAllByRole('columnheader'))
+        expect(th.getAttribute('scope')).toBe('col');
   });
 
   it('Q-inspector-hints: "How to break this" is followed by an ol with at least 3 items', async () => {

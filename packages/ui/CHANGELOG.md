@@ -2,6 +2,10 @@
 
 Breaking changes need a major bump, a new CSS prefix (`ds2-`) and an entry here (RFC 0008).
 
+## 1.5.0
+
+- `Table` with a `label` also renders a visually hidden `<caption>` with it, so the table has an accessible name. Table `th` body cells may be row headers (`th scope="row"`), styled like `td`. `.visually-hidden` now lives in `@mfe/ui/base.css`. Additive.
+
 ## 1.4.0
 
 - Locale helpers (RFC 0012): `detectLocale`, `useLocale`, `formatMoney`, `formatNumber`, `formatDate`, `formatTime`, `LOCALE_KEY` and the `Locale` type. `RemoteFrame` strings (loading, unavailable, Retry, build, region label) follow the locale, `de` or `en`. Additive; an app with no `lang` set stays English.
