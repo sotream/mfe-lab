@@ -19,6 +19,7 @@ test('E-login: viewer logs in and lands on /', async ({ page }) => {
   await login(page, 'viewer@lab.test');
   await expect(page).toHaveURL(`${BASE}/`);
   await expect(page.getByText('viewer@lab.test', { exact: true })).toBeVisible();
+  await expect(page).not.toHaveURL(/\/login/); // login's replace-navigation has landed
   await expect(page.getByText('viewer', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Log out' })).toBeVisible();
 });

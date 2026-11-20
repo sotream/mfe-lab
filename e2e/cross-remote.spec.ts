@@ -10,6 +10,7 @@ test('E-cross-remote: adding and deleting a product updates the dashboard tile w
   await page.getByLabel('Password').fill('lab12345');
   await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(page.getByText('editor@lab.test', { exact: true })).toBeVisible();
+  await expect(page).not.toHaveURL(/\/login/); // login's replace-navigation has landed
 
   const products = page.locator('section[data-remote="products"]');
   const dashboard = page.locator('section[data-remote="dashboard"]');

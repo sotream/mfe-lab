@@ -24,6 +24,10 @@ test('E-errors: a crashing products remote is isolated and reported', async ({ p
   await page.getByLabel('Password').fill('lab12345');
   await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(page.getByText('admin@lab.test', { exact: true })).toBeVisible();
+  // Login finishes with navigate('/', { replace: true }); a nav click before it lands is undone.
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'One page, three independent apps' }),
+  ).toBeVisible();
 
   try {
     await openInspector(page);
