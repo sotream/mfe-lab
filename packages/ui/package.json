@@ -1,6 +1,6 @@
 {
   "name": "@mfe/ui",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -15,6 +15,7 @@
     "react-dom": "catalog:"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./base.css": "./src/base.css"
   }
 }

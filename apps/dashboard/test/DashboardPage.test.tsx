@@ -165,7 +165,7 @@ describe('DashboardPage', () => {
     await act(async () => void fireEvent.mouseEnter(peak));
     let tips = screen.getAllByRole('tooltip');
     expect(tips).toHaveLength(1);
-    expect(tips[0]?.textContent).toContain('2026-10-03 · 5 orders');
+    expect(tips[0]?.textContent).toContain('2026-10-03: 5 orders');
 
     await act(async () => {
       fireEvent.mouseLeave(peak);
@@ -173,7 +173,7 @@ describe('DashboardPage', () => {
     });
     tips = screen.getAllByRole('tooltip');
     expect(tips).toHaveLength(1);
-    expect(tips[0]?.textContent).toContain('2026-10-01 · 2 orders');
+    expect(tips[0]?.textContent).toContain('2026-10-01: 2 orders');
   });
 
   it('Q-page-revenue: new, paid, shipped in order with values; widest bar is the largest', async () => {

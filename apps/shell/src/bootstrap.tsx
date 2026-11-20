@@ -1,4 +1,5 @@
 import { installGlobalHandlers } from '@mfe/telemetry';
+import '@mfe/ui/base.css';
 import { createRoot } from 'react-dom/client';
 import { RouterProvider } from 'react-router/dom';
 import { router } from './App.tsx';

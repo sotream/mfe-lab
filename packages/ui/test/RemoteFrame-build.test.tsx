@@ -22,7 +22,8 @@ describe('RemoteFrame build stamp', () => {
     const section = screen.getByRole('region', { name: 'products remote' });
     const el = await within(section).findByText('build v1');
     expect(el.classList.contains('remote-frame-build')).toBe(true);
-    expect(within(section).getByText('products · :3001')).toBeTruthy();
+    expect(within(section).getByText('products')).toBeTruthy();
+    expect(within(section).getByText(':3001')).toBeTruthy();
   });
 
   it('Q-frame-build: no buildVersion means no build text', async () => {

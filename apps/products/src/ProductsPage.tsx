@@ -279,39 +279,56 @@ function ProductsTable({
     return query.order === 'asc' ? 'ascending' : 'descending';
   };
   return (
-    <Table>
-      <thead>
-        <tr>
-          {COLUMNS.map(({ label, field }) => (
-            <th key={field} aria-sort={ariaSort(field)}>
-              <button onClick={() => onSort(field)}>{label}</button>
-            </th>
-          ))}
-          {canWrite && <th>Actions</th>}
-        </tr>
-      </thead>
-      <tbody>
-        {items.map((p) => (
-          <tr key={p.id}>
-            <td>{p.sku}</td>
-            <td>{detailLinks ? <Link to={`${base}${p.id}`}>{p.name}</Link> : p.name}</td>
-            <td>{formatPrice(p.price_cents)}</td>
-            <td>{p.stock}</td>
-            <td>{p.created_at.slice(0, 10)}</td>
-            {canWrite && (
-              <td>
-                <Button aria-label={`Edit ${p.sku}`} onClick={() => onEdit(p)}>
-                  Edit
-                </Button>{' '}
-                <Button variant="danger" aria-label={`Delete ${p.sku}`} onClick={() => onDelete(p)}>
-                  Delete
-                </Button>
-              </td>
-            )}
+    <div className="products-table">
+      <Table>
+        <thead>
+          <tr>
+            {COLUMNS.map(({ label, field }) => (
+              <th
+                key={field}
+                aria-sort={ariaSort(field)}
+                className={field === 'price_cents' || field === 'stock' ? 'ds1-num' : undefined}
+              >
+                <button onClick={() => onSort(field)}>{label}</button>
+              </th>
+            ))}
+            {canWrite && <th className="products-actions-head">Actions</th>}
           </tr>
-        ))}
-      </tbody>
-    </Table>
+        </thead>
+        <tbody>
+          {items.map((p) => (
+            <tr key={p.id}>
+              <td className="ds1-mono">{p.sku}</td>
+              <td>{detailLinks ? <Link to={`${base}${p.id}`}>{p.name}</Link> : p.name}</td>
+              <td className="ds1-num">{formatPrice(p.price_cents)}</td>
+              <td className="ds1-num">{p.stock}</td>
+              <td className="ds1-mono products-created">{p.created_at.slice(0, 10)}</td>
+              {canWrite && (
+                <td>
+                  <div className="products-actions">
+                    <Button
+                      className="ds1-button--sm"
+                      aria-label={`Edit ${p.sku}`}
+                      onClick={() => onEdit(p)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      className="ds1-button--sm"
+                      variant="danger"
+                      aria-label={`Delete ${p.sku}`}
+                      onClick={() => onDelete(p)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </td>
+              )}
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+    </div>
   );
 }
 
@@ -383,6 +400,7 @@ export function ProductsContent({ base }: { base: string }) {
       <div className="products-toolbar">
         <input
           type="search"
+          className="ds1-input"
           aria-label="Search"
           placeholder="Search name or SKU"
           value={text}

@@ -46,7 +46,7 @@ function Tiles({ stats }: { stats: Stats }) {
     ['Paid revenue', formatCents(stats.revenue_by_status.paid)],
   ];
   return (
-    <dl className="dashboard-tiles">
+    <dl className="ds1-readings dashboard-tiles">
       {tiles.map(([term, value]) => (
         <div key={term} className="dashboard-tile">
           <dt>{term}</dt>
@@ -157,7 +157,7 @@ function OrdersChart({ days }: { days: Day[] }) {
             top: `${(tip.y / height) * 100}%`,
           }}
         >
-          {`${active.date} · ${active.count} orders`}
+          {`${active.date}: ${active.count} orders`}
         </div>
       )}
     </div>

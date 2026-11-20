@@ -1,42 +1,74 @@
 [data-remote] {
-  --frame-color: var(--border, #888);
-  border: 2px solid var(--frame-color);
-  border-radius: 8px;
-  padding: 0 1rem 1rem;
-  margin: 1rem 0;
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  min-width: 0;
+  margin: 0;
+  border: 1px solid var(--ds1-rule);
+  border-radius: var(--ds1-radius-card);
+  background-color: var(--ds1-paper-3);
+  overflow: clip;
 }
 
-[data-remote='products'] {
-  --frame-color: #2f7d4f;
-}
-
-[data-remote='dashboard'] {
-  --frame-color: #7a4fc2;
+.remote-frame-label,
+.remote-frame-port,
+.remote-frame-build {
+  grid-row: 1;
+  padding: var(--ds1-space-xs) var(--ds1-space-sm);
+  font-size: var(--ds1-text-sm);
 }
 
 .remote-frame-label {
-  display: inline-block;
-  margin: 0 0 0.75rem;
-  padding: 0.15rem 0.6rem;
-  transform: translateY(-50%);
-  border-radius: 999px;
-  background: var(--frame-color);
-  color: #fff;
-  font:
-    600 0.75rem/1.4 ui-monospace,
-    monospace;
+  grid-column: 1;
+  border-right: 1px solid var(--ds1-rule);
+  color: var(--ds1-ink);
+  font-weight: 500;
+}
+
+.remote-frame-port {
+  grid-column: 2;
+  border-right: 1px solid var(--ds1-rule);
+  color: var(--ds1-cool);
+  font-family: var(--ds1-font-mono);
 }
 
 .remote-frame-build {
-  float: right;
-  margin-top: 0.4rem;
-  color: var(--muted, #666);
-  font:
-    0.7rem/1.4 ui-monospace,
-    monospace;
+  grid-column: 3;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ds1-cool);
+  font-family: var(--ds1-font-mono);
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-remote] > .remote-frame-body,
+[data-remote] > .remote-frame-error {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  min-width: 0;
+  border-top: 1px solid var(--ds1-rule);
+}
+
+.remote-frame-body {
+  padding: var(--ds1-space-lg);
+  background-color: var(--ds1-paper-2);
 }
 
 .remote-frame-error {
-  padding: 0.5rem 0;
-  color: #a12626;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds1-space-sm);
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--ds1-space-sm) var(--ds1-space-lg);
+  background-color: var(--ds1-bad-soft);
+  color: var(--ds1-ink);
+}
+
+/* Inside a frame the readings share the frame's surface: rules above and below only. */
+.remote-frame-body .ds1-readings {
+  border-inline: 0;
+  border-radius: 0;
 }

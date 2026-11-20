@@ -1,6 +1,8 @@
 import { login, useAuth } from '@mfe/auth-store';
+import { Button, Field } from '@mfe/ui';
 import { useState, type FormEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
+import { Wordmark } from './Wordmark.tsx';
 
 // Only same-app paths: "/x" is fine, "//evil.test", "/\evil.test" and absolute URLs are not.
 const safeNext = (next: string | null): string => (next && /^\/(?![/\\])/.test(next) ? next : '/');
@@ -30,33 +32,44 @@ export function LoginPage() {
   }
 
   return (
-    <>
-      <h1>Login</h1>
-      <form onSubmit={submit} className="login-form">
-        <label>
-          Email
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        </label>
-        <label>
-          Password
-          <input
+    <div className="login">
+      <div className="login-intro">
+        <Wordmark />
+        <h1>Sign in to the shell</h1>
+        <p className="lead">
+          The shell owns login. Both remotes read the same user from a shared store.
+        </p>
+      </div>
+      <div className="login-panel">
+        <form onSubmit={submit} className="login-form">
+          <Field
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <Field
+            label="Password"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-        </label>
-        <button type="submit" disabled={loading}>
-          Sign in
-        </button>
-        {error && <p role="alert">{error}</p>}
-      </form>
-      <p>Demo accounts (demo-only, password lab12345):</p>
-      <ul>
-        <li>admin@lab.test</li>
-        <li>editor@lab.test</li>
-        <li>viewer@lab.test</li>
-      </ul>
-    </>
+          <Button type="submit" variant="primary" disabled={loading} className="login-submit">
+            Sign in
+          </Button>
+          {error && <p role="alert">{error}</p>}
+        </form>
+        <div className="login-demo">
+          <p>Demo accounts (demo-only, password lab12345):</p>
+          <ul className="mono">
+            <li>admin@lab.test</li>
+            <li>editor@lab.test</li>
+            <li>viewer@lab.test</li>
+          </ul>
+        </div>
+      </div>
+    </div>
   );
 }

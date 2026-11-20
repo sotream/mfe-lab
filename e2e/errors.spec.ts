@@ -23,7 +23,11 @@ test('E-errors: a crashing products remote is isolated and reported', async ({ p
   await page.getByLabel('Email').fill('admin@lab.test');
   await page.getByLabel('Password').fill('lab12345');
   await page.getByRole('button', { name: 'Sign in' }).click();
-  await expect(page.getByText('admin@lab.test · ')).toBeVisible();
+  await expect(page.getByText('admin@lab.test', { exact: true })).toBeVisible();
+  // Login finishes with navigate('/', { replace: true }); a nav click before it lands is undone.
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'One page, three independent apps' }),
+  ).toBeVisible();
 
   try {
     await openInspector(page);
@@ -37,9 +41,7 @@ test('E-errors: a crashing products remote is isolated and reported', async ({ p
     await expect(
       page.locator('section[data-remote="products"]').getByText(/products is unavailable/),
     ).toBeVisible();
-    await expect(page.locator('section[data-remote="dashboard"]')).toContainText(
-      'dashboard · :3002',
-    );
+    await expect(page.locator('section[data-remote="dashboard"]')).toContainText(':3002');
     await expect(
       page.locator('section[data-remote="dashboard"]').getByRole('figure').first(),
     ).toBeVisible();

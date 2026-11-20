@@ -38,7 +38,8 @@ describe('RemoteFrame', () => {
     const section = screen.getByRole('region', { name: 'products remote' });
     expect(section.tagName).toBe('SECTION');
     expect(section.getAttribute('data-remote')).toBe('products');
-    expect(within(section).getByText('products · :3001')).toBeTruthy();
+    expect(within(section).getByText('products')).toBeTruthy();
+    expect(within(section).getByText(':3001')).toBeTruthy();
     await screen.findByText('remote ok');
   });
 

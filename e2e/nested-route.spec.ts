@@ -10,7 +10,8 @@ test('E-nested-route: list -> detail -> back, then cold deep link via login', as
   };
   await page.goto(`${BASE}/login`);
   await signIn();
-  await expect(page.getByText('viewer@lab.test · ')).toBeVisible();
+  await expect(page.getByText('viewer@lab.test', { exact: true })).toBeVisible();
+  await expect(page).not.toHaveURL(/\/login/); // login's replace-navigation has landed
 
   await page.getByRole('navigation').getByRole('link', { name: 'Products' }).click();
   const products = page.locator('section[data-remote="products"]');

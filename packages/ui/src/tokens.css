@@ -1,12 +1,94 @@
+/* Console theme, graphite, dark only. The only place that holds colours and font families. */
+@font-face {
+  font-family: 'Host Grotesk';
+  font-style: normal;
+  font-weight: 400 500;
+  font-display: swap;
+  src: url('./fonts/host-grotesk-latin.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Atkinson Hyperlegible Mono';
+  font-style: normal;
+  font-weight: 400 500;
+  font-display: swap;
+  src: url('./fonts/atkinson-hyperlegible-mono-latin.woff2') format('woff2');
+}
+
 :root {
-  --ds1-color-primary: #2b59c3;
-  --ds1-color-danger: #a12626;
-  --ds1-color-border: #888;
-  --ds1-color-text: #1a1a1a;
+  color-scheme: dark;
+
+  --ds1-paper: oklch(17% 0.008 250);
+  --ds1-paper-2: oklch(21% 0.009 250);
+  --ds1-paper-3: oklch(13.5% 0.007 250);
+  --ds1-ink: oklch(95% 0.005 250);
+  --ds1-ink-2: oklch(83% 0.008 250);
+  --ds1-muted: oklch(71% 0.01 250);
+  --ds1-rule: oklch(31% 0.01 250);
+  --ds1-rule-2: oklch(42% 0.012 250);
+  /* Edge of a control (input, select, switch, secondary button): 3:1 or better on paper-2 and paper-3, WCAG 1.4.11. */
+  --ds1-control-edge: oklch(54% 0.012 250);
+  --ds1-accent: oklch(82% 0.15 80);
+  --ds1-accent-ink: oklch(18% 0.04 75);
+  --ds1-accent-soft: oklch(29% 0.05 80);
+  --ds1-focus: oklch(82% 0.15 80);
+  --ds1-cool: oklch(77% 0.12 245);
+  --ds1-cool-soft: oklch(29% 0.05 245);
+  --ds1-ok: oklch(76% 0.15 150);
+  --ds1-ok-soft: oklch(24.5% 0.03 150);
+  --ds1-bad: oklch(70% 0.17 25);
+  --ds1-bad-soft: oklch(24.5% 0.035 25);
+
+  /* 1.0.0 names, kept and mapped onto the Console tokens */
+  --ds1-color-primary: var(--ds1-accent);
+  --ds1-color-danger: var(--ds1-bad);
+  --ds1-color-border: var(--ds1-rule-2);
+  --ds1-color-text: var(--ds1-ink);
+
+  --ds1-font-body: 'Host Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --ds1-font-mono: 'Atkinson Hyperlegible Mono', ui-monospace, monospace;
+  --ds1-font: inherit;
+
   --ds1-space-1: 0.25rem;
   --ds1-space-2: 0.5rem;
   --ds1-space-3: 0.75rem;
   --ds1-space-4: 1rem;
+  --ds1-space-2xs: 4px;
+  --ds1-space-xs: 8px;
+  --ds1-space-sm: 12px;
+  --ds1-space-md: 16px;
+  --ds1-space-lg: 24px;
+  --ds1-space-xl: 40px;
+  --ds1-space-2xl: 64px;
+
+  --ds1-text-xs: 0.75rem;
+  --ds1-text-sm: 0.875rem;
+  --ds1-text-md: 1rem;
+  --ds1-text-lg: 1.2rem;
+  --ds1-text-xl: 1.44rem;
+  --ds1-text-2xl: 1.728rem;
+  --ds1-text-3xl: 2.074rem;
+
+  --ds1-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ds1-dur-micro: 120ms;
+  --ds1-dur-short: 220ms;
+
+  --ds1-radius-card: 10px;
   --ds1-radius: 6px;
-  --ds1-font: inherit;
+  --ds1-tracking-display: -0.03em;
+  --ds1-container: 1440px;
+  --ds1-gutter: 64px;
+}
+
+/* After :root so the narrow gutters win over the default. */
+@media (max-width: 60rem) {
+  :root {
+    --ds1-gutter: 24px;
+  }
+}
+
+@media (max-width: 40rem) {
+  :root {
+    --ds1-gutter: 16px;
+  }
 }
