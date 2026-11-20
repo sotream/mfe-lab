@@ -12,6 +12,8 @@
   "dependencies": {
     "@mfe/api-client": "workspace:*",
     "@mfe/auth-store": "workspace:*",
+    "@mfe/events": "workspace:*",
+    "@tanstack/react-query": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-router": "catalog:"

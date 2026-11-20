@@ -6,9 +6,20 @@ import {
   updateProduct,
   type Page,
   type Product,
+  type ProductInput,
   type ProductQuery,
 } from '@mfe/api-client';
 import { useAuth } from '@mfe/auth-store';
+import { emit } from '@mfe/events';
+import {
+  keepPreviousData,
+  QueryClient,
+  notifyManager,
+  QueryClientProvider,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import {
   centsToPriceInput,
@@ -78,11 +89,11 @@ function initialValues(product: Product | null): FormValues {
 function ProductDialog({
   product,
   onClose,
-  onSaved,
+  onSave,
 }: {
   product: Product | null;
   onClose: () => void;
-  onSaved: () => void;
+  onSave: (input: ProductInput) => Promise<unknown>;
 }) {
   const id = useId();
   const [values, setValues] = useState(() => initialValues(product));
@@ -98,9 +109,7 @@ function ProductDialog({
     setFailure(null);
     setSaving(true);
     try {
-      if (product) await updateProduct(product.id, result.input);
-      else await createProduct(result.input);
-      onSaved();
+      await onSave(result.input);
     } catch (err) {
       setFailure(
         err instanceof ApiError && err.status === 409
@@ -152,18 +161,17 @@ function ProductDialog({
 function DeleteDialog({
   product,
   onClose,
-  onDeleted,
+  onDelete,
 }: {
   product: Product;
   onClose: () => void;
-  onDeleted: () => void;
+  onDelete: () => Promise<unknown>;
 }) {
   const [failure, setFailure] = useState<string | null>(null);
 
   async function confirm() {
     try {
-      await deleteProduct(product.id);
-      onDeleted();
+      await onDelete();
     } catch (err) {
       setFailure(
         err instanceof ApiError && err.status === 409
@@ -188,50 +196,54 @@ function DeleteDialog({
   );
 }
 
-// Last query wins: a response for a superseded query is ignored.
 function useProductList() {
   const [query, setQuery] = useState<Query>({ page: 1, sort: 'id', order: 'asc', q: '' });
-  const [data, setData] = useState<Page<Product> | null>(null);
-  const [failed, setFailed] = useState(false);
-  const [reloadKey, setReloadKey] = useState(0);
-
-  useEffect(() => {
-    let stale = false;
-    listProducts({
-      page: query.page,
-      limit: LIMIT,
-      sort: query.sort,
-      order: query.order,
-      q: query.q || undefined,
-    })
-      .then((d) => {
-        if (stale) return;
-        // A page past the end (for example after a delete elsewhere) steps back to the last page.
-        if (d.items.length === 0 && d.total > 0 && d.page > 1) {
-          setQuery((p) => ({ ...p, page: Math.ceil(d.total / d.limit) }));
-          return;
-        }
-        setFailed(false);
-        setData(d);
-      })
-      .catch(() => {
-        if (!stale) setFailed(true);
-      });
-    return () => {
-      stale = true;
-    };
-  }, [query, reloadKey]);
-
-  return {
-    query,
-    setQuery,
-    data,
-    failed,
-    reload: () => {
-      setFailed(false);
-      setReloadKey((k) => k + 1);
+  const { data, isError, refetch } = useQuery({
+    queryKey: ['products', query],
+    queryFn: async () => {
+      const list = (page: number) =>
+        listProducts({
+          page,
+          limit: LIMIT,
+          sort: query.sort,
+          order: query.order,
+          q: query.q || undefined,
+        });
+      const d = await list(query.page);
+      // A page past the end (for example after a delete elsewhere) steps back to the last page.
+      if (d.items.length === 0 && d.total > 0 && d.page > 1) {
+        const last = Math.ceil(d.total / d.limit);
+        setQuery((p) => ({ ...p, page: last }));
+        return list(last);
+      }
+      return d;
     },
+    placeholderData: keepPreviousData,
+  });
+
+  return { query, setQuery, data: data ?? null, failed: isError, reload: () => void refetch() };
+}
+
+// On success: refresh this remote's own cache, then tell the other remotes (RFC 0006).
+function useProductMutations() {
+  const client = useQueryClient();
+  const changed = (id: number, kind: 'created' | 'updated' | 'deleted') => {
+    void client.invalidateQueries({ queryKey: ['products'] });
+    emit('products:changed', { id, kind });
   };
+  const create = useMutation({
+    mutationFn: createProduct,
+    onSuccess: (p) => changed(p.id, 'created'),
+  });
+  const update = useMutation({
+    mutationFn: ({ id, input }: { id: number; input: ProductInput }) => updateProduct(id, input),
+    onSuccess: (_, { id }) => changed(id, 'updated'),
+  });
+  const remove = useMutation({
+    mutationFn: deleteProduct,
+    onSuccess: (_, id) => changed(id, 'deleted'),
+  });
+  return { create, update, remove };
 }
 
 function ProductsTable({
@@ -317,13 +329,14 @@ function Content({
 declare const __BUILD_VERSION__: string;
 export const buildVersion: string = __BUILD_VERSION__;
 
-export default function ProductsPage() {
+function ProductsContent() {
   const role = useAuth((s) => s.user?.role);
   const canWrite = role === 'admin' || role === 'editor';
   const [text, setText] = useState('');
   const [editing, setEditing] = useState<Product | 'new' | null>(null);
   const [deleting, setDeleting] = useState<Product | null>(null);
   const { query, setQuery, data, failed, reload } = useProductList();
+  const { create, update, remove } = useProductMutations();
 
   // Debounce: one request 300 ms after the last keystroke; a new search goes back to page 1.
   useEffect(() => {
@@ -344,11 +357,7 @@ export default function ProductsPage() {
   // Deleting the only item on the last page steps back one page instead of showing an empty one.
   const afterDelete = () => {
     setDeleting(null);
-    if (data?.items.length === 1 && query.page > 1) {
-      setQuery((p) => ({ ...p, page: p.page - 1 }));
-    } else {
-      reload();
-    }
+    if (data?.items.length === 1 && query.page > 1) setQuery((p) => ({ ...p, page: p.page - 1 }));
   };
 
   const pages = data ? Math.max(1, Math.ceil(data.total / data.limit)) : 1;
@@ -396,9 +405,10 @@ export default function ProductsPage() {
         <ProductDialog
           product={editing === 'new' ? null : editing}
           onClose={() => setEditing(null)}
-          onSaved={() => {
+          onSave={async (input) => {
+            if (editing === 'new') await create.mutateAsync(input);
+            else await update.mutateAsync({ id: editing.id, input });
             setEditing(null);
-            reload();
           }}
         />
       )}
@@ -406,9 +416,36 @@ export default function ProductsPage() {
         <DeleteDialog
           product={deleting}
           onClose={() => setDeleting(null)}
-          onDeleted={afterDelete}
+          onDelete={async () => {
+            await remove.mutateAsync(deleting.id);
+            afterDelete();
+          }}
         />
       )}
     </div>
   );
+}
+
+// Deliver cache updates in a microtask, not a macrotask: results render in the same tick as the fetch.
+notifyManager.setScheduler(queueMicrotask);
+
+// One QueryClient per mount and per user: a user change remounts this, so no cache is shared.
+// retry/refocus off keeps the explicit Retry button and today's behaviour.
+function ProductsRoot() {
+  const [client] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } },
+      }),
+  );
+  return (
+    <QueryClientProvider client={client}>
+      <ProductsContent />
+    </QueryClientProvider>
+  );
+}
+
+export default function ProductsPage() {
+  const userId = useAuth((s) => s.user?.id);
+  return <ProductsRoot key={userId ?? 'anonymous'} />;
 }

@@ -49,6 +49,7 @@ T17 `@mfe/events` and the inspector log; T18 TanStack Query and cross-remote inv
 ## Changelog
 
 - 2026-11-20: `products:changed` `{ id, kind }` (T17).
+- 2026-11-20: products and dashboard use TanStack Query, one `QueryClient` per page mount and per user; products emits `products:changed` after a successful mutation, dashboard invalidates `['stats']` (T18).
 
 ## Open questions
 

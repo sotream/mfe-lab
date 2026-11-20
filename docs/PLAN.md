@@ -111,6 +111,11 @@ Goal: weekly grouped dependency update PRs via `.github/dependabot.yml`, with no
 - **Goal:** `@mfe/events` is a typed contract over `window` CustomEvent for cross-remote messages (not a federation singleton). The shell keeps the last 20 events in memory and the inspector shows them live in an `Events` table (RFC 0006).
 - **Done when:** evaluating `window.dispatchEvent(new CustomEvent('mfe:*', {detail:{name:'products:changed',detail:{id:1,kind:'updated'},at:Date.now()}}))` on `/inspector` adds a `products:changed` row with its payload; `@mfe/events` is absent from `federation.shared.ts`.
 
+## T18 TanStack Query and cross-remote invalidation
+
+- **Goal:** products and dashboard fetch through TanStack Query (own `QueryClient` per page mount and per user, bundled in each remote, not shared). Products emits `products:changed` after a successful create, update or delete; the dashboard invalidates its `stats` query on it (RFC 0006).
+- **Done when:** on Home, adding a product in the products frame moves the dashboard `Products` tile from N to N+1 without a reload, and deleting it moves it back; `@tanstack/react-query` is absent from `federation.shared.ts`; existing products and dashboard tests pass unchanged.
+
 ## Later (not now)
 
 Nothing planned.

@@ -23,12 +23,10 @@ function StandaloneBar() {
 }
 
 function Standalone() {
-  // Remount the page after signing in or out: its first load fails with 401 while anonymous.
-  const userId = useAuth((s) => s.user?.id);
   return (
     <>
       <StandaloneBar />
-      <ProductsPage key={userId ?? 'anonymous'} />
+      <ProductsPage />
     </>
   );
 }
