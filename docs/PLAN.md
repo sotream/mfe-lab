@@ -96,6 +96,11 @@ Goal: weekly grouped dependency update PRs via `.github/dependabot.yml`, with no
 - **Goal:** Playwright covers runtime version switching of the products remote. A global setup freezes two releases (`0.0.1-e2e`, `0.0.2-e2e`) and a global teardown removes them, so the spec runs on any checkout.
 - **Done when:** `pnpm e2e` passes with the version-switching spec (`E-versions`: each release shows `build <version>` on Home, `dev` shows the dev stamp), and afterwards `apps/products/releases` holds no `*-e2e` leftovers.
 
+## T15 E2E against Docker images
+
+- **Goal:** `pnpm e2e:docker` (`E2E_TARGET=docker`) runs the e2e specs against the compose stack instead of the dev servers. Release fixtures and `E-versions` are skipped there, since nginx serves no `releases/`. Local only.
+- **Done when:** `pnpm e2e:docker` passes (5 passed, 1 skipped) and afterwards no containers run and the ports are free; default `pnpm e2e` is unchanged.
+
 ## Later (not now)
 
 Nothing planned.
