@@ -58,6 +58,18 @@ afterEach(() => {
 });
 
 describe('InspectorPage flags', () => {
+  it('Q-table-caption and Q-row-headers: Flags table is named, flag names are row headers', async () => {
+    await mount('viewer');
+    const table = screen.getByRole('table', { name: 'Flags' });
+    expect(
+      within(table)
+        .getAllByRole('rowheader')
+        .map((h) => h.textContent),
+    ).toEqual(flags.map((f) => f.name));
+    for (const th of within(table).getAllByRole('columnheader'))
+      expect(th.getAttribute('scope')).toBe('col');
+  });
+
   it('Q-inspector-flags: heading and columns', async () => {
     await mount('viewer');
     expect(screen.getByRole('heading', { level: 2, name: 'Flags' })).toBeTruthy();

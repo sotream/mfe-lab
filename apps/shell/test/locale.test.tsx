@@ -153,7 +153,7 @@ describe('locale switch', () => {
 
   it('Q-locale-switch: shell text changes in place; route and focus are kept', async () => {
     await mount('/products', 'admin');
-    expect(navNames()).toEqual(['mfe-lab', 'Home', 'Products', 'Dashboard', 'Inspector']);
+    expect(navNames()).toEqual(['Home', 'Products', 'Dashboard', 'Inspector']); // the wordmark is outside nav
     const navEl = nav();
     const link = within(navEl).getByRole('link', { name: 'Products' });
     const skip = document.querySelector('.skip-link') as HTMLElement;
@@ -166,7 +166,7 @@ describe('locale switch', () => {
       await sleep(30);
     });
 
-    expect(navNames().slice(1)).toEqual(['Startseite', 'Produkte', 'Dashboard', 'Inspector']);
+    expect(navNames()).toEqual(['Startseite', 'Produkte', 'Dashboard', 'Inspector']);
     expect(nav()).toBe(navEl); // no remount
     expect(link.isConnected).toBe(true);
     expect(link.textContent).toBe('Produkte');

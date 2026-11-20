@@ -92,6 +92,19 @@ describe('InspectorPage errors', () => {
     expect(within(table).getAllByRole('row')).toHaveLength(4); // header + 3
   });
 
+  it('Q-table-caption and Q-time: Errors table is named, its time cells carry the ISO timestamp', async () => {
+    await mount('admin');
+    const table = screen.getByRole('table', { name: 'Errors' });
+    const times = Array.from(table.querySelectorAll('tbody time'));
+    expect(times).toHaveLength(3);
+    for (const t of times) {
+      expect(t.getAttribute('datetime')).toBe('2026-11-20T10:00:00.000Z');
+      expect(t.textContent).toMatch(/^\d{2}:\d{2}:\d{2}$/); // visible text stays the local time
+    }
+    for (const th of within(table).getAllByRole('columnheader'))
+      expect(th.getAttribute('scope')).toBe('col');
+  });
+
   it('Q-inspector-errors: Refresh re-fetches', async () => {
     await mount('admin');
     rows.unshift(row(4, 'dashboard', 'unhandled', 'fresh one'));

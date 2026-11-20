@@ -104,6 +104,18 @@ describe('ProductDetail via ProductsApp', () => {
     expect(api.paths.some((p) => p.endsWith('/products/7'))).toBe(true);
   });
 
+  it('Q-time: detail Created is a time element with a date-only dateTime', async () => {
+    server();
+    await mount('/7');
+    const dl = document.querySelector('dl') as HTMLElement;
+    const dd = Array.from(dl.querySelectorAll('dt')).find((t) => t.textContent === 'Created')
+      ?.nextElementSibling as HTMLElement;
+    const time = dd.querySelector('time');
+    expect(time).not.toBeNull();
+    expect(time?.getAttribute('datetime')).toBe('2026-10-01');
+    expect(time?.textContent).toBe('01/10/2026');
+  });
+
   it('Q-product-detail: 404 shows Product not found', async () => {
     server(() => 404);
     await mount('/7');
