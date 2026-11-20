@@ -60,6 +60,14 @@ On Home, the dashboard `Products` tile reads 30. Add a product in the products f
 | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | ![Home, Products tile at 30](screenshots/9a-cross-remote-before.png) | ![Home, Products tile at 31 and the new row in the table](screenshots/9b-cross-remote-after.png) |
 
+### 10. German market
+
+The lab is German by default for German browsers and English for everything else. The `DE` / `EN` switch in the top bar changes every remote at once without a reload, and the choice is saved in the browser. Prices are gross EUR amounts with the note `inkl. 19 % MwSt.` on the detail page, and dates and numbers follow German formats (`674,28 €`, `17.10.2026`). The footer links to the Impressum and Datenschutz pages, which hold placeholder data. Details: [RFC 0012](rfc/0012-locale-across-remotes.md).
+
+| Home                                          | Product detail                                                    | Impressum                                          |
+| --------------------------------------------- | ----------------------------------------------------------------- | -------------------------------------------------- |
+| ![Home in German](screenshots/10-de-home.png) | ![Product detail with the VAT note](screenshots/11-de-detail.png) | ![Impressum page](screenshots/12-de-impressum.png) |
+
 ## Walkthroughs
 
 ### Nested routes
