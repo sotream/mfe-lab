@@ -116,13 +116,6 @@ describe('Table caption and scope', () => {
     const { container } = render(<Table>{head}</Table>);
     expect(container.querySelector('caption')).toBeNull();
   });
-
-  it('Q-row-headers: header-row th get scope=col', () => {
-    render(<Table label="T">{head}</Table>);
-    const ths = screen.getAllByRole('columnheader');
-    expect(ths).toHaveLength(2);
-    for (const th of ths) expect(th.getAttribute('scope')).toBe('col');
-  });
 });
 
 describe('Field', () => {

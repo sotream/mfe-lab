@@ -191,7 +191,7 @@ describe('German strings', () => {
   it('Q-de-strings: nav, skip link, h1 and titles per route', async () => {
     document.documentElement.lang = 'de';
     await mount('/', 'admin');
-    expect(navNames().slice(1)).toEqual(['Startseite', 'Produkte', 'Dashboard', 'Inspector']);
+    expect(navNames()).toEqual(['Startseite', 'Produkte', 'Dashboard', 'Inspector']);
     const skip = document.querySelector('.skip-link') as HTMLAnchorElement;
     expect(skip.textContent).toBe('Zum Inhalt springen');
     expect(skip.getAttribute('href')).toBe('#main');
