@@ -1,9 +1,12 @@
 import { logout, useAuth } from '@mfe/auth-store';
 import { RemoteFrame } from '@mfe/ui';
 import { createBrowserRouter, NavLink, Outlet, useNavigate } from 'react-router';
+import InspectorPage from './InspectorPage.tsx';
 import { LoginPage } from './LoginPage.tsx';
 import { RequireAuth } from './RequireAuth.tsx';
 import { loadPage, remotePort, type RemoteName } from './remotes.ts';
+
+declare const __BUILD_VERSION__: string;
 
 const Remote = ({ name }: { name: RemoteName }) => (
   <RemoteFrame name={name} port={remotePort(name)} load={() => loadPage(name)} />
@@ -40,6 +43,7 @@ function Layout() {
       <main>
         <Outlet />
       </main>
+      <footer>{`shell · build ${__BUILD_VERSION__}`}</footer>
     </>
   );
 }
@@ -74,7 +78,7 @@ export const router = createBrowserRouter([
           </RequireAuth>
         ),
       },
-      { path: 'inspector', element: <h1>Inspector</h1> },
+      { path: 'inspector', element: <InspectorPage /> },
       { path: 'login', element: <LoginPage /> },
     ],
   },

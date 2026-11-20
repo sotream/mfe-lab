@@ -27,6 +27,15 @@
     monospace;
 }
 
+.remote-frame-build {
+  float: right;
+  margin-top: 0.4rem;
+  color: var(--muted, #666);
+  font:
+    0.7rem/1.4 ui-monospace,
+    monospace;
+}
+
 .remote-frame-error {
   padding: 0.5rem 0;
   color: #a12626;

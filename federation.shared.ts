@@ -15,3 +15,9 @@ export const shared = {
   'react-router': singleton('react-router'),
   '@mfe/auth-store': singleton('@mfe/auth-store'),
 };
+
+// Build stamp: MF_BUILD_VERSION wins, else the current UTC time. Written back to the env so the
+// MF manifest (metaData.buildInfo.buildVersion) carries the same value as __BUILD_VERSION__.
+export const buildVersion =
+  process.env.MF_BUILD_VERSION ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+process.env.MF_BUILD_VERSION = buildVersion;

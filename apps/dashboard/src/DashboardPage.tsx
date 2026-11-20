@@ -213,6 +213,9 @@ function DataTable({ days }: { days: Day[] }) {
   );
 }
 
+declare const __BUILD_VERSION__: string;
+export const buildVersion: string = __BUILD_VERSION__;
+
 export default function DashboardPage() {
   const { stats, failed, reload } = useStats();
 

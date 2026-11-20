@@ -53,3 +53,17 @@ nav span {
 [role='alert'] {
   color: #a12626;
 }
+
+footer {
+  padding: 1rem 1.5rem;
+  color: var(--muted, #666);
+  font:
+    0.75rem/1.4 ui-monospace,
+    monospace;
+}
+
+td,
+th {
+  padding: 0.25rem 0.75rem 0.25rem 0;
+  text-align: left;
+}

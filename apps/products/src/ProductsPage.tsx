@@ -314,6 +314,9 @@ function Content({
   return children;
 }
 
+declare const __BUILD_VERSION__: string;
+export const buildVersion: string = __BUILD_VERSION__;
+
 export default function ProductsPage() {
   const role = useAuth((s) => s.user?.role);
   const canWrite = role === 'admin' || role === 'editor';
