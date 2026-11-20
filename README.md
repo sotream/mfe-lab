@@ -237,6 +237,12 @@ Flags live in the API (`GET /flags`, admin-only `PATCH /flags/:name`). Each remo
 
 Demo: sign in as `admin@lab.test`, open `/inspector`, uncheck `dashboard.revenue`, go Home: the Revenue by status section is gone. Check it again to bring it back. Turn on `products.crash` to see the Products frame fail while the rest of the page keeps working (Retry keeps failing until you turn it off). Viewers and editors see the checkboxes disabled.
 
+## Error tracking
+
+Errors are reported to the API with the remote and its build. `RemoteFrame` reports render and load failures (`report` prop, passed by the shell); `@mfe/telemetry` installs `window` handlers in the shell (`shell`), in each remote (`products`, `dashboard`) and a catch-all (`unknown`). Reports use `sendBeacon`, never throw, and the same message from the same remote is sent once per 5 s. Known limit: cross-origin `Script error.` has no filename or stack, so it lands in `unknown` (RFC 0010).
+
+Demo: sign in as `admin@lab.test`, open `/inspector`, click `Clear` in the Errors section and check `products.crash` in Flags. Go Home: the products frame shows `products is unavailable`, the dashboard still renders. Back in the inspector click `Refresh`: a row with Remote `products` and Kind `render` appears, with the count `products: 1` above. Uncheck `products.crash` and click `Clear` to finish. Only admins see the section.
+
 ## Design system versions
 
 `@mfe/ui` (`Button`, `Table`, `Field`) is shared with `singleton: false` and `requiredVersion: '^1.0.0'`, so each remote may use its own compatible version (RFC 0008). Styles use `--ds1-*` tokens and `ds1-*` classes: a breaking change means a major bump and a new prefix. See `packages/ui/CHANGELOG.md`.
@@ -294,7 +300,7 @@ Demo users (**demo-only credentials, never reuse**): `admin@lab.test`, `editor@l
 
 ### Endpoints
 
-All routes except `GET /health`, `POST /auth/login` and `/docs*` need `Authorization: Bearer <token>` (auth runs before validation, so no token is always `401`). Errors are always `{ "error": "<code>" }`: `invalid_body` / `invalid_query` / `invalid_params` (400), `unauthorized` (401), `forbidden` (403), `not_found` (404), `conflict` (409), `internal` (500).
+All routes except `GET /health`, `POST /auth/login`, `POST /errors` and `/docs*` need `Authorization: Bearer <token>` (auth runs before validation, so no token is always `401`). Errors are always `{ "error": "<code>" }`: `invalid_body` / `invalid_query` / `invalid_params` (400), `unauthorized` (401), `forbidden` (403), `not_found` (404), `conflict` (409), `internal` (500).
 
 | Route                                   | Roles allowed | Notes                                                                                                          |
 | --------------------------------------- | ------------- | -------------------------------------------------------------------------------------------------------------- |
@@ -307,6 +313,10 @@ All routes except `GET /health`, `POST /auth/login` and `/docs*` need `Authoriza
 | `GET /stats`                            | any           | counts, revenue by status, orders per day (UTC)                                                                |
 | `GET /flags`                            | any           | `{ name, enabled, description }[]` sorted by name                                                              |
 | `PATCH /flags/:name`                    | admin         | body `{ enabled }`; unknown name gives `404`                                                                   |
+| `POST /errors`                          | none          | error report from a browser; `message` cut to 500, `stack` to 4000; keeps the newest 1000 rows                 |
+| `GET /errors`                           | admin         | `?remote`; newest 50                                                                                           |
+| `GET /errors/summary`                   | admin         | `{ remote, count }[]`                                                                                          |
+| `DELETE /errors`                        | admin         | returns `204`                                                                                                  |
 
 Pagination defaults to `page=1&limit=20` (max `limit` 100); `sort` is one of `id, sku, name, price_cents, stock, created_at`.
 
@@ -325,6 +335,7 @@ Interactive OpenAPI docs: <http://localhost:4000/docs> (spec at `/docs/json`; bo
 | 0007 | [Routing inside remotes](docs/rfc/0007-routing-inside-remotes.md)                     | Accepted | The shell mounts a remote at `<name>/*`; the remote owns the subtree with relative links, on the shared router.                  |
 | 0008 | [Design system versioning](docs/rfc/0008-design-system-versioning.md)                 | Draft    | `@mfe/ui` is a non-singleton semver share; CSS carries a major prefix (`ds1-`), so two versions can coexist.                     |
 | 0009 | [Feature flags](docs/rfc/0009-feature-flags.md)                                       | Accepted | Flags live in the API; each remote reads them with its own query client; `flags:changed` refreshes them without a reload.        |
+| 0010 | [Error tracking per remote](docs/rfc/0010-error-tracking.md)                          | Draft    | Frames and `window` handlers report to the API with remote and build; admins read them in the inspector.                         |
 
 ## Run CI locally
 

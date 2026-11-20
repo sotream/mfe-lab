@@ -13,6 +13,7 @@ import { useEffect, useState } from 'react';
 import { useFlag, useFlagsSync } from './flags.ts';
 import { fillDays, formatCents, niceMax, totalRevenue, yTicks } from './stats.ts';
 import './dashboard.css';
+import './telemetry.ts';
 
 type Day = { date: string; count: number };
 

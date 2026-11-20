@@ -141,6 +141,11 @@ Goal: weekly grouped dependency update PRs via `.github/dependabot.yml`, with no
 - **Goal:** runtime flags in the API (`002_flags.sql`, `GET /flags`, admin `PATCH /flags/:name`), read by remotes with `useFlag(name, fallback)` and refreshed by the `flags:changed` event; an inspector `Flags` section lets an admin toggle them (RFC 0009).
 - **Done when:** as admin, unchecking `dashboard.revenue` in the inspector removes the Revenue by status section on Home and checking it brings it back; `products.detailPage` off makes names plain text; `products.crash` on makes the products frame show its error fallback; viewers see disabled checkboxes; `pnpm lint && pnpm typecheck && pnpm test` pass.
 
+## T24 Error tracking per remote
+
+- **Goal:** errors are reported to the API (`003_errors.sql`, `POST /errors`, admin `GET /errors`, `GET /errors/summary`, `DELETE /errors`) with the remote and its build, from `RemoteFrame` (`report` prop) and from `@mfe/telemetry` window handlers in the shell and each remote; an admin-only inspector `Errors` section lists them (RFC 0010).
+- **Done when:** as admin, checking `products.crash` makes the products frame show `products is unavailable` while the dashboard still renders, and after `Refresh` the inspector Errors table has a row with Remote `products` and Kind `render`; `@mfe/telemetry` is absent from `federation.shared.ts`; `pnpm lint && pnpm typecheck && pnpm test` pass.
+
 ## Later (not now)
 
 Nothing planned.
