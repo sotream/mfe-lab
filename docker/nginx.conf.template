@@ -1,0 +1,19 @@
+server {
+  listen ${PORT};
+  root /usr/share/nginx/html;
+  add_header Access-Control-Allow-Origin * always;
+
+  location /api/ {
+    proxy_pass http://api:4000/;
+  }
+
+  # Remote entry points must never be cached, so a restarted remote is picked up.
+  location ~ ^/(mf-manifest\.json|remoteEntry\.js)$ {
+    add_header Access-Control-Allow-Origin * always;
+    add_header Cache-Control no-store always;
+  }
+
+  location / {
+    try_files $uri /index.html;
+  }
+}
