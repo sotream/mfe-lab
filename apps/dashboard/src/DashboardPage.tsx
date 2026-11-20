@@ -204,17 +204,19 @@ function DataTable({ days }: { days: Day[] }) {
   return (
     <details>
       <summary>{t.showTable}</summary>
-      <Table>
+      <Table label={t.ordersPerDay}>
         <thead>
           <tr>
-            <th>{t.date}</th>
-            <th>{t.orders}</th>
+            <th scope="col">{t.date}</th>
+            <th scope="col">{t.orders}</th>
           </tr>
         </thead>
         <tbody>
           {days.map((d) => (
             <tr key={d.date}>
-              <td>{formatDate(d.date, locale)}</td>
+              <th scope="row">
+                <time dateTime={d.date}>{formatDate(d.date, locale)}</time>
+              </th>
               <td>{formatNumber(d.count, locale)}</td>
             </tr>
           ))}

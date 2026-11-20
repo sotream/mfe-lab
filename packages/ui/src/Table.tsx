@@ -7,7 +7,7 @@ type Props = TableHTMLAttributes<HTMLTableElement> & {
   label?: string;
 };
 
-export function Table({ className, label, ...rest }: Props) {
+export function Table({ className, label, children, ...rest }: Props) {
   return (
     <div
       className="ds1-table-wrap"
@@ -17,7 +17,10 @@ export function Table({ className, label, ...rest }: Props) {
         {...rest}
         data-ds="table"
         className={['ds1-table', className].filter(Boolean).join(' ')}
-      />
+      >
+        {label && <caption className="visually-hidden">{label}</caption>}
+        {children}
+      </table>
     </div>
   );
 }

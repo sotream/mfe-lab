@@ -58,7 +58,11 @@ export default function ProductDetail() {
           </div>
           <div>
             <dt>{t.columns.created}</dt>
-            <dd>{formatDate(data.created_at, locale)}</dd>
+            <dd>
+              <time dateTime={data.created_at.slice(0, 10)}>
+                {formatDate(data.created_at, locale)}
+              </time>
+            </dd>
           </div>
         </dl>
       </>

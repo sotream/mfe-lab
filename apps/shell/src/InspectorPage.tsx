@@ -123,15 +123,17 @@ function Flags({ flags, setFlags }: { flags: Flag[]; setFlags: Dispatch<SetState
           <Table label={t.flags}>
             <thead>
               <tr>
-                <th>{t.flag}</th>
-                <th>{t.enabled}</th>
-                <th>{t.description}</th>
+                <th scope="col">{t.flag}</th>
+                <th scope="col">{t.enabled}</th>
+                <th scope="col">{t.description}</th>
               </tr>
             </thead>
             <tbody>
               {flags.map((f) => (
                 <tr key={f.name}>
-                  <td className="ds1-mono">{f.name}</td>
+                  <th scope="row" className="ds1-mono">
+                    {f.name}
+                  </th>
                   <td>
                     <input
                       type="checkbox"
@@ -206,11 +208,11 @@ function Errors() {
           <Table label={t.errors}>
             <thead>
               <tr>
-                <th>{t.time}</th>
-                <th>{t.remote}</th>
-                <th>{t.build}</th>
-                <th>{t.kind}</th>
-                <th>{t.message}</th>
+                <th scope="col">{t.time}</th>
+                <th scope="col">{t.remote}</th>
+                <th scope="col">{t.build}</th>
+                <th scope="col">{t.kind}</th>
+                <th scope="col">{t.message}</th>
               </tr>
             </thead>
             <tbody>
@@ -221,7 +223,11 @@ function Errors() {
               )}
               {rows.map((e) => (
                 <tr key={e.id}>
-                  <td className="ds1-mono">{formatTime(new Date(e.at), locale)}</td>
+                  <td className="ds1-mono">
+                    <time dateTime={new Date(e.at).toISOString()}>
+                      {formatTime(new Date(e.at), locale)}
+                    </time>
+                  </td>
                   <td>{e.remote}</td>
                   <td className="ds1-mono">{e.build}</td>
                   <td>
@@ -304,17 +310,17 @@ export default function InspectorPage() {
         <Table label={t.remotes}>
           <thead>
             <tr>
-              <th>{t.name}</th>
-              <th>{t.manifest}</th>
-              <th>{t.version}</th>
-              <th>{t.status}</th>
-              <th>{t.use}</th>
+              <th scope="col">{t.name}</th>
+              <th scope="col">{t.manifest}</th>
+              <th scope="col">{t.version}</th>
+              <th scope="col">{t.status}</th>
+              <th scope="col">{t.use}</th>
             </tr>
           </thead>
           <tbody>
             {remotes.map((name) => (
               <tr key={name}>
-                <td>{name}</td>
+                <th scope="row">{name}</th>
                 <td className="ds1-mono manifest">{remoteEntry(name)}</td>
                 <td className="ds1-mono">{pings[name]?.version ?? '—'}</td>
                 <td>
@@ -335,11 +341,11 @@ export default function InspectorPage() {
         <Table label={t.shared}>
           <thead>
             <tr>
-              <th>{t.pkg}</th>
-              <th>{t.required}</th>
-              <th>{t.loaded}</th>
-              <th>{t.singleton}</th>
-              <th>{t.status}</th>
+              <th scope="col">{t.pkg}</th>
+              <th scope="col">{t.required}</th>
+              <th scope="col">{t.loaded}</th>
+              <th scope="col">{t.singleton}</th>
+              <th scope="col">{t.status}</th>
             </tr>
           </thead>
           <tbody>
@@ -350,7 +356,7 @@ export default function InspectorPage() {
             )}
             {rows.map((r) => (
               <tr key={r.name}>
-                <td>{r.name}</td>
+                <th scope="row">{r.name}</th>
                 <td className="ds1-mono">{r.required}</td>
                 <td className="ds1-mono">{r.loaded.join(', ') || '—'}</td>
                 <td>
@@ -373,9 +379,9 @@ export default function InspectorPage() {
         <Table className="trail" label={t.events}>
           <thead>
             <tr>
-              <th>{t.time}</th>
-              <th>{t.event}</th>
-              <th>{t.payload}</th>
+              <th scope="col">{t.time}</th>
+              <th scope="col">{t.event}</th>
+              <th scope="col">{t.payload}</th>
             </tr>
           </thead>
           <tbody>
@@ -388,7 +394,11 @@ export default function InspectorPage() {
             )}
             {events.map((e) => (
               <tr key={`${e.at}-${e.name}-${JSON.stringify(e.detail)}`}>
-                <td className="ds1-mono time">{formatTime(new Date(e.at), locale)}</td>
+                <td className="ds1-mono time">
+                  <time dateTime={new Date(e.at).toISOString()}>
+                    {formatTime(new Date(e.at), locale)}
+                  </time>
+                </td>
                 <td className="ds1-mono">{e.name}</td>
                 <td className="ds1-mono payload">
                   <code>{JSON.stringify(e.detail)}</code>

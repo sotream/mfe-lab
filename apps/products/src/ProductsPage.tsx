@@ -300,6 +300,7 @@ function ProductsTable({
           <tr>
             {COLUMNS.map(({ label, field }) => (
               <th
+                scope="col"
                 key={field}
                 aria-sort={ariaSort(field)}
                 className={field === 'price_cents' || field === 'stock' ? 'ds1-num' : undefined}
@@ -307,17 +308,25 @@ function ProductsTable({
                 <button onClick={() => onSort(field)}>{t.columns[label]}</button>
               </th>
             ))}
-            {canWrite && <th className="products-actions-head">{t.actions}</th>}
+            {canWrite && (
+              <th scope="col" className="products-actions-head">
+                {t.actions}
+              </th>
+            )}
           </tr>
         </thead>
         <tbody>
           {items.map((p) => (
             <tr key={p.id}>
-              <td className="ds1-mono">{p.sku}</td>
+              <th scope="row" className="ds1-mono">
+                {p.sku}
+              </th>
               <td>{detailLinks ? <Link to={`${base}${p.id}`}>{p.name}</Link> : p.name}</td>
               <td className="ds1-num">{formatMoney(p.price_cents, locale)}</td>
               <td className="ds1-num">{p.stock}</td>
-              <td className="ds1-mono products-created">{formatDate(p.created_at, locale)}</td>
+              <td className="ds1-mono products-created">
+                <time dateTime={p.created_at.slice(0, 10)}>{formatDate(p.created_at, locale)}</time>
+              </td>
               {canWrite && (
                 <td>
                   <div className="products-actions">
@@ -417,14 +426,16 @@ export function ProductsContent({ base }: { base: string }) {
     <div className="products">
       <CrashWhenFlagged />
       <div className="products-toolbar" ref={toolbar}>
-        <input
-          type="search"
-          className="ds1-input"
-          aria-label={t.search}
-          placeholder={t.searchPlaceholder}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-        />
+        <search>
+          <input
+            type="search"
+            className="ds1-input"
+            aria-label={t.search}
+            placeholder={t.searchPlaceholder}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+          />
+        </search>
         {canWrite && (
           <Button variant="primary" onClick={() => dispatch(openNew())}>
             {t.add}

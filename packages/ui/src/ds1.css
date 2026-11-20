@@ -77,12 +77,18 @@
   font-weight: 500;
 }
 
+/* Row headers look like the td they replaced. */
+.ds1-table tbody th {
+  color: inherit;
+  font-weight: inherit;
+}
+
 .ds1-table tbody tr:hover {
   background-color: var(--ds1-paper-3);
 }
 
-.ds1-table td.ds1-mono,
-.ds1-table td.ds1-num {
+.ds1-table :is(td, th).ds1-mono,
+.ds1-table :is(td, th).ds1-num {
   font-family: var(--ds1-font-mono);
   font-variant-numeric: tabular-nums;
 }
