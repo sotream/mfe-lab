@@ -37,22 +37,18 @@ const TITLE_KEYS = {
   datenschutz: 'datenschutz',
 } as const;
 
-const LOCALES: { locale: Locale; label: string }[] = [
-  { locale: 'de', label: 'Deutsch' },
-  { locale: 'en', label: 'English' },
-];
+const LOCALES: Locale[] = ['de', 'en'];
 
 function LanguageSwitch() {
   const t = useT();
   const current = useLocale();
   return (
     <div role="group" aria-label={t.language} className="lang-switch">
-      {LOCALES.map(({ locale, label }) => (
+      {LOCALES.map((locale) => (
         <Button
           key={locale}
           className="ds1-button--sm"
           lang={locale}
-          aria-label={label}
           aria-pressed={current === locale}
           onClick={() => setLocale(locale)}
         >
