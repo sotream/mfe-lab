@@ -63,7 +63,7 @@ T4 (host + stubs), T6 and T7 (real remotes), T8 (inspector, build stamps), T9 (P
 
 ## Open questions
 
-- Should the shell prefetch remote entries on idle? Measure first.
+- Resolved: the shell prefetches remotes on idle; measured in [RFC 0005](0005-prefetch-remotes.md).
 
 ## Changelog
 
@@ -71,3 +71,4 @@ T4 (host + stubs), T6 and T7 (real remotes), T8 (inspector, build stamps), T9 (P
 - 2026-11-18: T4: root `federation.shared.ts` with catalog versions, `loadRemote()` instead of `React.lazy`, local `remotes.d.ts` with `dts: false`.
 - 2026-11-20: T8: inspector and build stamps as described under Versioning.
 - 2026-11-20: T9: Proposal synced with the code (runtime `registerRemotes`, `bootstrap.tsx`, build stamp source). The Playwright smoke test covers the remote-down fallback by aborting requests to `:3001`.
+- 2026-11-20: T16: open question resolved, the shell prefetches remotes on idle (RFC 0005).

@@ -101,6 +101,11 @@ Goal: weekly grouped dependency update PRs via `.github/dependabot.yml`, with no
 - **Goal:** `pnpm e2e:docker` (`E2E_TARGET=docker`) runs the e2e specs against the compose stack instead of the dev servers. Release fixtures and `E-versions` are skipped there, since nginx serves no `releases/`. Local only.
 - **Done when:** `pnpm e2e:docker` passes (5 passed, 1 skipped) and afterwards no containers run and the ports are free; default `pnpm e2e` is unchanged.
 
+## T16 Prefetch remotes on idle
+
+- **Goal:** the shell prefetches both remotes on idle after the first render, decided by measurement (RFC 0005).
+- **Done when:** with the compose stack, the first click on `Products` after 1 s idle takes at least 30% less time on Fast 4G than without prefetch (measured 1201 to 823 ms), and the products entry and expose chunk requests happen before the click.
+
 ## Later (not now)
 
 Nothing planned.
