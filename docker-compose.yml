@@ -1,5 +1,6 @@
 services:
   api:
+    init: true
     build: { context: ., target: api }
     environment:
       HOST: 0.0.0.0
