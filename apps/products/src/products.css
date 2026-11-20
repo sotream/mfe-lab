@@ -16,18 +16,6 @@
   max-width: 20rem;
 }
 
-.products table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.products th,
-.products td {
-  padding: 0.4rem 0.6rem;
-  border-bottom: 1px solid var(--p-border);
-  text-align: left;
-}
-
 .products th button {
   padding: 0;
   border: 0;
@@ -58,8 +46,7 @@
 }
 
 .products [role='alert'],
-.products-dialog [role='alert'],
-.products-field-error {
+.products-dialog [role='alert'] {
   color: var(--p-danger, #a12626);
 }
 
@@ -72,11 +59,6 @@
 .products-dialog form {
   display: grid;
   gap: 0.75rem;
-}
-
-.products-dialog label {
-  display: grid;
-  gap: 0.25rem;
 }
 
 .products-dialog-actions {

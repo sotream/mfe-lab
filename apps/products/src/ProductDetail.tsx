@@ -1,4 +1,5 @@
 import { ApiError, getProduct } from '@mfe/api-client';
+import { Button } from '@mfe/ui';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router';
 import { formatPrice } from './productForm.ts';
@@ -20,7 +21,7 @@ export default function ProductDetail() {
     body = (
       <div role="alert">
         <p>Could not load product</p>
-        <button onClick={() => void refetch()}>Retry</button>
+        <Button onClick={() => void refetch()}>Retry</Button>
       </div>
     );
   } else if (!data) {

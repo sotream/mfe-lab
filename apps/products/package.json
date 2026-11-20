@@ -13,6 +13,7 @@
     "@mfe/api-client": "workspace:*",
     "@mfe/auth-store": "workspace:*",
     "@mfe/events": "workspace:*",
+    "@mfe/ui": "workspace:*",
     "@reduxjs/toolkit": "catalog:",
     "@tanstack/react-query": "catalog:",
     "react": "catalog:",

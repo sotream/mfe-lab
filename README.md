@@ -231,6 +231,18 @@ A remote can be frozen into a release and the shell can switch to it at runtime,
 
 The selection lives in memory only: a reload goes back to `dev`. To clean up, delete `apps/products/releases`.
 
+## Design system versions
+
+`@mfe/ui` (`Button`, `Table`, `Field`) is shared with `singleton: false` and `requiredVersion: '^1.0.0'`, so each remote may use its own compatible version (RFC 0008). Styles use `--ds1-*` tokens and `ds1-*` classes: a breaking change means a major bump and a new prefix. See `packages/ui/CHANGELOG.md`.
+
+Walkthrough with two versions on one page (do not commit step 2):
+
+1. `pnpm --filter @mfe/products release 1.0.0-ds`.
+2. In `packages/ui/package.json` set `"version": "1.1.0"`, add a `Badge` component to `packages/ui/src`, export it, and use it in `apps/dashboard/src/DashboardPage.tsx`.
+3. With `pnpm dev` running, open `/inspector` and pick `1.0.0-ds` for products.
+
+The Shared table now lists `@mfe/ui` with two loaded versions (1.0.0 from the release, 1.1.0 from the shell and dashboard) and `Singleton` `no`. Revert the `packages/ui` and dashboard edits and delete `apps/products/releases` to clean up.
+
 ## Testing
 
 - **Unit and component (black-box):** `pnpm test` runs Vitest. API tests use Fastify `inject` with in-memory SQLite; frontend tests use Testing Library. Tests are written from the task contract in `docs/PLAN.md`, not from the implementation.
@@ -303,6 +315,7 @@ Interactive OpenAPI docs: <http://localhost:4000/docs> (spec at `/docs/json`; bo
 | 0005 | [Prefetch remotes on idle](docs/rfc/0005-prefetch-remotes.md)                         | Accepted | After first render the shell preloads both remotes on idle; measured 1201 to 823 ms on Fast 4G.                                  |
 | 0006 | [Data between remotes](docs/rfc/0006-data-between-remotes.md)                         | Accepted | One TanStack Query client per remote, Redux Toolkit local to products, typed `window` events between remotes; nothing shared.    |
 | 0007 | [Routing inside remotes](docs/rfc/0007-routing-inside-remotes.md)                     | Accepted | The shell mounts a remote at `<name>/*`; the remote owns the subtree with relative links, on the shared router.                  |
+| 0008 | [Design system versioning](docs/rfc/0008-design-system-versioning.md)                 | Draft    | `@mfe/ui` is a non-singleton semver share; CSS carries a major prefix (`ds1-`), so two versions can coexist.                     |
 
 ## Run CI locally
 

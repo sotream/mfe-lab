@@ -1,0 +1,12 @@
+:root {
+  --ds1-color-primary: #2b59c3;
+  --ds1-color-danger: #a12626;
+  --ds1-color-border: #888;
+  --ds1-color-text: #1a1a1a;
+  --ds1-space-1: 0.25rem;
+  --ds1-space-2: 0.5rem;
+  --ds1-space-3: 0.75rem;
+  --ds1-space-4: 1rem;
+  --ds1-radius: 6px;
+  --ds1-font: inherit;
+}

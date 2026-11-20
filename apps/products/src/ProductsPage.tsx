@@ -10,6 +10,7 @@ import {
 } from '@mfe/api-client';
 import { useAuth } from '@mfe/auth-store';
 import { emit } from '@mfe/events';
+import { Button, Field, Table } from '@mfe/ui';
 import {
   keepPreviousData,
   QueryClient,
@@ -140,34 +141,24 @@ function ProductDialog({
     <Modal title={product ? 'Edit product' : 'Add product'} onClose={onClose}>
       <form onSubmit={submit} noValidate>
         {FIELDS.map(({ key, label, inputMode }) => {
-          const error = errors[key];
           return (
-            <div key={key}>
-              <label htmlFor={`${id}-${key}`}>{label}</label>
-              <input
-                id={`${id}-${key}`}
-                value={values[key]}
-                inputMode={inputMode}
-                onChange={(e) => setValues({ ...values, [key]: e.target.value })}
-                aria-invalid={error ? true : undefined}
-                aria-describedby={error ? `${id}-${key}-error` : undefined}
-              />
-              {error && (
-                <p id={`${id}-${key}-error`} className="products-field-error">
-                  {error}
-                </p>
-              )}
-            </div>
+            <Field
+              key={key}
+              label={label}
+              id={`${id}-${key}`}
+              value={values[key]}
+              inputMode={inputMode}
+              onChange={(e) => setValues({ ...values, [key]: e.target.value })}
+              error={errors[key]}
+            />
           );
         })}
         {failure && <p role="alert">{failure}</p>}
         <div className="products-dialog-actions">
-          <button type="button" onClick={onClose}>
-            Cancel
-          </button>
-          <button type="submit" disabled={saving}>
+          <Button onClick={onClose}>Cancel</Button>
+          <Button type="submit" variant="primary" disabled={saving}>
             Save
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>
@@ -201,12 +192,10 @@ function DeleteDialog({
     <Modal title={`Delete ${product.name}?`} onClose={onClose}>
       {failure && <p role="alert">{failure}</p>}
       <div className="products-dialog-actions">
-        <button type="button" onClick={onClose}>
-          Cancel
-        </button>
-        <button type="button" onClick={confirm}>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button variant="danger" onClick={confirm}>
           Delete
-        </button>
+        </Button>
       </div>
     </Modal>
   );
@@ -286,7 +275,7 @@ function ProductsTable({
     return query.order === 'asc' ? 'ascending' : 'descending';
   };
   return (
-    <table>
+    <Table>
       <thead>
         <tr>
           {COLUMNS.map(({ label, field }) => (
@@ -309,18 +298,18 @@ function ProductsTable({
             <td>{p.created_at.slice(0, 10)}</td>
             {canWrite && (
               <td>
-                <button aria-label={`Edit ${p.sku}`} onClick={() => onEdit(p)}>
+                <Button aria-label={`Edit ${p.sku}`} onClick={() => onEdit(p)}>
                   Edit
-                </button>{' '}
-                <button aria-label={`Delete ${p.sku}`} onClick={() => onDelete(p)}>
+                </Button>{' '}
+                <Button variant="danger" aria-label={`Delete ${p.sku}`} onClick={() => onDelete(p)}>
                   Delete
-                </button>
+                </Button>
               </td>
             )}
           </tr>
         ))}
       </tbody>
-    </table>
+    </Table>
   );
 }
 
@@ -339,7 +328,7 @@ function Content({
     return (
       <div role="alert">
         <p>Could not load products</p>
-        <button onClick={onRetry}>Retry</button>
+        <Button onClick={onRetry}>Retry</Button>
       </div>
     );
   }
@@ -388,7 +377,11 @@ export function ProductsContent({ base }: { base: string }) {
           value={text}
           onChange={(e) => setText(e.target.value)}
         />
-        {canWrite && <button onClick={() => dispatch(openNew())}>Add product</button>}
+        {canWrite && (
+          <Button variant="primary" onClick={() => dispatch(openNew())}>
+            Add product
+          </Button>
+        )}
       </div>
 
       <Content data={data} failed={failed} onRetry={reload}>
@@ -402,13 +395,13 @@ export function ProductsContent({ base }: { base: string }) {
           onDelete={(p) => dispatch(openDelete(p))}
         />
         <div className="products-pager">
-          <button disabled={query.page <= 1} onClick={() => dispatch(setPage(query.page - 1))}>
+          <Button disabled={query.page <= 1} onClick={() => dispatch(setPage(query.page - 1))}>
             Previous
-          </button>
+          </Button>
           <span>{`Page ${query.page} of ${pages}`}</span>
-          <button disabled={query.page >= pages} onClick={() => dispatch(setPage(query.page + 1))}>
+          <Button disabled={query.page >= pages} onClick={() => dispatch(setPage(query.page + 1))}>
             Next
-          </button>
+          </Button>
         </div>
       </Content>
 
