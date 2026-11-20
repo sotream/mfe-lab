@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "rspack dev",
     "build": "rspack build",
+    "release": "node ../../scripts/release.ts",
     "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {
