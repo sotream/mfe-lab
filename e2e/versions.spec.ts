@@ -12,6 +12,8 @@ async function pickVersion(page: Page, version: string): Promise<void> {
   await page.getByRole('link', { name: 'Home' }).click();
 }
 
+test.skip(process.env.E2E_TARGET === 'docker', 'nginx serves no releases/');
+
 test('E-versions: switching the products version changes the mounted build', async ({ page }) => {
   await page.goto(`${BASE}/login`);
   await page.getByLabel('Email').fill('viewer@lab.test');
