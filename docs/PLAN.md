@@ -156,6 +156,11 @@ Goal: weekly grouped dependency update PRs via `.github/dependabot.yml`, with no
 - **Goal:** an ownership contract for page-level accessibility, WCAG 2.2 AA structure: the shell sets route titles, moves focus to the `h1` after navigation, renders the skip link and one live region; remotes own their subtree, start headings at `h3` and announce through `a11y:announce`; `@mfe/ui` 1.3.0 adds `Table` `label` and the frame `h2` (RFC 0011). `eslint-plugin-jsx-a11y` and `@axe-core/playwright` guard it.
 - **Done when:** each top-level route has its title and the product detail sets its own; after a client navigation focus is on the page `h1`; the skip link is the first tab stop and focuses `main`; each page has one `h1`, frame names are `h2` and remote headings `h3`; the chart label is a summary and bars are not focusable; creating, saving and deleting a product and toggling a flag are announced in the shell's live region; after a failed Retry focus stays on Retry; `E-a11y` finds no serious or critical axe violation on the main pages; `@mfe/ui` is 1.3.0 with a changelog entry and `requiredVersion` stays `^1.0.0`; `pnpm lint && pnpm typecheck && pnpm test` pass.
 
+## T27 German market
+
+- **Goal:** the lab reads as a product for the German market: German UI by default for German browsers with an EN switch in the top bar, EUR gross prices, German date, number and time formats, German seed names, and Impressum and Datenschutz pages. The shell owns the locale (`lang` plus `locale:changed`), each app owns its messages, `@mfe/ui` 1.4.0 holds the formatters (RFC 0012).
+- **Done when:** a browser with `de-DE` gets `<html lang="de">`, the German nav, titles and `674,28 €`; the switch changes every app in place without a reload, keeps the route and persists the choice in `localStorage['mfe-lab:locale']`; the product detail shows `inkl. 19 % MwSt.`; the price input accepts `674,28` and `674.28`; dates, chart axis and times follow the locale; the seed has 30 German names with `Drucksensor` first; `/impressum` and `/datenschutz` work signed out and are linked from the footer; `E-a11y` stays green in EN; `@mfe/ui` is 1.4.0 with a changelog entry and `requiredVersion` stays `^1.0.0`; `pnpm lint && pnpm typecheck && pnpm test` pass.
+
 ## Later (not now)
 
 Nothing planned.

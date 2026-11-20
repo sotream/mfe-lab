@@ -37,6 +37,8 @@ A page built from independently deployed apps has no single author, so page-leve
 | Announcements                     | remote    | `emit('a11y:announce', { message })`; products on create, save and delete, the inspector on flag toggles and Clear errors           |
 | Focus styles, contrast, semantics | `@mfe/ui` | `:focus-visible` ring, `--ds1-*` tokens, `Table` `label` makes a scrollable table a focusable region                                |
 
+**Language.** Titles, announcements and the chart label are translated ([RFC 0012](0012-locale-across-remotes.md)); the English strings here are the `en` catalog and `<html lang>` follows the locale.
+
 **Title order.** The shell sets its title in a layout effect, which runs before the passive effect of a remote, so on the detail route the remote's title wins and on every other navigation the shell's does.
 
 **Live region.** The shell listens to `a11y:announce` and writes the message into the region. To re-announce an identical message it clears the region and sets the text again on the next tick.
