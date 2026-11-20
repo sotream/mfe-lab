@@ -340,6 +340,9 @@ importers:
       '@mfe/auth-store':
         specifier: workspace:*
         version: link:../../packages/auth-store
+      '@mfe/events':
+        specifier: workspace:*
+        version: link:../../packages/events
       '@mfe/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -375,6 +378,8 @@ importers:
       '@types/react':
         specifier: 'catalog:'
         version: 19.3.0
+
+  packages/events: {}
 
   packages/ui:
     dependencies:
