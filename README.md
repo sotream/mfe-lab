@@ -132,6 +132,10 @@ It also runs on its own: `pnpm --filter @mfe/products dev` serves it on `:3001` 
 
 It also runs on its own: `pnpm --filter @mfe/dashboard dev` serves it on `:3002` with the same "Standalone dev" bar as products (the bar is not part of the exposed module).
 
+### Data between remotes
+
+Products and dashboard each fetch through their own TanStack Query client (created per page mount and per user, bundled in each remote, never shared). When products creates, updates or deletes a product it emits `products:changed` through `@mfe/events`, and the dashboard invalidates its stats: on Home the `Products` tile updates with no reload (RFC 0006).
+
 ### Inspector and build stamps
 
 Every build gets a stamp: `MF_BUILD_VERSION` if set, else the UTC time (`YYYY-MM-DDTHH:MM:SSZ`). It is baked in as `__BUILD_VERSION__`, written to `mf-manifest.json` (`metaData.buildInfo.buildVersion`), exported as `buildVersion` by both exposed pages, and shown in each remote frame and in the shell footer. Rebuild one remote and its stamp changes while the shell's stays. `/inspector` (no login) lists the remotes with their live manifest version and up/down status (polled every 5 s) and the shared dependencies read from the runtime's share scope.

@@ -1,4 +1,13 @@
 import { getStats, type Stats } from '@mfe/api-client';
+import { useAuth } from '@mfe/auth-store';
+import { on } from '@mfe/events';
+import {
+  notifyManager,
+  QueryClient,
+  QueryClientProvider,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { fillDays, formatCents, niceMax, totalRevenue, yTicks } from './stats.ts';
 import './dashboard.css';
@@ -14,31 +23,16 @@ const MAX_BAR = 24;
 const GAP = 2;
 
 function useStats() {
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [failed, setFailed] = useState(false);
-  const [reloadKey, setReloadKey] = useState(0);
+  const client = useQueryClient();
+  const { data, isError, refetch } = useQuery({ queryKey: ['stats'], queryFn: getStats });
 
-  useEffect(() => {
-    let stale = false;
-    getStats()
-      .then((s) => {
-        if (stale) return;
-        setFailed(false);
-        setStats(s);
-      })
-      .catch(() => {
-        if (!stale) setFailed(true);
-      });
-    return () => {
-      stale = true;
-    };
-  }, [reloadKey]);
+  // Another remote changed products: our own stats are stale (RFC 0006).
+  useEffect(
+    () => on('products:changed', () => void client.invalidateQueries({ queryKey: ['stats'] })),
+    [client],
+  );
 
-  const reload = () => {
-    setFailed(false);
-    setReloadKey((k) => k + 1);
-  };
-  return { stats, failed, reload };
+  return { stats: data ?? null, failed: isError, reload: () => void refetch() };
 }
 
 function Tiles({ stats }: { stats: Stats }) {
@@ -216,7 +210,7 @@ function DataTable({ days }: { days: Day[] }) {
 declare const __BUILD_VERSION__: string;
 export const buildVersion: string = __BUILD_VERSION__;
 
-export default function DashboardPage() {
+function DashboardContent() {
   const { stats, failed, reload } = useStats();
 
   if (failed) {
@@ -241,4 +235,27 @@ export default function DashboardPage() {
       {days.length > 0 && <DataTable days={days} />}
     </div>
   );
+}
+
+// Deliver cache updates in a microtask, not a macrotask: results render in the same tick as the fetch.
+notifyManager.setScheduler(queueMicrotask);
+
+// One QueryClient per mount and per user (a user change remounts it, so no cache is shared).
+function DashboardRoot() {
+  const [client] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } },
+      }),
+  );
+  return (
+    <QueryClientProvider client={client}>
+      <DashboardContent />
+    </QueryClientProvider>
+  );
+}
+
+export default function DashboardPage() {
+  const userId = useAuth((s) => s.user?.id);
+  return <DashboardRoot key={userId ?? 'anonymous'} />;
 }
