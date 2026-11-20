@@ -16,14 +16,16 @@ describe('eventLog', () => {
     emit('products:changed', { id: 1, kind: 'created' });
     emit('products:changed', { id: 2, kind: 'updated' });
     emit('products:changed', { id: 3, kind: 'deleted' });
-    expect(eventLog().map((e) => e.detail.id)).toEqual([3, 2, 1]);
+    expect(eventLog().map((e) => (e.name === 'products:changed' ? e.detail.id : -1))).toEqual([
+      3, 2, 1,
+    ]);
     expect(eventLog()[0]!.name).toBe('products:changed');
   });
 
   it('Q-log-cap: 25 emits keep the newest 20', async () => {
     const { eventLog, emit } = await fresh();
     for (let id = 1; id <= 25; id++) emit('products:changed', { id, kind: 'created' });
-    const ids = eventLog().map((e) => e.detail.id);
+    const ids = eventLog().map((e) => (e.name === 'products:changed' ? e.detail.id : -1));
     expect(ids).toHaveLength(20);
     expect(ids[0]).toBe(25);
     expect(ids[19]).toBe(6);
