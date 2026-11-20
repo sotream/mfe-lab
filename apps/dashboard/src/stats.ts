@@ -1,12 +1,13 @@
 import type { Stats } from '@mfe/api-client';
+import type { Locale } from '@mfe/ui';
 
-// Integer math on cents, so large amounts never drift: 123456789 -> "$1,234,567.89".
-export function formatCents(cents: number): string {
-  const abs = Math.abs(cents);
-  const dollars = Math.trunc(abs / 100).toLocaleString('en-US');
-  const rest = String(abs % 100).padStart(2, '0');
-  return `${cents < 0 ? '-' : ''}$${dollars}.${rest}`;
-}
+// Axis tick: day and month only, DE 04.10. and EN 04/10 (the day key stays ISO).
+export const formatDayMonth = (iso: string, locale: Locale): string =>
+  new Date(iso).toLocaleDateString(locale === 'de' ? 'de-DE' : 'en-GB', {
+    day: '2-digit',
+    month: '2-digit',
+    timeZone: 'UTC',
+  });
 
 const DAY_MS = 86_400_000;
 const toUtc = (date: string) => Date.parse(`${date}T00:00:00Z`);

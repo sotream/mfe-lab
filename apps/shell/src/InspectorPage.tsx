@@ -9,7 +9,7 @@ import {
 } from '@mfe/api-client';
 import { useAuth } from '@mfe/auth-store';
 import { emit } from '@mfe/events';
-import { Button, Table } from '@mfe/ui';
+import { Button, formatTime, Table, useLocale } from '@mfe/ui';
 import { getInstance } from '@module-federation/enhanced/runtime';
 import {
   useEffect,
@@ -18,6 +18,7 @@ import {
   type Dispatch,
   type SetStateAction,
 } from 'react';
+import { useT } from './messages.ts';
 import { eventLog, subscribeEventLog } from './eventLog.ts';
 import {
   releaseManifestUrl,
@@ -44,6 +45,7 @@ async function fetchVersions(name: RemoteName): Promise<string[]> {
 }
 
 function VersionSelect({ name }: { name: RemoteName }) {
+  const t = useT().inspector;
   const [versions, setVersions] = useState<string[]>([]);
   const current = useSyncExternalStore(subscribeRemotes, () => remoteEntry(name));
   useEffect(() => {
@@ -57,7 +59,7 @@ function VersionSelect({ name }: { name: RemoteName }) {
   return (
     <select
       className="ds1-input"
-      aria-label={`${name} version`}
+      aria-label={t.versionOf(name)}
       value={value}
       onChange={(e) =>
         setRemoteEntry(name, e.target.value ? releaseManifestUrl(name, e.target.value) : null)
@@ -76,6 +78,8 @@ function VersionSelect({ name }: { name: RemoteName }) {
 const readShared = () => sharedRows(getInstance()?.shareScopeMap.default as ShareScope | undefined);
 
 function Flags({ flags, setFlags }: { flags: Flag[]; setFlags: Dispatch<SetStateAction<Flag[]>> }) {
+  const tt = useT();
+  const t = tt.inspector;
   const user = useAuth((s) => s.user);
   const isAdmin = user?.role === 'admin';
   const [failed, setFailed] = useState(false);
@@ -97,7 +101,7 @@ function Flags({ flags, setFlags }: { flags: Flag[]; setFlags: Dispatch<SetState
     try {
       const updated = await setFlag(name, enabled);
       emit('flags:changed', { name, enabled: updated.enabled });
-      emit('a11y:announce', { message: `${name} turned ${updated.enabled ? 'on' : 'off'}` });
+      emit('a11y:announce', { message: tt.flagToggled(name, updated.enabled) });
       setFlags((all) => all.map((f) => (f.name === name ? updated : f)));
     } catch {
       setFailed(true);
@@ -106,22 +110,22 @@ function Flags({ flags, setFlags }: { flags: Flag[]; setFlags: Dispatch<SetState
 
   return (
     <section className="panel">
-      <h2>Flags</h2>
+      <h2>{t.flags}</h2>
       {!signedIn ? (
-        <p className="panel-body">Sign in to see flags</p>
+        <p className="panel-body">{t.signInFlags}</p>
       ) : (
         <>
           {failed && (
             <p role="alert" className="panel-body">
-              Could not load or change flags
+              {t.flagsFailed}
             </p>
           )}
-          <Table label="Flags">
+          <Table label={t.flags}>
             <thead>
               <tr>
-                <th>Flag</th>
-                <th>Enabled</th>
-                <th>Description</th>
+                <th>{t.flag}</th>
+                <th>{t.enabled}</th>
+                <th>{t.description}</th>
               </tr>
             </thead>
             <tbody>
@@ -150,6 +154,9 @@ function Flags({ flags, setFlags }: { flags: Flag[]; setFlags: Dispatch<SetState
 }
 
 function Errors() {
+  const tt = useT();
+  const t = tt.inspector;
+  const locale = useLocale();
   const isAdmin = useAuth((s) => s.user?.role === 'admin');
   const [summary, setSummary] = useState<{ remote: string; count: number }[]>([]);
   const [rows, setRows] = useState<ErrorRow[]>([]);
@@ -166,7 +173,7 @@ function Errors() {
         setSummary([]),
         setRows([]),
         setFailed(false),
-        emit('a11y:announce', { message: 'Errors cleared' })
+        emit('a11y:announce', { message: tt.errorsCleared })
       ),
       () => setFailed(true),
     );
@@ -177,12 +184,12 @@ function Errors() {
 
   return (
     <section className="panel">
-      <h2>Errors</h2>
+      <h2>{t.errors}</h2>
       {!isAdmin ? (
-        <p className="panel-body">Admins only</p>
+        <p className="panel-body">{t.adminsOnly}</p>
       ) : (
         <>
-          {failed && <p className="panel-body">Could not load errors</p>}
+          {failed && <p className="panel-body">{t.errorsFailed}</p>}
           <div className="panel-body panel-toolbar">
             <ul className="chips">
               {summary.map((s) => (
@@ -190,31 +197,31 @@ function Errors() {
               ))}
             </ul>
             <Button className="ds1-button--sm" onClick={() => void refresh()}>
-              Refresh
+              {t.refresh}
             </Button>
             <Button className="ds1-button--sm" onClick={() => void clear()}>
-              Clear
+              {t.clear}
             </Button>
           </div>
-          <Table label="Errors">
+          <Table label={t.errors}>
             <thead>
               <tr>
-                <th>Time</th>
-                <th>Remote</th>
-                <th>Build</th>
-                <th>Kind</th>
-                <th>Message</th>
+                <th>{t.time}</th>
+                <th>{t.remote}</th>
+                <th>{t.build}</th>
+                <th>{t.kind}</th>
+                <th>{t.message}</th>
               </tr>
             </thead>
             <tbody>
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={5}>No errors</td>
+                  <td colSpan={5}>{t.noErrors}</td>
                 </tr>
               )}
               {rows.map((e) => (
                 <tr key={e.id}>
-                  <td className="ds1-mono">{new Date(e.at).toLocaleTimeString('en-GB')}</td>
+                  <td className="ds1-mono">{formatTime(new Date(e.at), locale)}</td>
                   <td>{e.remote}</td>
                   <td className="ds1-mono">{e.build}</td>
                   <td>
@@ -232,6 +239,8 @@ function Errors() {
 }
 
 export default function InspectorPage() {
+  const t = useT().inspector;
+  const locale = useLocale();
   const events = useSyncExternalStore(subscribeEventLog, eventLog);
   const [pings, setPings] = useState<Record<string, Ping>>({});
   // Re-run the ping effect (and show the right Manifest) whenever a selection changes.
@@ -266,42 +275,40 @@ export default function InspectorPage() {
   return (
     <>
       <div className="page-head">
-        <h1 tabIndex={-1}>Federation inspector</h1>
-        <p className="lead">
-          Live state of this page: remotes, shared modules, flags, errors and events.
-        </p>
+        <h1 tabIndex={-1}>{t.h1}</h1>
+        <p className="lead">{t.lead}</p>
       </div>
       <dl className="ds1-readings readings">
         <div>
-          <dt>Remotes up</dt>
+          <dt>{t.remotesUp}</dt>
           <dd>{`${upCount}/${remotes.length}`}</dd>
         </div>
         <div>
-          <dt>Shared modules</dt>
+          <dt>{t.sharedModules}</dt>
           <dd>
             {rows.length}
-            {allOnce && <span className="reading-note">loaded once</span>}
+            {allOnce && <span className="reading-note">{t.loadedOnce}</span>}
           </dd>
         </div>
         <div>
-          <dt>Flags on</dt>
+          <dt>{t.flagsOn}</dt>
           <dd>{user ? `${flags.filter((f) => f.enabled).length}/${flags.length}` : '—'}</dd>
         </div>
         <div>
-          <dt>Events</dt>
+          <dt>{t.events}</dt>
           <dd>{events.length}</dd>
         </div>
       </dl>
       <section className="panel">
-        <h2>Remotes</h2>
-        <Table label="Remotes">
+        <h2>{t.remotes}</h2>
+        <Table label={t.remotes}>
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Manifest</th>
-              <th>Version</th>
-              <th>Status</th>
-              <th>Use</th>
+              <th>{t.name}</th>
+              <th>{t.manifest}</th>
+              <th>{t.version}</th>
+              <th>{t.status}</th>
+              <th>{t.use}</th>
             </tr>
           </thead>
           <tbody>
@@ -312,7 +319,7 @@ export default function InspectorPage() {
                 <td className="ds1-mono">{pings[name]?.version ?? '—'}</td>
                 <td>
                   <span className={`chip chip--${pings[name]?.status ?? 'idle'}`}>
-                    {pings[name]?.status ?? 'checking…'}
+                    {pings[name] ? t[pings[name].status] : t.checking}
                   </span>
                 </td>
                 <td>
@@ -324,21 +331,21 @@ export default function InspectorPage() {
         </Table>
       </section>
       <section className="panel">
-        <h2>Shared dependencies</h2>
-        <Table label="Shared dependencies">
+        <h2>{t.shared}</h2>
+        <Table label={t.shared}>
           <thead>
             <tr>
-              <th>Package</th>
-              <th>Required</th>
-              <th>Loaded</th>
-              <th>Singleton</th>
-              <th>Status</th>
+              <th>{t.pkg}</th>
+              <th>{t.required}</th>
+              <th>{t.loaded}</th>
+              <th>{t.singleton}</th>
+              <th>{t.status}</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 && (
               <tr>
-                <td colSpan={5}>No shared modules registered yet</td>
+                <td colSpan={5}>{t.noShared}</td>
               </tr>
             )}
             {rows.map((r) => (
@@ -347,11 +354,11 @@ export default function InspectorPage() {
                 <td className="ds1-mono">{r.required}</td>
                 <td className="ds1-mono">{r.loaded.join(', ') || '—'}</td>
                 <td>
-                  <span className="chip">{r.singleton ? 'yes' : 'no'}</span>
+                  <span className="chip">{r.singleton ? t.yes : t.no}</span>
                 </td>
                 <td>
                   <span className={`chip ${r.loaded.length === 1 ? 'chip--up' : ''}`}>
-                    {r.status}
+                    {r.loaded.length === 0 ? t.notLoaded : t.loadedN(r.loaded.length)}
                   </span>
                 </td>
               </tr>
@@ -362,26 +369,26 @@ export default function InspectorPage() {
       <Flags flags={flags} setFlags={setFlags} />
       <Errors />
       <section className="panel">
-        <h2>Events</h2>
-        <Table className="trail" label="Events">
+        <h2>{t.events}</h2>
+        <Table className="trail" label={t.events}>
           <thead>
             <tr>
-              <th>Time</th>
-              <th>Event</th>
-              <th>Payload</th>
+              <th>{t.time}</th>
+              <th>{t.event}</th>
+              <th>{t.payload}</th>
             </tr>
           </thead>
           <tbody>
             {events.length === 0 && (
               <tr>
                 <td colSpan={3} className="empty">
-                  No events yet
+                  {t.noEvents}
                 </td>
               </tr>
             )}
             {events.map((e) => (
               <tr key={`${e.at}-${e.name}-${JSON.stringify(e.detail)}`}>
-                <td className="ds1-mono time">{new Date(e.at).toLocaleTimeString('en-GB')}</td>
+                <td className="ds1-mono time">{formatTime(new Date(e.at), locale)}</td>
                 <td className="ds1-mono">{e.name}</td>
                 <td className="ds1-mono payload">
                   <code>{JSON.stringify(e.detail)}</code>
@@ -392,22 +399,21 @@ export default function InspectorPage() {
         </Table>
       </section>
       <section className="panel">
-        <h2>How to break this</h2>
+        <h2>{t.breakTitle}</h2>
         <ol className="panel-body">
+          <li>{t.break1}</li>
           <li>
-            Stop a remote dev server: its status turns to down, the frame shows the fallback and the
-            rest of the shell keeps working.
+            {t.break2a}
+            <code>singleton: true</code>
+            {t.break2b}
+            <code>federation.shared.ts</code>
+            {t.break2c}
           </li>
+          <li>{t.break3}</li>
           <li>
-            Remove <code>singleton: true</code> for react in <code>federation.shared.ts</code>: a
-            second React loads and hooks throw &quot;Invalid hook call&quot;.
-          </li>
-          <li>
-            Rebuild only one remote: its build stamp changes here and in its frame, while the shell
-            stamp stays the same.
-          </li>
-          <li>
-            Set a <code>requiredVersion</code> the host cannot satisfy: watch the console warning.
+            {t.break4a}
+            <code>requiredVersion</code>
+            {t.break4b}
           </li>
         </ol>
       </section>

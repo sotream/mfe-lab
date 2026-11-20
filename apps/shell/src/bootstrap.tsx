@@ -1,4 +1,5 @@
 import { installGlobalHandlers } from '@mfe/telemetry';
+import { detectLocale } from '@mfe/ui';
 import '@mfe/ui/base.css';
 import { createRoot } from 'react-dom/client';
 import { RouterProvider } from 'react-router/dom';
@@ -21,6 +22,7 @@ installGlobalHandlers({
   origin: null,
   ignoreOrigins: [location.origin, ...remoteManifests.map((r) => new URL(r.manifest).origin)],
 });
+document.documentElement.lang = detectLocale();
 startEventLog();
 createRoot(document.getElementById('root')!).render(<RouterProvider router={router} />);
 

@@ -1,9 +1,12 @@
 import { login, useAuth } from '@mfe/auth-store';
-import { Button } from '@mfe/ui';
+import { Button, detectLocale } from '@mfe/ui';
 import '@mfe/ui/base.css';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router';
+import { useT } from './messages.ts';
 import DashboardPage from './DashboardPage.tsx';
+
+document.documentElement.lang = detectLocale();
 
 const ROLES = ['admin', 'editor', 'viewer'] as const;
 
@@ -12,9 +15,10 @@ const ROLES = ['admin', 'editor', 'viewer'] as const;
 // Only the standalone page renders this bar; inside the shell the user comes from its login.
 function StandaloneBar() {
   const user = useAuth((s) => s.user);
+  const t = useT().standalone;
   return (
     <div className="standalone-bar">
-      <span className="standalone-title">Standalone dev. Sign in as</span>
+      <span className="standalone-title">{t.title}</span>
       {ROLES.map((role) => (
         <Button
           key={role}
@@ -24,7 +28,7 @@ function StandaloneBar() {
           {role}
         </Button>
       ))}
-      <span>{user ? `signed in as ${user.email} (${user.role})` : 'not signed in'}</span>
+      <span>{user ? t.signedIn(user.email, user.role) : t.signedOut}</span>
     </div>
   );
 }

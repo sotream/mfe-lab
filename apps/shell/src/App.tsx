@@ -1,13 +1,16 @@
 import { logout, useAuth } from '@mfe/auth-store';
 import { report } from '@mfe/telemetry';
-import { Button, RemoteFrame } from '@mfe/ui';
+import { Button, RemoteFrame, useLocale, type Locale } from '@mfe/ui';
 import { useEffect, useLayoutEffect, useRef } from 'react';
-import { createBrowserRouter, NavLink, Outlet, useLocation, useNavigate } from 'react-router';
+import { createBrowserRouter, Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router';
+import { DatenschutzPage, ImpressumPage } from './LegalPages.tsx';
 import { LiveRegion } from './LiveRegion.tsx';
 import InspectorPage from './InspectorPage.tsx';
 import { LoginPage } from './LoginPage.tsx';
 import { RequireAuth } from './RequireAuth.tsx';
 import { Wordmark } from './Wordmark.tsx';
+import { setLocale } from './locale.ts';
+import { useT } from './messages.ts';
 import { loadPage, remotePort, type RemoteName } from './remotes.ts';
 
 declare const __BUILD_VERSION__: string;
@@ -23,26 +26,55 @@ const Remote = ({ name, module }: { name: RemoteName; module?: string }) => (
   />
 );
 
-// Page title per top-level route; a remote owns the title below its route (RFC 0011).
-const TITLES: Record<string, string> = {
-  '': 'Home',
-  products: 'Products',
-  dashboard: 'Dashboard',
-  inspector: 'Inspector',
-  login: 'Sign in',
-};
+// Page title per top-level route (key into the messages); a remote owns the title below its route (RFC 0011).
+const TITLE_KEYS = {
+  '': 'home',
+  products: 'products',
+  dashboard: 'dashboard',
+  inspector: 'inspector',
+  login: 'login',
+  impressum: 'impressum',
+  datenschutz: 'datenschutz',
+} as const;
+
+const LOCALES: { locale: Locale; label: string }[] = [
+  { locale: 'de', label: 'Deutsch' },
+  { locale: 'en', label: 'English' },
+];
+
+function LanguageSwitch() {
+  const t = useT();
+  const current = useLocale();
+  return (
+    <div role="group" aria-label={t.language} className="lang-switch">
+      {LOCALES.map(({ locale, label }) => (
+        <Button
+          key={locale}
+          className="ds1-button--sm"
+          lang={locale}
+          aria-label={label}
+          aria-pressed={current === locale}
+          onClick={() => setLocale(locale)}
+        >
+          {locale.toUpperCase()}
+        </Button>
+      ))}
+    </div>
+  );
+}
 
 function Layout() {
   const user = useAuth((s) => s.user);
+  const t = useT();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const firstRender = useRef(true);
 
   // Layout effect: runs before a remote's own effects, so ProductDetail's title wins.
   useLayoutEffect(() => {
-    const title = TITLES[pathname.split('/')[1] ?? ''];
-    if (title) document.title = `${title} – mfe-lab`;
-  }, [pathname]);
+    const key = TITLE_KEYS[(pathname.split('/')[1] ?? '') as keyof typeof TITLE_KEYS];
+    if (key) document.title = `${t.titles[key]} – mfe-lab`;
+  }, [pathname, t]);
 
   // Every navigation after the first render, back and forward included, moves focus to the h1.
   useEffect(() => {
@@ -56,17 +88,18 @@ function Layout() {
   return (
     <>
       <a href="#main" className="skip-link">
-        Skip to content
+        {t.skip}
       </a>
       <header className="topbar">
         <nav className="container">
           <Wordmark />
           <NavLink to="/" end>
-            Home
+            {t.nav.home}
           </NavLink>
-          <NavLink to="/products">Products</NavLink>
-          <NavLink to="/dashboard">Dashboard</NavLink>
-          <NavLink to="/inspector">Inspector</NavLink>
+          <NavLink to="/products">{t.nav.products}</NavLink>
+          <NavLink to="/dashboard">{t.nav.dashboard}</NavLink>
+          <NavLink to="/inspector">{t.nav.inspector}</NavLink>
+          <LanguageSwitch />
           {user ? (
             <div className="nav-user">
               <span className="nav-email">{user.email}</span>
@@ -77,12 +110,12 @@ function Layout() {
                   logout();
                 }}
               >
-                Log out
+                {t.logout}
               </Button>
             </div>
           ) : (
             <NavLink to="/login" className="nav-user">
-              Login
+              {t.login}
             </NavLink>
           )}
         </nav>
@@ -94,8 +127,31 @@ function Layout() {
       <footer className="container">
         <span>shell</span>
         <span className="mono build">{`build ${__BUILD_VERSION__}`}</span>
+        <span className="footer-links">
+          <Link to="/impressum">{t.footer.imprint}</Link>
+          <Link to="/datenschutz">{t.footer.privacy}</Link>
+        </span>
       </footer>
     </>
+  );
+}
+
+function Heading({ k }: { k: 'products' | 'dashboard' }) {
+  const t = useT();
+  return (
+    <div className="page-head">
+      <h1 tabIndex={-1}>{t.nav[k]}</h1>
+    </div>
+  );
+}
+
+function Home() {
+  const t = useT().home;
+  return (
+    <div className="page-head">
+      <h1 tabIndex={-1}>{t.h1}</h1>
+      <p className="lead">{t.lead}</p>
+    </div>
   );
 }
 
@@ -107,13 +163,7 @@ export const router = createBrowserRouter([
         index: true,
         element: (
           <RequireAuth>
-            <div className="page-head">
-              <h1 tabIndex={-1}>One page, three independent apps</h1>
-              <p className="lead">
-                The shell on :3000 loads products and dashboard at runtime. Each is built and
-                deployed on its own.
-              </p>
-            </div>
+            <Home />
             <div className="frames">
               <Remote name="products" />
               <Remote name="dashboard" />
@@ -126,9 +176,7 @@ export const router = createBrowserRouter([
         path: 'products/*',
         element: (
           <RequireAuth>
-            <div className="page-head">
-              <h1 tabIndex={-1}>Products</h1>
-            </div>
+            <Heading k="products" />
             <Remote name="products" module="ProductsApp" />
           </RequireAuth>
         ),
@@ -137,15 +185,15 @@ export const router = createBrowserRouter([
         path: 'dashboard',
         element: (
           <RequireAuth>
-            <div className="page-head">
-              <h1 tabIndex={-1}>Dashboard</h1>
-            </div>
+            <Heading k="dashboard" />
             <Remote name="dashboard" />
           </RequireAuth>
         ),
       },
       { path: 'inspector', element: <InspectorPage /> },
       { path: 'login', element: <LoginPage /> },
+      { path: 'impressum', element: <ImpressumPage /> },
+      { path: 'datenschutz', element: <DatenschutzPage /> },
     ],
   },
 ]);

@@ -439,6 +439,9 @@ importers:
 
   packages/ui:
     dependencies:
+      '@mfe/events':
+        specifier: workspace:*
+        version: link:../events
       react:
         specifier: 'catalog:'
         version: 19.3.1

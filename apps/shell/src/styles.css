@@ -60,7 +60,6 @@
   display: flex;
   gap: var(--ds1-space-sm);
   align-items: center;
-  margin-left: auto;
 }
 
 .nav-email {
@@ -392,4 +391,30 @@ code {
 .switch:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+.lang-switch {
+  display: flex;
+  gap: var(--ds1-space-2xs);
+  align-items: center;
+  margin-left: auto;
+}
+
+.lang-switch [aria-pressed='true'] {
+  border-color: var(--ds1-accent);
+  color: var(--ds1-accent);
+}
+
+.footer-links {
+  display: flex;
+  gap: var(--ds1-space-sm);
+  margin-left: auto;
+}
+
+.legal address {
+  font-style: normal;
+}
+
+.legal-note {
+  color: var(--ds1-muted);
 }

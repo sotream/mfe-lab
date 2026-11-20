@@ -1,11 +1,13 @@
 import { ApiError, getProduct } from '@mfe/api-client';
-import { Button } from '@mfe/ui';
+import { Button, formatDate, formatMoney, formatNumber, useLocale } from '@mfe/ui';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { Link, useParams } from 'react-router';
-import { formatPrice } from './productForm.ts';
+import { useT } from './messages.ts';
 
 export default function ProductDetail() {
+  const t = useT();
+  const locale = useLocale();
   const { id: raw = '' } = useParams();
   const valid = /^[1-9]\d*$/.test(raw);
   const id = Number(raw);
@@ -17,23 +19,23 @@ export default function ProductDetail() {
 
   const notFound = !valid || (error instanceof ApiError && error.status === 404);
   // The remote owns the title of its subtree; the shell sets "Products – mfe-lab" on navigation (RFC 0011).
-  const title = notFound ? 'Product not found' : data?.name;
+  const title = notFound ? t.notFound : data?.name;
   useEffect(() => {
-    if (title) document.title = `${title} – Products – mfe-lab`;
-  }, [title]);
+    if (title) document.title = t.detailTitle(title);
+  }, [title, t]);
 
   let body;
   if (notFound) {
-    body = <p>Product not found</p>;
+    body = <p>{t.notFound}</p>;
   } else if (error) {
     body = (
       <div role="alert">
-        <p>Could not load product</p>
-        <Button onClick={() => void refetch()}>Retry</Button>
+        <p>{t.detailFailed}</p>
+        <Button onClick={() => void refetch()}>{t.retry}</Button>
       </div>
     );
   } else if (!data) {
-    body = <p role="status">Loading…</p>;
+    body = <p role="status">{t.loading}</p>;
   } else {
     body = (
       <>
@@ -44,16 +46,19 @@ export default function ProductDetail() {
             <dd>{data.sku}</dd>
           </div>
           <div className="price">
-            <dt>Price</dt>
-            <dd>{formatPrice(data.price_cents)}</dd>
+            <dt>{t.columns.price}</dt>
+            <dd>
+              {formatMoney(data.price_cents, locale)}
+              <small className="vat">{t.vat}</small>
+            </dd>
           </div>
           <div>
-            <dt>Stock</dt>
-            <dd>{data.stock}</dd>
+            <dt>{t.columns.stock}</dt>
+            <dd>{formatNumber(data.stock, locale)}</dd>
           </div>
           <div>
-            <dt>Created</dt>
-            <dd>{data.created_at.slice(0, 10)}</dd>
+            <dt>{t.columns.created}</dt>
+            <dd>{formatDate(data.created_at, locale)}</dd>
           </div>
         </dl>
       </>
@@ -62,7 +67,7 @@ export default function ProductDetail() {
   return (
     <div className="products">
       <Link to=".." className="product-back">
-        Back to products
+        {t.back}
       </Link>
       {body}
     </div>
