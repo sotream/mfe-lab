@@ -333,9 +333,9 @@ Interactive OpenAPI docs: <http://localhost:4000/docs> (spec at `/docs/json`; bo
 | 0005 | [Prefetch remotes on idle](docs/rfc/0005-prefetch-remotes.md)                         | Accepted | After first render the shell preloads both remotes on idle; measured 1201 to 823 ms on Fast 4G.                                  |
 | 0006 | [Data between remotes](docs/rfc/0006-data-between-remotes.md)                         | Accepted | One TanStack Query client per remote, Redux Toolkit local to products, typed `window` events between remotes; nothing shared.    |
 | 0007 | [Routing inside remotes](docs/rfc/0007-routing-inside-remotes.md)                     | Accepted | The shell mounts a remote at `<name>/*`; the remote owns the subtree with relative links, on the shared router.                  |
-| 0008 | [Design system versioning](docs/rfc/0008-design-system-versioning.md)                 | Draft    | `@mfe/ui` is a non-singleton semver share; CSS carries a major prefix (`ds1-`), so two versions can coexist.                     |
+| 0008 | [Design system versioning](docs/rfc/0008-design-system-versioning.md)                 | Accepted | `@mfe/ui` is a non-singleton semver share; CSS carries a major prefix (`ds1-`), so two versions can coexist.                     |
 | 0009 | [Feature flags](docs/rfc/0009-feature-flags.md)                                       | Accepted | Flags live in the API; each remote reads them with its own query client; `flags:changed` refreshes them without a reload.        |
-| 0010 | [Error tracking per remote](docs/rfc/0010-error-tracking.md)                          | Draft    | Frames and `window` handlers report to the API with remote and build; admins read them in the inspector.                         |
+| 0010 | [Error tracking per remote](docs/rfc/0010-error-tracking.md)                          | Accepted | Frames and `window` handlers report to the API with remote and build; admins read them in the inspector.                         |
 
 ## Run CI locally
 

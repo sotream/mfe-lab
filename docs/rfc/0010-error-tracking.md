@@ -1,6 +1,6 @@
 # RFC 0010: Error tracking per remote
 
-- **Status:** Draft
+- **Status:** Accepted
 - **Author:** mfe-lab
 - **Date:** 2026-11-20
 - **Related:** [RFC 0001](0001-module-federation-for-frontend.md), [RFC 0006](0006-data-between-remotes.md), [RFC 0009](0009-feature-flags.md)
