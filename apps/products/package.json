@@ -13,9 +13,11 @@
     "@mfe/api-client": "workspace:*",
     "@mfe/auth-store": "workspace:*",
     "@mfe/events": "workspace:*",
+    "@reduxjs/toolkit": "catalog:",
     "@tanstack/react-query": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
+    "react-redux": "catalog:",
     "react-router": "catalog:"
   },
   "devDependencies": {
