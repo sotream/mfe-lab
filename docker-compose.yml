@@ -1,0 +1,26 @@
+services:
+  api:
+    build: { context: ., target: api }
+    environment:
+      HOST: 0.0.0.0
+      # Demo-only secret. Never reuse outside the lab.
+      JWT_SECRET: demo-only-secret-do-not-use-in-production-0123456789
+    volumes:
+      - api-data:/data
+  shell:
+    build: { context: ., target: web, args: { APP: shell } }
+    environment: { PORT: '3000' }
+    ports: ['3000:3000']
+    depends_on: [api]
+  products:
+    build: { context: ., target: web, args: { APP: products } }
+    environment: { PORT: '3001' }
+    ports: ['3001:3001']
+    depends_on: [api]
+  dashboard:
+    build: { context: ., target: web, args: { APP: dashboard } }
+    environment: { PORT: '3002' }
+    ports: ['3002:3002']
+    depends_on: [api]
+volumes:
+  api-data:

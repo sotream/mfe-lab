@@ -86,6 +86,11 @@ Goal: weekly grouped dependency update PRs via `.github/dependabot.yml`, with no
 
 - **Done when:** the YAML parses, and the README "Dependencies" section describes the process.
 
+## T10 Docker + compose
+
+- **Goal:** `docker compose up --build` runs the whole lab: nginx serves shell (3000), products (3001) and dashboard (3002) from their builds, and the API runs behind `/api/` on each origin. The DB lives in a named volume.
+- **Done when:** :3000 has a working login with both remotes; `docker compose stop products` makes only the products frame fall back, and `start` plus Retry recovers; `/inspector` shows `loaded once`; images build from a clean clone.
+
 ## Later (not now)
 
-Dockerfile + compose.
+Nothing planned.
