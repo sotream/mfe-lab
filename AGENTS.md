@@ -10,6 +10,7 @@ Project: `mfe-lab`, a private learning monorepo for Federated Micro Frontends. R
 - Tests ship in the same change as the code. Run `pnpm lint && pnpm typecheck && pnpm test` before finishing.
 - One PR per task, squash merge, title in conventional commits (`feat(api): add products CRUD`). Few commits, no chains of tiny fixups.
 - CI runs on GitHub Actions for every PR; it must be green before merge. To reproduce it locally, run act from a fresh clone of the committed branch: `d=$(mktemp -d) && git clone -q -b <branch> "$PWD" "$d" && (cd "$d" && act pull_request -P ubuntu-latest=catthehacker/ubuntu:act-latest); rm -rf "$d"`. Not from a worktree: its `.git` points to a host path that does not exist in the container.
+- **Commit email is the GitHub noreply address only** (`71038063+sotream@users.noreply.github.com`, set in the repo-local git config). Never commit or push with any other email; a pre-push hook rejects such commits. Check with `git log -1 --format='%ae %ce'`.
 - **No AI attribution** in commits or PR text: no `Co-Authored-By`, no "Generated with" lines.
 - `main` is protected: PR only. The owner merges unless told otherwise.
 - If the task conflicts with an RFC, stop and write the question in the PR; do not silently diverge. Decision changes = edit the RFC in the same PR.
