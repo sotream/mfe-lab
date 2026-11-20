@@ -75,6 +75,11 @@ T0 ─┬─ T1 ── T2 ── T3 ───────┐
 - **Goal:** record how Native Federation compares with Module Federation 2 for this repo, with sourced facts, a migration-cost estimate and the criteria for switching. Docs only, no code.
 - **Done when:** `docs/rfc/0003-native-federation-comparison.md` is `Accepted` (decision: stay on MF2), indexed in `docs/rfc/README.md`, and linked from the README.
 
+## T12 Versioned remotes
+
+- `pnpm --filter @mfe/<remote> release <version>` freezes a build into `apps/<remote>/releases/<version>/` and updates `releases/index.json`. Dev servers serve `releases/`. The inspector gets a `Use` column to switch a remote between `dev` and a release by manifest URL, with no shell rebuild (RFC 0004).
+- **Done when:** after releasing products 1.0.0 and 1.1.0, switching products to 1.1.0 in `/inspector` makes Home show `build 1.1.0`, and switching back to `dev` restores the dev stamp.
+
 ## T13 Dependabot
 
 Goal: weekly grouped dependency update PRs via `.github/dependabot.yml`, with no Renovate app.
@@ -83,4 +88,4 @@ Goal: weekly grouped dependency update PRs via `.github/dependabot.yml`, with no
 
 ## Later (not now)
 
-Dockerfile + compose, versioned remotes via manifest.
+Dockerfile + compose.
