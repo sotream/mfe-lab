@@ -29,6 +29,7 @@ import {
   type FormValues,
 } from './productForm.ts';
 import { Link } from 'react-router';
+import { useFlag, useFlagsSync } from './flags.ts';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import {
   closeDialogs,
@@ -257,6 +258,7 @@ function ProductsTable({
   query,
   canWrite,
   base,
+  detailLinks,
   onSort,
   onEdit,
   onDelete,
@@ -265,6 +267,7 @@ function ProductsTable({
   query: ListQuery;
   canWrite: boolean;
   base: string;
+  detailLinks: boolean;
   onSort: (field: Sort) => void;
   onEdit: (p: Product) => void;
   onDelete: (p: Product) => void;
@@ -290,9 +293,7 @@ function ProductsTable({
         {items.map((p) => (
           <tr key={p.id}>
             <td>{p.sku}</td>
-            <td>
-              <Link to={`${base}${p.id}`}>{p.name}</Link>
-            </td>
+            <td>{detailLinks ? <Link to={`${base}${p.id}`}>{p.name}</Link> : p.name}</td>
             <td>{formatPrice(p.price_cents)}</td>
             <td>{p.stock}</td>
             <td>{p.created_at.slice(0, 10)}</td>
@@ -336,6 +337,12 @@ function Content({
   return children;
 }
 
+// Error tracking demo: throws on render while the products.crash flag is on.
+function CrashWhenFlagged() {
+  if (useFlag('products.crash', false)) throw new Error('products.crash flag is on');
+  return null;
+}
+
 declare const __BUILD_VERSION__: string;
 export const buildVersion: string = __BUILD_VERSION__;
 
@@ -349,6 +356,8 @@ export function ProductsContent({ base }: { base: string }) {
   const deleting = useAppSelector((s) => s.productsUi.deleting);
   const { query, data, failed, reload } = useProductList();
   const { create, update, remove } = useProductMutations();
+  useFlagsSync();
+  const detailLinks = useFlag('products.detailPage', true);
 
   // Debounce: one request 300 ms after the last keystroke; a new search goes back to page 1.
   useEffect(() => {
@@ -369,6 +378,7 @@ export function ProductsContent({ base }: { base: string }) {
 
   return (
     <div className="products">
+      <CrashWhenFlagged />
       <div className="products-toolbar">
         <input
           type="search"
@@ -390,6 +400,7 @@ export function ProductsContent({ base }: { base: string }) {
           query={query}
           canWrite={canWrite}
           base={base}
+          detailLinks={detailLinks}
           onSort={(f) => dispatch(setSort(f))}
           onEdit={(p) => dispatch(openEdit(p))}
           onDelete={(p) => dispatch(openDelete(p))}

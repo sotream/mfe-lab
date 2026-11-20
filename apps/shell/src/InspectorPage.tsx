@@ -1,3 +1,6 @@
+import { listFlags, setFlag, type Flag } from '@mfe/api-client';
+import { useAuth } from '@mfe/auth-store';
+import { emit } from '@mfe/events';
 import { getInstance } from '@module-federation/enhanced/runtime';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { eventLog, subscribeEventLog } from './eventLog.ts';
@@ -55,6 +58,75 @@ function VersionSelect({ name }: { name: RemoteName }) {
 }
 
 const readShared = () => sharedRows(getInstance()?.shareScopeMap.default as ShareScope | undefined);
+
+function Flags() {
+  const user = useAuth((s) => s.user);
+  const isAdmin = user?.role === 'admin';
+  const [flags, setFlags] = useState<Flag[]>([]);
+  const [failed, setFailed] = useState(false);
+  const signedIn = user !== null;
+
+  useEffect(() => {
+    if (!signedIn) return;
+    let active = true;
+    listFlags().then(
+      (f) => active && (setFlags(f), setFailed(false)),
+      () => active && setFailed(true),
+    );
+    return () => {
+      active = false;
+    };
+  }, [signedIn]);
+
+  async function toggle(name: string, enabled: boolean) {
+    try {
+      const updated = await setFlag(name, enabled);
+      emit('flags:changed', { name, enabled: updated.enabled });
+      setFlags((all) => all.map((f) => (f.name === name ? updated : f)));
+    } catch {
+      setFailed(true);
+    }
+  }
+
+  return (
+    <>
+      <h2>Flags</h2>
+      {!signedIn ? (
+        <p>Sign in to see flags</p>
+      ) : (
+        <>
+          {failed && <p role="alert">Could not load or change flags</p>}
+          <table>
+            <thead>
+              <tr>
+                <th>Flag</th>
+                <th>Enabled</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              {flags.map((f) => (
+                <tr key={f.name}>
+                  <td>{f.name}</td>
+                  <td>
+                    <input
+                      type="checkbox"
+                      aria-label={f.name}
+                      checked={f.enabled}
+                      disabled={!isAdmin}
+                      onChange={(e) => void toggle(f.name, e.target.checked)}
+                    />
+                  </td>
+                  <td>{f.description}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
+    </>
+  );
+}
 
 export default function InspectorPage() {
   const events = useSyncExternalStore(subscribeEventLog, eventLog);
@@ -139,6 +211,7 @@ export default function InspectorPage() {
           ))}
         </tbody>
       </table>
+      <Flags />
       <h2>Events</h2>
       <table>
         <thead>

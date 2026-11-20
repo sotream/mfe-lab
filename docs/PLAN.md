@@ -136,6 +136,11 @@ Goal: weekly grouped dependency update PRs via `.github/dependabot.yml`, with no
 - **Goal:** `@mfe/ui` gets a real version (1.0.0), a changelog, `ds1-` tokens and three components (`Button`, `Table`, `Field`), shared as a non-singleton so remotes can run different compatible versions (RFC 0008). Products and dashboard use the components; the inspector shows a `Singleton` column.
 - **Done when:** products and dashboard render `data-ds` components with unchanged roles and texts, the three `mf-manifest.json` list `@mfe/ui` 1.0.0 with `singleton: false`, the README "Design system versions" walkthrough works, and `pnpm lint && pnpm typecheck && pnpm test` pass.
 
+## T23 Feature flags
+
+- **Goal:** runtime flags in the API (`002_flags.sql`, `GET /flags`, admin `PATCH /flags/:name`), read by remotes with `useFlag(name, fallback)` and refreshed by the `flags:changed` event; an inspector `Flags` section lets an admin toggle them (RFC 0009).
+- **Done when:** as admin, unchecking `dashboard.revenue` in the inspector removes the Revenue by status section on Home and checking it brings it back; `products.detailPage` off makes names plain text; `products.crash` on makes the products frame show its error fallback; viewers see disabled checkboxes; `pnpm lint && pnpm typecheck && pnpm test` pass.
+
 ## Later (not now)
 
 Nothing planned.

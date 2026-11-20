@@ -91,3 +91,9 @@ export type Stats = {
 };
 
 export const getStats = () => request<Stats>('/stats');
+
+export type Flag = { name: string; enabled: boolean; description: string };
+
+export const listFlags = () => request<Flag[]>('/flags');
+export const setFlag = (name: string, enabled: boolean) =>
+  request<Flag>(`/flags/${encodeURIComponent(name)}`, { method: 'PATCH', body: { enabled } });
