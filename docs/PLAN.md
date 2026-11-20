@@ -70,6 +70,12 @@ T0 ─┬─ T1 ── T2 ── T3 ───────┐
 - README with 3-command start, mermaid architecture, screenshots/GIF. Update RFC statuses to `Accepted`, fix any drift.
 - CI runs Playwright headless.
 
+## T13 Dependabot
+
+Goal: weekly grouped dependency update PRs via `.github/dependabot.yml`, with no Renovate app.
+
+- **Done when:** the YAML parses, and the README "Dependencies" section describes the process.
+
 ## Later (not now)
 
-Dockerfile + compose, Native Federation variant for comparison RFC, versioned remotes via manifest, Renovate/Dependabot.
+Dockerfile + compose, Native Federation variant for comparison RFC, versioned remotes via manifest.

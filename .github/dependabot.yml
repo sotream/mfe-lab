@@ -1,0 +1,51 @@
+version: 2
+updates:
+  # pnpm workspace (root, apps/*, packages/*) and the pnpm catalog in pnpm-workspace.yaml.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore(deps)
+    groups:
+      react:
+        patterns:
+          - react
+          - react-dom
+          - '@types/react*'
+          - react-router
+      federation:
+        patterns:
+          - '@module-federation/*'
+          - '@rspack/*'
+      lint-test:
+        patterns:
+          - eslint*
+          - '@eslint/*'
+          - typescript-eslint
+          - prettier
+          - vitest
+          - '@testing-library/*'
+          - '@playwright/test'
+          - jsdom
+      minor-and-patch:
+        patterns:
+          - '*'
+        update-types:
+          - minor
+          - patch
+    ignore:
+      # typescript-eslint supports TypeScript < 6.1 only; review TS majors by hand.
+      - dependency-name: typescript
+        update-types:
+          - version-update:semver-major
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: chore(deps)
