@@ -27,6 +27,7 @@ import {
   type FormErrors,
   type FormValues,
 } from './productForm.ts';
+import { Link } from 'react-router';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import {
   closeDialogs,
@@ -266,6 +267,7 @@ function ProductsTable({
   items,
   query,
   canWrite,
+  base,
   onSort,
   onEdit,
   onDelete,
@@ -273,6 +275,7 @@ function ProductsTable({
   items: Product[];
   query: ListQuery;
   canWrite: boolean;
+  base: string;
   onSort: (field: Sort) => void;
   onEdit: (p: Product) => void;
   onDelete: (p: Product) => void;
@@ -298,7 +301,9 @@ function ProductsTable({
         {items.map((p) => (
           <tr key={p.id}>
             <td>{p.sku}</td>
-            <td>{p.name}</td>
+            <td>
+              <Link to={`${base}${p.id}`}>{p.name}</Link>
+            </td>
             <td>{formatPrice(p.price_cents)}</td>
             <td>{p.stock}</td>
             <td>{p.created_at.slice(0, 10)}</td>
@@ -345,7 +350,8 @@ function Content({
 declare const __BUILD_VERSION__: string;
 export const buildVersion: string = __BUILD_VERSION__;
 
-function ProductsContent() {
+// base is the link prefix to a detail page: '' inside ProductsApp (relative), '/products/' on Home.
+export function ProductsContent({ base }: { base: string }) {
   const role = useAuth((s) => s.user?.role);
   const canWrite = role === 'admin' || role === 'editor';
   const [text, setText] = useState('');
@@ -390,6 +396,7 @@ function ProductsContent() {
           items={data?.items ?? []}
           query={query}
           canWrite={canWrite}
+          base={base}
           onSort={(f) => dispatch(setSort(f))}
           onEdit={(p) => dispatch(openEdit(p))}
           onDelete={(p) => dispatch(openDelete(p))}
@@ -435,7 +442,7 @@ notifyManager.setScheduler(queueMicrotask);
 
 // One QueryClient and one UI store per mount and per user: a user change remounts this, so no cache is shared.
 // retry/refocus off keeps the explicit Retry button and today's behaviour.
-function ProductsRoot() {
+export function ProductsRoot({ children }: { children: ReactNode }) {
   const [client] = useState(
     () =>
       new QueryClient({
@@ -445,14 +452,16 @@ function ProductsRoot() {
   const [store] = useState(makeStore);
   return (
     <Provider store={store}>
-      <QueryClientProvider client={client}>
-        <ProductsContent />
-      </QueryClientProvider>
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
     </Provider>
   );
 }
 
 export default function ProductsPage() {
   const userId = useAuth((s) => s.user?.id);
-  return <ProductsRoot key={userId ?? 'anonymous'} />;
+  return (
+    <ProductsRoot key={userId ?? 'anonymous'}>
+      <ProductsContent base="/products/" />
+    </ProductsRoot>
+  );
 }

@@ -126,6 +126,11 @@ Goal: weekly grouped dependency update PRs via `.github/dependabot.yml`, with no
 - **Goal:** the README reads in two minutes: pitch and infographic first, then quick start, "Things to see" with a screenshot each (the six brief points plus versions, events and cross-remote sync), data-flow diagrams, an RFC index, and an accurate command for every task. Screenshots are refreshed at 1280x900.
 - **Done when:** `docs/img/architecture.svg` (under 60 KB, explicit background) renders without overlapping text; the README has the sequence diagram and the state-ownership flowchart; `docs/screenshots/` holds 1 to 8 plus `9a`/`9b`, each at most 300 KB; `pnpm lint && pnpm typecheck && pnpm test` pass.
 
+## T21 Nested routes inside the products remote
+
+- **Goal:** the products remote owns its sub-routes: the shell mounts it at `products/*` and the remote serves the list (`index`) and a product detail page (`:id`) with relative links (RFC 0007). Home keeps `ProductsPage`, with names linking to `/products/<id>`.
+- **Done when:** clicking a product name opens `/products/<id>` with its details, the back button returns to the list with the same page and sort, a cold load of `/products/<id>` works (after login), `:3001/5` shows the detail standalone, and `pnpm lint && pnpm typecheck && pnpm test` pass.
+
 ## Later (not now)
 
 Nothing planned.
