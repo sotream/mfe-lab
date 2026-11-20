@@ -119,6 +119,36 @@ describe('InspectorPage', () => {
     expect(cells('lodash')).toEqual(['lodash', '—', '—', 'no', 'not loaded']);
   });
 
+  it('Q-inspector-singleton: Singleton cell reads yes for singleton 1 and no for singleton false', async () => {
+    stubFetch(() => manifest('v'));
+    rt.instance = {
+      shareScopeMap: {
+        default: {
+          react: {
+            '19.1.0': { from: 'shell', shareConfig: { singleton: 1, requiredVersion: '^19.0.0' } },
+          },
+          '@mfe/ui': {
+            '1.0.0': {
+              from: 'products',
+              shareConfig: { singleton: false, requiredVersion: '^1.0.0' },
+            },
+          },
+        },
+      },
+    };
+    await mount();
+    const col = within(sharedTable())
+      .getAllByRole('columnheader')
+      .findIndex((h) => h.textContent === 'Singleton');
+    expect(col).toBeGreaterThanOrEqual(0);
+    const cell = (name: string) =>
+      within(within(sharedTable()).getByText(name).closest('tr') as HTMLElement).getAllByRole(
+        'cell',
+      )[col]?.textContent;
+    expect(cell('react')).toBe('yes');
+    expect(cell('@mfe/ui')).toBe('no');
+  });
+
   it('Q-inspector-shared: getInstance() null shows the empty message and does not crash', async () => {
     stubFetch(() => manifest('v'));
     rt.instance = null;

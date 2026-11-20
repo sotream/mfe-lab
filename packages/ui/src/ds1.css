@@ -1,0 +1,49 @@
+.ds1-button {
+  padding: var(--ds1-space-1) var(--ds1-space-3);
+  border: 1px solid var(--ds1-color-border);
+  border-radius: var(--ds1-radius);
+  background: transparent;
+  color: var(--ds1-color-text);
+  font: var(--ds1-font);
+  cursor: pointer;
+}
+
+.ds1-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ds1-button--primary {
+  border-color: var(--ds1-color-primary);
+  background: var(--ds1-color-primary);
+  color: #fff;
+}
+
+.ds1-button--danger {
+  border-color: var(--ds1-color-danger);
+  color: var(--ds1-color-danger);
+}
+
+.ds1-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--ds1-color-text);
+  font: var(--ds1-font);
+}
+
+.ds1-table th,
+.ds1-table td {
+  padding: var(--ds1-space-2) var(--ds1-space-3);
+  border-bottom: 1px solid var(--ds1-color-border);
+  text-align: left;
+}
+
+.ds1-field {
+  display: grid;
+  gap: var(--ds1-space-1);
+}
+
+.ds1-field-error {
+  margin: 0;
+  color: var(--ds1-color-danger);
+}

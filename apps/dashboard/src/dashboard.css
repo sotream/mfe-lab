@@ -128,18 +128,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.dashboard details table {
-  border-collapse: collapse;
-  margin-top: 0.5rem;
-}
-
-.dashboard details th,
-.dashboard details td {
-  padding: 0.25rem 0.75rem;
-  border-bottom: 1px solid var(--d-grid);
-  text-align: left;
-}
-
 .standalone-bar {
   display: flex;
   gap: 0.5rem;
