@@ -121,6 +121,11 @@ Goal: weekly grouped dependency update PRs via `.github/dependabot.yml`, with no
 - **Goal:** the products page keeps its UI state (page, sort, order, search, open dialogs) in a Redux Toolkit slice `productsUi`, in a store created per page mount and per user, local to the products remote (RFC 0006).
 - **Done when:** products behaviour is unchanged and all existing tests pass unedited; `@reduxjs/toolkit` and `react-redux` are absent from `federation.shared.ts`; two stores created by `makeStore()` share no state.
 
+## T20 Docs
+
+- **Goal:** the README reads in two minutes: pitch and infographic first, then quick start, "Things to see" with a screenshot each (the six brief points plus versions, events and cross-remote sync), data-flow diagrams, an RFC index, and an accurate command for every task. Screenshots are refreshed at 1280x900.
+- **Done when:** `docs/img/architecture.svg` (under 60 KB, explicit background) renders without overlapping text; the README has the sequence diagram and the state-ownership flowchart; `docs/screenshots/` holds 1 to 8 plus `9a`/`9b`, each at most 300 KB; `pnpm lint && pnpm typecheck && pnpm test` pass.
+
 ## Later (not now)
 
 Nothing planned.
