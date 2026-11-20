@@ -1,6 +1,6 @@
 # RFC 0008: Design system versioning
 
-- **Status:** Draft
+- **Status:** Accepted
 - **Author:** owner
 - **Date:** 2026-11-20
 - **Related:** RFC 0001, RFC 0004

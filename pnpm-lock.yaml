@@ -302,6 +302,9 @@ importers:
       '@mfe/events':
         specifier: workspace:*
         version: link:../../packages/events
+      '@mfe/telemetry':
+        specifier: workspace:*
+        version: link:../../packages/telemetry
       '@mfe/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -336,6 +339,9 @@ importers:
       '@mfe/events':
         specifier: workspace:*
         version: link:../../packages/events
+      '@mfe/telemetry':
+        specifier: workspace:*
+        version: link:../../packages/telemetry
       '@mfe/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -376,6 +382,9 @@ importers:
       '@mfe/events':
         specifier: workspace:*
         version: link:../../packages/events
+      '@mfe/telemetry':
+        specifier: workspace:*
+        version: link:../../packages/telemetry
       '@mfe/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -413,6 +422,8 @@ importers:
         version: 19.3.0
 
   packages/events: {}
+
+  packages/telemetry: {}
 
   packages/ui:
     dependencies:
