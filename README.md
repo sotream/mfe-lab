@@ -216,6 +216,10 @@ UI state: the products page keeps page, sort, order, search and open dialogs in 
 
 Between remotes: `@mfe/events` wraps `window` `CustomEvent`, so each remote may bundle its own copy and they still talk. The contract is the `EventMap` type in `packages/events/src/index.ts`; today it has one event, `products:changed` with `{ id, kind: 'created' | 'updated' | 'deleted' }`. `emit` with an unknown name is a TypeScript error. Products emits it after a successful create, update or delete; the dashboard calls `invalidateQueries({ queryKey: ['stats'] })`. The shell subscribes with `onAny` and keeps the last 20 events for the inspector. Details and rejected alternatives: [RFC 0006](docs/rfc/0006-data-between-remotes.md).
 
+## Nested routes
+
+The shell mounts the products remote at `/products/*` and knows nothing about what is inside. The remote's second expose, `./ProductsApp`, has its own `<Routes>`: the list at `/products` and a detail page at `/products/:id`, linked with relative paths (`to="5"`, `to=".."`). It works because `react-router` is a shared singleton: the remote sees the shell's router, so the URL and the back button stay in sync. List page, sort and search survive going to a detail page and back. On Home the table uses `ProductsPage`, which links to the absolute `/products/<id>`. Standalone, `localhost:3001/5` shows the detail page. A cold load of `/products/5` works because the dev server and nginx fall back to `index.html` (you log in first, since a reload clears the token). Details: [RFC 0007](docs/rfc/0007-routing-inside-remotes.md).
+
 ## Versioned remotes
 
 A remote can be frozen into a release and the shell can switch to it at runtime, using only manifest URLs (RFC 0004).
@@ -298,6 +302,7 @@ Interactive OpenAPI docs: <http://localhost:4000/docs> (spec at `/docs/json`; bo
 | 0004 | [Versioned remotes](docs/rfc/0004-versioned-remotes.md)                               | Accepted | Freeze a remote into a static release; the shell switches versions by changing only the manifest URL.                            |
 | 0005 | [Prefetch remotes on idle](docs/rfc/0005-prefetch-remotes.md)                         | Accepted | After first render the shell preloads both remotes on idle; measured 1201 to 823 ms on Fast 4G.                                  |
 | 0006 | [Data between remotes](docs/rfc/0006-data-between-remotes.md)                         | Accepted | One TanStack Query client per remote, Redux Toolkit local to products, typed `window` events between remotes; nothing shared.    |
+| 0007 | [Routing inside remotes](docs/rfc/0007-routing-inside-remotes.md)                     | Accepted | The shell mounts a remote at `<name>/*`; the remote owns the subtree with relative links, on the shared router.                  |
 
 ## Run CI locally
 

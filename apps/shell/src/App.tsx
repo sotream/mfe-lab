@@ -8,8 +8,8 @@ import { loadPage, remotePort, type RemoteName } from './remotes.ts';
 
 declare const __BUILD_VERSION__: string;
 
-const Remote = ({ name }: { name: RemoteName }) => (
-  <RemoteFrame name={name} port={remotePort(name)} load={() => loadPage(name)} />
+const Remote = ({ name, module }: { name: RemoteName; module?: string }) => (
+  <RemoteFrame name={name} port={remotePort(name)} load={() => loadPage(name, module)} />
 );
 
 function Layout() {
@@ -63,10 +63,11 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: 'products',
+        // The splat hands everything under /products to the remote's own routes (RFC 0007).
+        path: 'products/*',
         element: (
           <RequireAuth>
-            <Remote name="products" />
+            <Remote name="products" module="ProductsApp" />
           </RequireAuth>
         ),
       },

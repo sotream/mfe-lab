@@ -48,14 +48,17 @@ export const releaseManifestUrl = (name: RemoteName, version: string): string =>
 
 const failed = new Set<RemoteName>();
 
-export async function loadPage(name: RemoteName): Promise<RemoteModule> {
+export async function loadPage(
+  name: RemoteName,
+  module: string = entries[name].module,
+): Promise<RemoteModule> {
   // The runtime caches a failed manifest/entry fetch, so after a failure re-register the
   // remote with force: that drops the cached state and the next loadRemote refetches.
   if (failed.has(name)) {
     registerRemotes([{ name, entry: remoteEntry(name) }], { force: true });
   }
   try {
-    const mod = await loadRemote<RemoteModule>(`${name}/${entries[name].module}`);
+    const mod = await loadRemote<RemoteModule>(`${name}/${module}`);
     if (!mod) throw new Error(`${name} returned no module`);
     failed.delete(name);
     return mod;

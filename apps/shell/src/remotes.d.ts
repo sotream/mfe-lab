@@ -5,6 +5,12 @@ declare module 'products/ProductsPage' {
   export default ProductsPage;
 }
 
+declare module 'products/ProductsApp' {
+  const ProductsApp: import('react').ComponentType;
+  export const buildVersion: string;
+  export default ProductsApp;
+}
+
 declare module 'dashboard/DashboardPage' {
   const DashboardPage: import('react').ComponentType;
   export const buildVersion: string;
