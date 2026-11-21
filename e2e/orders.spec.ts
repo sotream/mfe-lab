@@ -101,23 +101,73 @@ test('E-orders: DE/EN relabels the table in place, without a remount', async ({ 
 });
 
 const HOSTILE = 'table, th, td { border: 7px solid rgb(255, 0, 0) !important }';
-const border = (loc: ReturnType<Page['locator']>) =>
-  loc.first().evaluate((el) => {
-    const s = getComputedStyle(el);
-    return `${s.borderTopWidth} ${s.borderTopColor}`;
-  });
+// Layout and visual properties a leaking stylesheet would change (not all ~500 computed ones).
+const PROPS = [
+  'display',
+  'margin-top',
+  'margin-bottom',
+  'padding-top',
+  'padding-right',
+  'padding-bottom',
+  'padding-left',
+  'border-top-width',
+  'border-top-style',
+  'border-top-color',
+  'border-bottom-width',
+  'border-bottom-color',
+  'font-family',
+  'font-size',
+  'font-weight',
+  'line-height',
+  'color',
+  'background-color',
+  'text-align',
+  'vertical-align',
+];
+
+// Products re-renders when its data arrives, so a node can be replaced between resolving the locator
+// and reading it: a detached element has an empty computed style. Retry until the read is from a live node.
+async function snap(loc: ReturnType<Page['locator']>): Promise<Record<string, string>> {
+  let out: Record<string, string> = {};
+  await expect(async () => {
+    out = await loc.first().evaluate((el, props) => {
+      if (!el.isConnected) throw new Error('detached');
+      const s = getComputedStyle(el);
+      return Object.fromEntries(props.map((p) => [p, s.getPropertyValue(p)]));
+    }, PROPS);
+    expect(out['font-size'], 'computed style is not empty').toBeTruthy();
+  }).toPass({ timeout: 10_000 });
+  return out;
+}
+const border = async (loc: ReturnType<Page['locator']>) => {
+  const s = await snap(loc);
+  return `${s['border-top-width']} ${s['border-top-color']}`;
+};
+
+// Rows are visible and the row count has been the same for a moment (no refetch re-render pending).
+async function settled(rows: ReturnType<Page['locator']>) {
+  await expect(rows.first()).toBeVisible();
+  let last = -1;
+  await expect(async () => {
+    const n = await rows.count();
+    const stable = n === last;
+    last = n;
+    await rows.page().waitForTimeout(300);
+    expect(stable, 'row count settled').toBe(true);
+  }).toPass({ timeout: 10_000 });
+}
 
 test('E-css-leak: a hostile global style hits products cells but not the orders shadow DOM', async ({
   page,
 }) => {
   await login(page);
   await nav(page).getByRole('link', { name: 'Products', exact: true }).click();
-  await expect(products(page).locator('tbody td').first()).toBeVisible();
+  await settled(products(page).locator('tbody tr'));
   await page.addStyleTag({ content: HOSTILE });
   expect(await border(products(page).locator('tbody td'))).toBe('7px rgb(255, 0, 0)');
 
   await nav(page).getByRole('link', { name: 'Orders', exact: true }).click();
-  await expect(orders(page).locator('tbody td').first()).toBeVisible();
+  await settled(orders(page).locator('tbody tr'));
   const own = await border(orders(page).locator('tbody td'));
   expect(own).not.toBe('7px rgb(255, 0, 0)');
   expect(await border(orders(page).locator('thead th'))).not.toBe('7px rgb(255, 0, 0)');
@@ -127,20 +177,14 @@ test('E-css-leak: visiting orders does not restyle shell or products elements', 
   page,
 }) => {
   await login(page);
-  const computed = (loc: ReturnType<Page['locator']>) =>
-    loc.first().evaluate((el) => {
-      const s = getComputedStyle(el);
-      return Object.fromEntries([...s].map((p) => [p, s.getPropertyValue(p)]));
-    });
   const probe = async () => {
     await nav(page).getByRole('link', { name: 'Products', exact: true }).click();
-    await expect(products(page).locator('thead th').first()).toBeVisible();
-    await expect(products(page).locator('tbody td').first()).toBeVisible();
+    await settled(products(page).locator('tbody tr'));
     return {
-      th: await computed(products(page).locator('thead th')),
-      td: await computed(products(page).locator('tbody td')),
-      nav: await computed(nav(page).getByRole('link').first()),
-      body: await computed(page.locator('body')),
+      th: await snap(products(page).locator('thead th')),
+      td: await snap(products(page).locator('tbody td')),
+      nav: await snap(nav(page).getByRole('link')),
+      body: await snap(page.locator('body')),
     };
   };
   const sheets = () =>
@@ -149,6 +193,7 @@ test('E-css-leak: visiting orders does not restyle shell or products elements', 
   const headBefore = await sheets();
   await openOrders(page);
   const after = await probe();
+  expect(Object.keys(before.th).length).toBe(PROPS.length);
   expect(after.th).toEqual(before.th);
   expect(after.td).toEqual(before.td);
   expect(after.nav).toEqual(before.nav);
