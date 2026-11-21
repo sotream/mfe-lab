@@ -71,6 +71,10 @@ A page built from independently deployed apps has no single author, so page-leve
 | Remotes call `document.title` for top-level routes | Two owners; the last writer wins and the title depends on load order.         |
 | Heading level passed to the remote as a prop       | Couples the remote to the host layout; a fixed `h3` start is simpler to hold. |
 
+## Tooltips (T39)
+
+`Tooltip` follows WCAG 1.4.13: it shows on hover (after 300 ms) and on focus, hides on Escape without moving focus (dismissible), stays open while the pointer is on the trigger or on the tooltip (hoverable) and until blur or leave (persistent). The trigger carries `aria-describedby`; text and icons that carry a tooltip are a tab stop (`MiddleTruncate` always, as it cannot cheaply know it is truncated). Its full text is in a visually hidden span, so screen readers and copy-paste get the whole value.
+
 ## Trade-offs and risks
 
 - A remote loaded standalone announces nothing. The same actions still change the page visibly.
