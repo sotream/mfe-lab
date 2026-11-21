@@ -211,6 +211,11 @@ Goal: weekly grouped dependency update PRs via `.github/dependabot.yml`, with no
 - **Goal:** every loading state is a skeleton with the final layout's size, so content swaps in without a jump (RFC 0011, loading states).
 - **Done when:** `@mfe/ui` has `Skeleton`, `Table` `loading` and `RemoteFrame` `fallback` (shimmer off under `prefers-reduced-motion`); the shell frames, products list and detail, dashboard, orders (Vue, own skeleton in its shadow root) and the inspector tables show skeletons with a visually hidden `role="status"` text and `aria-busy`; the height of the frame bodies and tables before and after the data differs by at most 4 px and `clsHome` drops; `pnpm lint && pnpm typecheck && pnpm test` pass.
 
+## T38 Custom select
+
+- **Goal:** a styled, accessible select that looks the same in the React shell and the Vue remote and is never clipped by a scroll region (RFC 0011).
+- **Done when:** `@mfe/ui/select-core` holds `keyAction`, `typeahead` and `placePopup` with no framework import; `@mfe/ui` 1.9.0 has `Select` and `@mfe/ui/select.css`, and orders has `DsSelect.vue` on the same core and CSS; the inspector "Use" select and the orders status filter use them (APG select-only combobox, popup in the top layer, flips above near the viewport bottom); no new dependency and no budget raised; RFC 0011 and the `@mfe/ui` changelog are updated; `pnpm lint && pnpm typecheck && pnpm test` pass.
+
 ## Later (not now)
 
 Nothing planned.
