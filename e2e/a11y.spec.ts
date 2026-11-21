@@ -50,6 +50,13 @@ test('E-a11y: axe finds no serious or critical WCAG A/AA violations', async ({ p
   await expect(page.locator('section[data-remote="dashboard"] svg[role="img"]')).toBeVisible();
   await scan(page, '/dashboard');
 
+  // E-a11y: axe scans into open shadow roots, so this covers the Vue table.
+  await nav.getByRole('link', { name: 'Orders', exact: true }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Orders' })).toBeVisible();
+  await expect(page.locator('section[data-remote="orders"]').getByRole('table')).toBeVisible();
+  await expect(page.locator('section[data-remote="orders"] tbody tr').first()).toBeVisible();
+  await scan(page, '/orders');
+
   await nav.getByRole('link', { name: 'Inspector' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Federation inspector' })).toBeVisible();
   await expect(page.getByRole('checkbox', { name: 'dashboard.revenue' })).toBeEnabled();
