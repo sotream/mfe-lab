@@ -43,6 +43,27 @@ describe('RemoteFrame', () => {
     await screen.findByText('remote ok');
   });
 
+  it('Q-frame-label: origin wins as is, port alone gives :port, neither gives no label', async () => {
+    const ok = () => Promise.resolve({ default: Ok });
+    await mount(
+      <RemoteFrame name="products" origin="mfe-lab-products.vercel.app" port={3001} load={ok} />,
+    );
+    let section = screen.getByRole('region', { name: 'products remote' });
+    expect(within(section).getByText('mfe-lab-products.vercel.app', { exact: true })).toBeTruthy();
+    expect(within(section).queryByText(':3001')).toBeNull();
+    cleanup();
+
+    await mount(<RemoteFrame name="products" port={3001} load={ok} />);
+    section = screen.getByRole('region', { name: 'products remote' });
+    expect(within(section).getByText(':3001', { exact: true })).toBeTruthy();
+    cleanup();
+
+    await mount(<RemoteFrame name="products" load={ok} />);
+    section = screen.getByRole('region', { name: 'products remote' });
+    expect(section.querySelector('.remote-frame-port')).toBeNull();
+    expect(section.textContent).not.toMatch(/:\d|undefined/);
+  });
+
   it('Q-pending: never-resolving loader shows loading status', () => {
     render(<RemoteFrame name="products" port={3001} load={() => new Promise(() => {})} />);
     expect(screen.getByRole('status').textContent).toContain('Loading products…');

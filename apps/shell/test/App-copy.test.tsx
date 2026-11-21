@@ -53,9 +53,10 @@ describe('shell copy', () => {
     );
     expect(
       screen.getByText(
-        'The shell on :3000 loads products and dashboard at runtime. Each is built and deployed on its own.',
+        'The shell loads products and dashboard at runtime. Each is built and deployed on its own.',
       ),
     ).toBeTruthy();
+    expect(document.body.textContent).not.toContain(':3000'); // Q-lead
   });
 
   it('Q-nav-user: email and role chip are separate, no middle dot', async () => {

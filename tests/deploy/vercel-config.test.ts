@@ -16,8 +16,6 @@ type Header = { source: string; headers: { key: string; value: string }[] };
 type VercelJson = {
   rewrites?: { source: string; destination: string }[];
   headers?: Header[];
-  build?: { env?: Record<string, string> };
-  env?: Record<string, string>;
   outputDirectory?: string;
   installCommand?: string;
   buildCommand?: string;
@@ -96,11 +94,15 @@ describe('vercel config', () => {
     }
   });
 
-  it('Q-vercel-config: shell build.env points at the production remote manifests', () => {
-    const c = load(root, 'shell');
-    const env = { ...c.env, ...c.build?.env };
-    expect(env.MF_PRODUCTS_URL).toBe(`${url('products')}/mf-manifest.json`);
-    expect(env.MF_DASHBOARD_URL).toBe(`${url('dashboard')}/mf-manifest.json`);
+  it('Q-no-build-env: the shell vercel.json has no build key (vercel build ignores it)', () => {
+    expect(load(root, 'shell')).not.toHaveProperty('build');
+  });
+
+  it('Q-no-build-env: deploy.yml exports the remote manifests from urls.json and guards localhost', () => {
+    const wf = readFileSync(join(root, '.github/workflows/deploy.yml'), 'utf8');
+    expect(wf).toMatch(/MF_PRODUCTS_URL=.*deploy\/urls\.json.*\.products.*\/mf-manifest\.json/);
+    expect(wf).toMatch(/MF_DASHBOARD_URL=.*deploy\/urls\.json.*\.dashboard.*\/mf-manifest\.json/);
+    expect(wf).toMatch(/grep -rl 'localhost:300'/);
   });
 
   it('Q-vercel-config: api vercel.json has the daily 03:00 UTC reseed cron', () => {
