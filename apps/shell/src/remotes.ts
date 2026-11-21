@@ -1,21 +1,36 @@
 import { loadRemote, preloadRemote, registerRemotes } from '@module-federation/enhanced/runtime';
-import type { RemoteModule } from '@mfe/ui';
+import type { ComponentType } from 'react';
+import {
+  exposes,
+  type ExposedModule,
+  type ExposedName,
+  type RemoteName,
+} from '../../../federation.contract.ts';
 
 // Manifest URLs are baked in at build time: MF_*_URL env overrides the localhost defaults.
 declare const __MF_PRODUCTS_URL__: string;
 declare const __MF_DASHBOARD_URL__: string;
 
-const entries = {
-  products: { entry: __MF_PRODUCTS_URL__, module: 'ProductsPage' },
-  dashboard: { entry: __MF_DASHBOARD_URL__, module: 'DashboardPage' },
-} as const;
+type PageModule = ExposedModule<ComponentType>;
+
+const urls: Record<RemoteName, string> = {
+  products: __MF_PRODUCTS_URL__,
+  dashboard: __MF_DASHBOARD_URL__,
+};
+// Remote names and the default (first) module per remote come from the federation contract.
+const entries = Object.fromEntries(
+  (Object.keys(exposes) as RemoteName[]).map((name) => [
+    name,
+    { entry: urls[name], module: exposes[name][0] },
+  ]),
+) as { [R in RemoteName]: { entry: string; module: ExposedName<R> } };
 
 export const remoteManifests = Object.entries(entries).map(([name, { entry }]) => ({
   name,
   manifest: entry,
 }));
 
-export type RemoteName = keyof typeof entries;
+export type { ExposedName, RemoteName };
 // Where a remote lives, for the frame label: ":port" on localhost, else the hostname.
 export function remoteOrigin(manifestUrl: string): string {
   const { hostname, port } = new URL(manifestUrl);
@@ -52,17 +67,17 @@ export const releaseManifestUrl = (name: RemoteName, version: string): string =>
 
 const failed = new Set<RemoteName>();
 
-export async function loadPage(
-  name: RemoteName,
-  module: string = entries[name].module,
-): Promise<RemoteModule> {
+export async function loadPage<R extends RemoteName>(
+  name: R,
+  module: ExposedName<R> = entries[name].module,
+): Promise<PageModule> {
   // The runtime caches a failed manifest/entry fetch, so after a failure re-register the
   // remote with force: that drops the cached state and the next loadRemote refetches.
   if (failed.has(name)) {
     registerRemotes([{ name, entry: remoteEntry(name) }], { force: true });
   }
   try {
-    const mod = await loadRemote<RemoteModule>(`${name}/${module}`);
+    const mod = await loadRemote<PageModule>(`${name}/${module}`);
     if (!mod) throw new Error(`${name} returned no module`);
     failed.delete(name);
     return mod;

@@ -16,12 +16,13 @@ import {
   remoteEntry,
   remoteOrigin,
   subscribeRemotes,
+  type ExposedName,
   type RemoteName,
 } from './remotes.ts';
 
 declare const __BUILD_VERSION__: string;
 
-const Remote = ({ name, module }: { name: RemoteName; module?: string }) => {
+const Remote = <R extends RemoteName>({ name, module }: { name: R; module?: ExposedName<R> }) => {
   // Follows the version selected in the inspector.
   const entry = useSyncExternalStore(subscribeRemotes, () => remoteEntry(name));
   return (
