@@ -29,8 +29,9 @@ function staticApp(name: 'shell' | 'products' | 'dashboard') {
       ...(remote ? [header('/(.*)', 'Access-Control-Allow-Origin', '*')] : []),
       header('/(mf-manifest\\.json|remoteEntry\\.js)', 'Cache-Control', 'no-store'),
       // Content-hashed assets (16 hex chars) never change. remoteEntry.js has no hash, so it never matches.
+      // The whole pattern must sit inside one group: Vercel's path-to-regexp 6.1.0 reads a bare {16} as a literal group.
       header(
-        '/(.+\\.)?[0-9a-f]{16}\\.(js|css|woff2)',
+        '/((?:.*\\.)?[0-9a-f]{16}\\.(?:js|css|woff2))',
         'Cache-Control',
         'public, max-age=31536000, immutable',
       ),
