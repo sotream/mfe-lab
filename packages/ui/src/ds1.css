@@ -185,3 +185,37 @@
 .ds1-table .ds1-num {
   white-space: nowrap;
 }
+
+/* Loading placeholder: a dim block with a slow light sweep. Static under reduced motion. */
+.ds1-skeleton {
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: middle;
+  border-radius: var(--ds1-radius);
+  background-color: color-mix(in oklch, var(--ds1-rule) 45%, transparent);
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in oklch, var(--ds1-rule-2) 40%, transparent) 50%,
+    transparent 100%
+  );
+  background-repeat: no-repeat;
+  background-size: 60% 100%;
+  animation: ds1-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes ds1-shimmer {
+  from {
+    background-position: -100% 0;
+  }
+
+  to {
+    background-position: 200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds1-skeleton {
+    animation: none;
+  }
+}

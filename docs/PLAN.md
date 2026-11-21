@@ -206,6 +206,11 @@ Goal: weekly grouped dependency update PRs via `.github/dependabot.yml`, with no
 - **Goal:** change which version of a remote users get, and switch a remote off, without redeploying the shell; a failing canary falls back to stable (RFC 0017).
 - **Done when:** migration `004_remote_registry.sql` and `GET /registry` (public, `no-store`) and `PATCH /registry/:name` (admin, validated) exist and `seed:reset` clears them; the shell resolves each remote from the registry (sticky FNV-1a bucket, canary, disabled) and fails open to stable when the registry is down; a disabled remote is never fetched and its frame shows a localized switched-off state; a `errorLoadRemote` runtime plugin falls back from a failing canary to stable once per page and reports it; the inspector shows variant and bucket and gives admins canary URL, percent and off controls; RFC 0017 is added and RFC 0004, RFC 0010, `docs/api.md`, README and `docs/tour.md` are updated; `pnpm lint && pnpm typecheck && pnpm test` pass.
 
+## T37 Skeleton loading states
+
+- **Goal:** every loading state is a skeleton with the final layout's size, so content swaps in without a jump (RFC 0011, loading states).
+- **Done when:** `@mfe/ui` has `Skeleton`, `Table` `loading` and `RemoteFrame` `fallback` (shimmer off under `prefers-reduced-motion`); the shell frames, products list and detail, dashboard, orders (Vue, own skeleton in its shadow root) and the inspector tables show skeletons with a visually hidden `role="status"` text and `aria-busy`; the height of the frame bodies and tables before and after the data differs by at most 4 px and `clsHome` drops; `pnpm lint && pnpm typecheck && pnpm test` pass.
+
 ## Later (not now)
 
 Nothing planned.
