@@ -1,9 +1,8 @@
-// Q-select-core. ASSUMPTIONS (phase 2 adapts to the real names/shapes):
-//   keyAction(state: {open, activeIndex}, key: string, opts: {options: {disabled?}[], altKey?: boolean})
-//     -> {open, activeIndex, select?: boolean, close?: boolean}   (select = pick the returned activeIndex)
-//   typeahead(buffer: string, options: {label, disabled?}[], from: number) -> index or -1
-//   placePopup(triggerRect, popupSize {width,height}, viewport {width,height}) -> {top,left,width,maxHeight,side}
-import { describe, expect, it } from 'vitest';
+// Q-select-core against the real API:
+//   keyAction(state {open, activeIndex, buffer?, at?}, key, opts {options, selectedIndex, alt?})
+//     -> {open, activeIndex, buffer, at, select?: index, close?, preventDefault}
+//   typeahead(buffer, options, from) -> index | -1;  placePopup(triggerRect, popup, viewport)
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { keyAction, placePopup, typeahead } from '@mfe/ui/select-core';
 
 const options = [
@@ -13,32 +12,44 @@ const options = [
   { value: 'd', label: 'Date' },
   { value: 'e', label: 'Elder', disabled: true },
 ];
+afterEach(() => vi.useRealTimers());
 const closed = (activeIndex = 0) => ({ open: false, activeIndex });
 const open = (activeIndex = 0) => ({ open: true, activeIndex });
-const act = (state: { open: boolean; activeIndex: number }, key: string, altKey = false) =>
-  keyAction(state, key, { options, altKey });
+const act = (
+  state: { open: boolean; activeIndex: number; buffer?: string; at?: number },
+  key: string,
+  alt = false,
+  selectedIndex = state.activeIndex,
+) => keyAction(state, key, { options, selectedIndex, alt });
 
 describe('keyAction', () => {
-  it.each(['ArrowDown', 'Enter', ' '])(
-    'Q-select-core: %s opens a closed select on the active index',
+  it.each(['ArrowDown', 'ArrowUp', 'Enter', ' '])(
+    'Q-select-core: %s opens a closed select on the selected option',
     (key) => {
       const r = act(closed(2), key);
       expect(r.open).toBe(true);
       expect(r.activeIndex).toBe(2);
-      expect(r.select).toBeFalsy();
+      expect(r.select).toBeUndefined();
     },
   );
-  it('Q-select-core: Alt+ArrowDown opens, Alt+ArrowUp on open closes without selecting', () => {
+  it('Q-select-core: Home and End open a closed select on the first and last enabled option', () => {
+    expect(act(closed(2), 'Home')).toMatchObject({ open: true, activeIndex: 0 });
+    expect(act(closed(0), 'End')).toMatchObject({ open: true, activeIndex: 3 });
+  });
+  it('Q-select-core: Alt+ArrowDown opens a closed select', () => {
     expect(act(closed(2), 'ArrowDown', true).open).toBe(true);
+  });
+  it('Q-select-core: Alt+Arrow on an open select selects the active option and closes', () => {
     const r = act(open(2), 'ArrowUp', true);
     expect(r.open).toBe(false);
+    expect(r.select).toBe(2);
   });
   it('Q-select-core: arrows move and skip disabled options', () => {
     expect(act(open(0), 'ArrowDown').activeIndex).toBe(2);
     expect(act(open(2), 'ArrowUp').activeIndex).toBe(0);
     expect(act(open(2), 'ArrowDown').activeIndex).toBe(3);
   });
-  it('Q-select-core: arrows stop at the ends (no wrap)', () => {
+  it('Q-select-core: arrows clamp at the ends (no wrap)', () => {
     expect(act(open(0), 'ArrowUp').activeIndex).toBe(0);
     expect(act(open(3), 'ArrowDown').activeIndex).toBe(3); // 4 is disabled
   });
@@ -46,7 +57,7 @@ describe('keyAction', () => {
     expect(act(open(3), 'Home').activeIndex).toBe(0);
     expect(act(open(0), 'End').activeIndex).toBe(3);
   });
-  it('Q-select-core: PageDown and PageUp jump, clamped to enabled options', () => {
+  it('Q-select-core: PageDown and PageUp jump (10), clamped to enabled options', () => {
     expect(act(open(0), 'PageDown').activeIndex).toBe(3);
     expect(act(open(3), 'PageUp').activeIndex).toBe(0);
   });
@@ -54,34 +65,60 @@ describe('keyAction', () => {
     'Q-select-core: %s on an open select selects the active option and closes',
     (key) => {
       const r = act(open(2), key);
-      expect(r.select).toBe(true);
-      expect(r.activeIndex).toBe(2);
+      expect(r.select).toBe(2);
       expect(r.open).toBe(false);
     },
   );
   it('Q-select-core: Escape closes without selecting', () => {
     const r = act(open(2), 'Escape');
     expect(r.open).toBe(false);
-    expect(r.select).toBeFalsy();
+    expect(r.close).toBe(true);
+    expect(r.select).toBeUndefined();
   });
-  it('Q-select-core: Tab selects the active option and closes; focus is not trapped', () => {
+  it('Q-select-core: Tab selects the active option, closes, and does not preventDefault', () => {
     const r = act(open(2), 'Tab');
-    expect(r.select).toBe(true);
+    expect(r.select).toBe(2);
     expect(r.open).toBe(false);
+    expect(r.preventDefault).toBe(false);
   });
-  it('Q-select-core: Tab on a closed select does nothing', () => {
+  it('Q-select-core: Tab on a closed select does nothing and is not prevented', () => {
     const r = act(closed(2), 'Tab');
     expect(r.open).toBe(false);
-    expect(r.select).toBeFalsy();
+    expect(r.select).toBeUndefined();
+    expect(r.preventDefault).toBe(false);
   });
-  it('Q-select-core: Escape on a closed select is a no-op', () => {
-    expect(act(closed(1), 'Escape')).toMatchObject({ open: false, activeIndex: 1 });
-  });
-  it('Q-select-core: a printable character on a closed select opens it or moves; never selects a disabled option', () => {
+  it('Q-select-core: a printable key on a closed select picks a value without opening', () => {
     const r = act(closed(0), 'c');
+    expect(r.open).toBe(false);
+    expect(r.select).toBe(2);
+  });
+  it('Q-select-core: a printable key never picks a disabled option', () => {
+    expect(act(closed(0), 'b').select).toBeUndefined();
+  });
+  it('Q-select-core: a printable key on an open select moves the active option only', () => {
+    const r = act(open(0), 'd');
+    expect(r.open).toBe(true);
+    expect(r.activeIndex).toBe(3);
+    expect(r.select).toBeUndefined();
+  });
+  it('Q-select-core: the type-ahead buffer grows within 500 ms and resets after (fake timers)', () => {
+    vi.useFakeTimers();
+    const opts = [
+      { value: '1', label: 'Cat' },
+      { value: '2', label: 'Cow' },
+      { value: '3', label: 'Dog' },
+    ];
+    const press = (
+      st: { open: boolean; activeIndex: number; buffer?: string; at?: number },
+      k: string,
+    ) => keyAction(st, k, { options: opts, selectedIndex: 0 });
+    let r = press(open(0), 'c');
+    r = press(r, 'o');
+    expect(r.activeIndex).toBe(1); // "co" -> Cow
+    vi.advanceTimersByTime(600);
+    r = press(r, 'd'); // buffer reset: "d", not "cod"
+    expect(r.buffer).toBe('d');
     expect(r.activeIndex).toBe(2);
-    const d = act(closed(0), 'b'); // Banana is disabled
-    expect(d.activeIndex).not.toBe(1);
   });
 });
 
@@ -90,32 +127,27 @@ describe('typeahead', () => {
     expect(typeahead('ch', options, 0)).toBe(2);
     expect(typeahead('D', options, 0)).toBe(3);
   });
-  it('Q-select-core: no match gives -1', () => {
+  it('Q-select-core: no match gives -1; empty buffer gives -1', () => {
     expect(typeahead('zz', options, 0)).toBe(-1);
+    expect(typeahead('', options, 0)).toBe(-1);
   });
   it('Q-select-core: skips disabled options', () => {
     expect(typeahead('b', options, 0)).toBe(-1);
   });
-  it('Q-select-core: the same letter repeated cycles through matches from the active index', () => {
+  it('Q-select-core: starts at from (inclusive) and wraps', () => {
+    expect(typeahead('c', options, 2)).toBe(2);
+    expect(typeahead('a', options, 3)).toBe(0);
+  });
+  it('Q-select-core: a repeated single char cycles from from+1', () => {
     const opts = [
       { value: '1', label: 'Alpha' },
       { value: '2', label: 'Beta' },
       { value: '3', label: 'Apricot' },
       { value: '4', label: 'Avocado' },
     ];
-    expect(typeahead('a', opts, 0)).toBe(2);
-    expect(typeahead('a', opts, 2)).toBe(3);
-    expect(typeahead('a', opts, 3)).toBe(0); // wraps
-  });
-});
-
-describe('typeahead reset', () => {
-  // The 500 ms reset lives wherever the buffer lives; the core is pure, so the contract is: the buffer
-  // handed in is what is matched. A fresh one-letter buffer after a pause matches from scratch.
-  it('Q-select-core: a fresh buffer after the pause ignores the previous letters', () => {
-    expect(typeahead('c', options, 0)).toBe(2);
-    expect(typeahead('ca', options, 0)).toBe(-1);
-    expect(typeahead('a', options, 0)).toBe(0);
+    expect(typeahead('aa', opts, 0)).toBe(2);
+    expect(typeahead('aa', opts, 2)).toBe(3);
+    expect(typeahead('aa', opts, 3)).toBe(0);
   });
 });
 

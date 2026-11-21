@@ -35,7 +35,10 @@ async function expectFullyVisible(page: Page) {
       }
       return el;
     };
-    const options = [...document.querySelectorAll('[role="option"]')] as HTMLElement[];
+    // every select's listbox is always in the DOM (hidden when closed): only the open one counts
+    const options = [
+      ...document.querySelectorAll('[role="listbox"]:not([hidden]) [role="option"]'),
+    ] as HTMLElement[];
     return options.map((o) => {
       const r = o.getBoundingClientRect();
       const x = r.left + r.width / 2;
@@ -84,13 +87,13 @@ test('E-select-toplayer: near the viewport bottom the popup opens above the trig
   await login(page);
   await openInspector(page);
   const use = page.getByRole('combobox', { name: 'products version' });
-  // put the trigger about 50 px above the viewport bottom
-  await use.evaluate((el) => {
-    const r = el.getBoundingClientRect();
-    window.scrollBy(0, r.bottom - (innerHeight - 50));
-  });
+  // size the viewport so the trigger sits about 50 px above its bottom edge (the page may not scroll far enough)
+  await use.scrollIntoViewIfNeeded();
+  const docY = await use.evaluate((el) => el.getBoundingClientRect().bottom + window.scrollY);
+  await page.setViewportSize({ width: 1440, height: Math.ceil(docY + 50) });
+  await use.evaluate(() => window.scrollTo(0, 0));
   const trig = await use.boundingBox();
-  expect(trig!.y + trig!.height).toBeGreaterThan(600);
+  expect(page.viewportSize()!.height - (trig!.y + trig!.height)).toBeLessThan(80);
   await use.click();
   const box = await page.getByRole('listbox').boundingBox();
   expect(box!.y + box!.height).toBeLessThanOrEqual(trig!.y + 1);
@@ -111,15 +114,11 @@ test('E-select-orders: the status filter works with the keyboard only; Escape ke
   };
 
   await filter.focus();
-  await page.keyboard.press('ArrowDown'); // opens
-  // ArrowDown until the active option is "paid" (the contract's focus, ArrowDown, ArrowDown, Enter,
-  // give or take whether the opening press already moves)
-  for (let i = 0; i < 4; i++) {
-    const id = await filter.getAttribute('aria-activedescendant');
-    const text = id ? await orders(page).locator(`[id="${id}"]`).innerText() : '';
-    if (/^(paid|bezahlt)$/i.test(text.trim())) break;
-    await page.keyboard.press('ArrowDown');
-  }
+  // APG: the first ArrowDown opens on the selected option (All); then New, then Paid
+  await page.keyboard.press('ArrowDown');
+  await expect(filter).toHaveAttribute('aria-expanded', 'true');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Enter');
   await expect(filter).toContainText(/paid|bezahlt/i);
   await expect.poll(rowsAll(/\bpaid\b|bezahlt/i)).toBe(true);

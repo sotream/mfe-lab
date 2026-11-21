@@ -34,9 +34,16 @@ const proto = HTMLElement.prototype as unknown as Record<string, unknown>;
 proto.showPopover ??= vi.fn();
 proto.hidePopover ??= vi.fn();
 const select = (name: string) => screen.getByRole('combobox', { name: `${name} version` });
+// every select's listbox is always in the DOM (hidden when closed): scope to this trigger's own one
+const optionsOf = (s: HTMLElement) =>
+  Array.from(
+    document
+      .getElementById(s.getAttribute('aria-controls')!)!
+      .querySelectorAll<HTMLElement>('[role="option"]'),
+  );
 const optionLabels = async (s: HTMLElement) => {
   await act(async () => void fireEvent.click(s));
-  const labels = screen.getAllByRole('option', { hidden: true }).map((o) => o.textContent?.trim());
+  const labels = optionsOf(s).map((o) => o.textContent?.trim());
   await act(async () => void fireEvent.keyDown(s, { key: 'Escape' }));
   return labels;
 };
