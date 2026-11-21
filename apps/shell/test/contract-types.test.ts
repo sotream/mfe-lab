@@ -8,6 +8,7 @@ import type { ExposedModule } from '../../../federation.contract.ts';
 // remotes.ts talks to the MF runtime at import time; stub it as the other shell tests do.
 vi.mock('@module-federation/enhanced/runtime', () => ({
   getInstance: () => null,
+  registerPlugins: vi.fn(),
   init: vi.fn(),
   registerRemotes: vi.fn(),
   loadRemote: vi.fn(),

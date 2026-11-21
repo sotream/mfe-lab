@@ -7,6 +7,7 @@ const rt = vi.hoisted(() => ({
 }));
 vi.mock('@module-federation/enhanced/runtime', () => ({
   getInstance: () => null,
+  registerPlugins: vi.fn(),
   init: rt.init,
   registerRemotes: rt.registerRemotes,
   loadRemote: rt.loadRemote,

@@ -11,6 +11,7 @@ import {
 } from '../../../federation.contract.ts';
 vi.mock('@module-federation/enhanced/runtime', () => ({
   getInstance: () => null,
+  registerPlugins: vi.fn(),
   init: vi.fn(),
   registerRemotes: vi.fn(),
   loadRemote: vi.fn(),
