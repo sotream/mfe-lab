@@ -18,6 +18,8 @@
   <a href="#quick-start"><b>Quick start</b></a>
 </p>
 
+**Live demo: <https://mfe-lab.vercel.app>**. Log in with the demo accounts from [Quick start](#quick-start). Data resets daily at 03:00 UTC. The database is on a free tier, so the first request may take a second to wake it.
+
 One shell loads two independently built and deployed React remotes **at runtime** with Module Federation 2, on top of a small Fastify + Postgres API.
 
 It answers the questions a real micro frontend platform runs into:

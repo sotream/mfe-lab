@@ -1,0 +1,178 @@
+name: Deploy
+
+# Deploys to Vercel from Actions with the Vercel CLI (no Vercel GitHub app), after CI is green on main.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      apps:
+        description: changed (diff of the last commit) or all
+        type: choice
+        options: [changed, all]
+        default: changed
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+env:
+  VERCEL_CLI: vercel@66.6.0
+
+jobs:
+  plan:
+    # Only a green push run of CI on main, or a manual run.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      sha: ${{ steps.plan.outputs.sha }}
+      api: ${{ steps.plan.outputs.api }}
+      remotes: ${{ steps.plan.outputs.remotes }}
+      shell: ${{ steps.plan.outputs.shell }}
+      any: ${{ steps.plan.outputs.any }}
+    steps:
+      # workflow_run runs on the default branch's latest commit; check out the commit CI actually ran on.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      - id: plan
+        env:
+          APPS: ${{ inputs.apps || 'changed' }}
+        run: |
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          if [ "$APPS" = all ]; then
+            apps="api products dashboard shell"
+          else
+            apps=$(git diff --name-only HEAD~1 HEAD | node scripts/changed-apps.ts | tr '\n' ' ')
+          fi
+          echo "apps: ${apps:-none}"
+          has() { case " $apps " in *" $1 "*) echo true;; *) echo false;; esac; }
+          remotes=$(for a in products dashboard; do [ "$(has "$a")" = true ] && echo "\"$a\""; done | paste -sd, -)
+          {
+            echo "api=$(has api)"
+            echo "shell=$(has shell)"
+            echo "remotes=[$remotes]"
+            echo "any=$([ -n "${apps// /}" ] && echo true || echo false)"
+          } >> "$GITHUB_OUTPUT"
+
+  api:
+    needs: plan
+    if: needs.plan.outputs.api == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.plan.outputs.sha }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --filter @mfe/api...
+      # Migrate Neon before the new code goes live.
+      - run: node scripts/provision.ts db-url
+      - run: pnpm --filter @mfe/api migrate
+      - name: Deploy api
+        run: |
+          slug=$(node scripts/provision.ts vercel-scope)
+          scope=(); [ -z "$slug" ] || scope=(--scope "$slug")
+          pnpm dlx "$VERCEL_CLI" link --yes --project mfe-lab-api --token "$VERCEL_TOKEN" "${scope[@]}"
+          pnpm dlx "$VERCEL_CLI" pull --yes --environment=production --token "$VERCEL_TOKEN" "${scope[@]}"
+          pnpm dlx "$VERCEL_CLI" build --prod --token "$VERCEL_TOKEN" "${scope[@]}"
+          pnpm dlx "$VERCEL_CLI" deploy --prebuilt --prod --token "$VERCEL_TOKEN" "${scope[@]}"
+
+  remotes:
+    needs: [plan, api]
+    if: ${{ !cancelled() && !failure() && needs.plan.result == 'success' && needs.plan.outputs.remotes != '[]' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJSON(needs.plan.outputs.remotes) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.plan.outputs.sha }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Deploy ${{ matrix.app }}
+        run: |
+          slug=$(node scripts/provision.ts vercel-scope)
+          scope=(); [ -z "$slug" ] || scope=(--scope "$slug")
+          pnpm dlx "$VERCEL_CLI" link --yes --project "mfe-lab-${{ matrix.app }}" --token "$VERCEL_TOKEN" "${scope[@]}"
+          pnpm dlx "$VERCEL_CLI" pull --yes --environment=production --token "$VERCEL_TOKEN" "${scope[@]}"
+          pnpm dlx "$VERCEL_CLI" build --prod --token "$VERCEL_TOKEN" "${scope[@]}"
+          pnpm dlx "$VERCEL_CLI" deploy --prebuilt --prod --token "$VERCEL_TOKEN" "${scope[@]}"
+
+  shell:
+    needs: [plan, remotes]
+    if: ${{ !cancelled() && !failure() && needs.plan.result == 'success' && needs.plan.outputs.shell == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.plan.outputs.sha }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Deploy shell
+        run: |
+          slug=$(node scripts/provision.ts vercel-scope)
+          scope=(); [ -z "$slug" ] || scope=(--scope "$slug")
+          pnpm dlx "$VERCEL_CLI" link --yes --project "mfe-lab" --token "$VERCEL_TOKEN" "${scope[@]}"
+          pnpm dlx "$VERCEL_CLI" pull --yes --environment=production --token "$VERCEL_TOKEN" "${scope[@]}"
+          pnpm dlx "$VERCEL_CLI" build --prod --token "$VERCEL_TOKEN" "${scope[@]}"
+          pnpm dlx "$VERCEL_CLI" deploy --prebuilt --prod --token "$VERCEL_TOKEN" "${scope[@]}"
+
+  smoke:
+    needs: [plan, shell]
+    if: ${{ !cancelled() && !failure() && needs.plan.result == 'success' && needs.plan.outputs.any == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Live URLs
+        run: |
+          set -eu
+          h() { curl -sS --retry 5 --retry-delay 3 --retry-all-errors -D - -o /dev/null "$1"; }
+          code() { curl -sS --retry 5 --retry-delay 3 --retry-all-errors -o /dev/null -w '%{http_code}' "$1"; }
+          curl -fsS --retry 5 --retry-delay 3 --retry-all-errors https://mfe-lab.vercel.app/ | grep -qi '<title>'
+          [ "$(code https://mfe-lab.vercel.app/api/health)" = 200 ]
+          m=$(h https://mfe-lab-products.vercel.app/mf-manifest.json)
+          echo "$m" | head -1 | grep -q ' 200'
+          echo "$m" | grep -qi '^access-control-allow-origin: \*'
+          echo "$m" | grep -i '^cache-control:' | grep -qi 'no-store'
+          [ "$(code https://mfe-lab-api.vercel.app/cron/reseed)" = 401 ]
+          echo smoke ok

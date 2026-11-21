@@ -1,4 +1,4 @@
-# Deploying to Vercel (prepared in T30, first deploy in T31)
+# Deploying to Vercel (prepared in T30, provisioned and deployed from Actions in T31)
 
 Each app is its own Vercel project, built from the monorepo with its own root directory. Nothing here changes local dev, Docker or e2e.
 
@@ -28,18 +28,20 @@ Each app is its own Vercel project, built from the monorepo with its own root di
 
 - `pnpm build` in `apps/api` bundles `src/vercel.ts` with rolldown to `apps/api/api/index.js` (gitignored). Vercel does not resolve our `.ts` import specifiers, hence this one build step; local dev and Docker still run `.ts` directly.
 - `vercel.json` sets `framework: null` (no zero-config Fastify detection, which would pick `src/app.ts`) and rewrites every path to the function.
-- The function builds one Fastify app per warm instance, never calls `listen()`, and never migrates (`migrate: false`). Run migrations against Neon yourself: `DATABASE_URL=<neon url> pnpm --filter @mfe/api migrate` (then `seed` once).
+- The function builds one Fastify app per warm instance, never calls `listen()`, and never migrates (`migrate: false`). Migrations run in CI (see Deploy flow); `provision.yml` also seeds once.
 - PGlite is imported dynamically only for `pglite:` URLs, so production never loads it. The `pg` pool has `max: 3` and a 10 s idle timeout; use Neon's pooled connection string.
 - Node 26 (`engines.node` `26.x` in `apps/api/package.json`).
 
-### Env (set in the Vercel project, never committed)
+### Env (set by `provision.yml`, never committed)
 
-| Project | Variable       | Value                                       |
-| ------- | -------------- | ------------------------------------------- |
-| api     | `DATABASE_URL` | Neon pooled connection string               |
-| api     | `JWT_SECRET`   | long random string                          |
-| api     | `CRON_SECRET`  | long random string (Vercel Cron sends it)   |
-| static  | none           | shell URLs are in `vercel.json` `build.env` |
+| Project | Variable       | Value                                                          |
+| ------- | -------------- | -------------------------------------------------------------- |
+| api     | `DATABASE_URL` | Neon pooled connection string (updated if it changes)          |
+| api     | `JWT_SECRET`   | random, 32 bytes, created once and never rotated by the script |
+| api     | `CRON_SECRET`  | random, 32 bytes, created once and never rotated by the script |
+| static  | none           | shell URLs are in `vercel.json` `build.env`                    |
+
+All three are type `sensitive` on the production and preview targets. The API function runs in `fra1`, next to the database (`aws-eu-central-1`).
 
 ### Daily demo reset
 
@@ -49,9 +51,47 @@ Each app is its own Vercel project, built from the monorepo with its own root di
 
 `releases/` (frozen remote versions, `pnpm release`) is not built on Vercel, same as in Docker, so the inspector offers only `dev`.
 
-## Owner checklist for T31
+## Provision once
 
-1. Create Vercel and Neon accounts.
-2. Install the Vercel GitHub app on `sotream/mfe-lab`.
-3. `claude mcp add` the Vercel and Neon MCP servers and finish OAuth.
-4. Create a Vercel token in the dashboard and store it yourself: `gh secret set VERCEL_TOKEN`. Do not paste secret values to the planner or an agent.
+`.github/workflows/provision.yml` (manual, `workflow_dispatch`) runs `node scripts/provision.ts`, which uses the Vercel and Neon REST APIs with plain `fetch` and is idempotent:
+
+- Neon: finds or creates the project `mfe-lab` (Postgres 17, `aws-eu-central-1`).
+- Vercel: finds or creates the four projects (`framework: null`, root dir `apps/<name>`, Node 26.x), then checks that each production domain is the `*.vercel.app` URL in `deploy/urls.json` and fails naming the actual domain if not.
+- API env vars as above. `DATABASE_URL` is a sensitive value that cannot be read back, so its comment holds a short hash of the URI; the script rewrites it only when the hash differs.
+- The workflow then migrates and seeds Neon and checks that the database has 3 users. The pooled URI is fetched inside the job and masked with `::add-mask::`.
+
+The script logs only names, ids and created / exists / updated. Re-run it any time; a second run changes nothing.
+
+## Deploy flow
+
+`.github/workflows/deploy.yml` runs when CI succeeds for a push to `main` (`workflow_run`), or by hand (`workflow_dispatch`, input `apps`: `changed` or `all`). Nothing is deployed from pull requests.
+
+1. `plan` checks out the commit CI ran on (`workflow_run.head_sha`; the default checkout would be the newest `main`), and lists the files of `HEAD~1..HEAD` (a squash merge is one commit per PR). `scripts/changed-apps.ts` maps them to apps.
+2. `api`: migrate Neon, then deploy.
+3. `products` and `dashboard` in parallel.
+4. `shell` last.
+5. `smoke` checks the live URLs: shell `<title>`, `/api/health` 200, the products manifest (200, CORS `*`, `no-store`), and `/cron/reseed` 401 without auth.
+
+Per app: `vercel link --yes --project <name>` (so no project id is stored), `vercel pull --yes --environment=production`, `vercel build --prod`, `vercel deploy --prebuilt --prod`. The CLI is pinned in `deploy.yml` (`VERCEL_CLI`) and runs with `pnpm dlx`. Jobs run under `concurrency: deploy` without cancelling.
+
+### What gets deployed
+
+| Changed path                                                                                                                                                                 | Apps     |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| `apps/<x>/**` (the API's migrations included)                                                                                                                                | `<x>`    |
+| `packages/**`, `federation.shared.ts`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, root `package.json`, `deploy/**`, `scripts/vercel-config.ts`, `.github/workflows/deploy.yml` | all four |
+| docs, tests, `e2e/`, the rest of `.github/**`                                                                                                                                | none     |
+
+If two merges land while a deploy is running, the queue keeps only the newest pending run, so the skipped commit's changes are not deployed. Run `deploy.yml` with `all` to catch up.
+
+No PR previews yet: an API preview would use the production database. Previews with a Neon branch per PR are a later task.
+
+### Secrets (names only)
+
+Repository secrets: `VERCEL_TOKEN`, `NEON_API_KEY`. The Vercel GitHub app is not needed. Set them yourself with `gh secret set`; never paste values to an agent. The runtime secrets live only in the Vercel project env.
+
+## Owner checklist
+
+1. Create Vercel and Neon accounts (a Vercel team and a Neon organization are fine: `scripts/provision.ts` discovers them from the tokens and `deploy.yml` passes `--scope`; nothing is stored, and several teams or orgs fail with a listing).
+2. `gh secret set VERCEL_TOKEN` and `gh secret set NEON_API_KEY`.
+3. After merge: run `provision.yml`, then `deploy.yml` with `all`.
