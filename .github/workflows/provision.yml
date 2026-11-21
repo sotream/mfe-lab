@@ -33,6 +33,8 @@ jobs:
       - run: pnpm --filter @mfe/api migrate
       - run: pnpm --filter @mfe/api seed
       - name: Smoke, the database has 3 users
+        env:
+          PGSSLROOTCERT: system
         run: |
           n=$(psql "$DATABASE_URL" -tAc 'select count(*) from users')
           echo "users: $n"
