@@ -34,10 +34,12 @@ export const remoteManifests = Object.entries(entries).map(([name, { entry }]) =
 }));
 
 export type { ExposedName, RemoteName };
-// Where a remote lives, for the frame label: ":port" on localhost, else the hostname.
+// Where a remote lives, for the frame label: ":port" on localhost, else the first DNS label (full host in the label title).
 export function remoteOrigin(manifestUrl: string): string {
   const { hostname, port } = new URL(manifestUrl);
-  return hostname === 'localhost' || hostname === '127.0.0.1' ? `:${port}` : hostname;
+  return hostname === 'localhost' || hostname === '127.0.0.1'
+    ? `:${port}`
+    : hostname.split('.')[0]!;
 }
 
 registerRemotes(Object.entries(entries).map(([name, { entry }]) => ({ name, entry })));

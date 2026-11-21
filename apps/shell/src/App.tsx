@@ -47,6 +47,7 @@ const Frame = ({
       key={frameKey}
       name={name}
       origin={remoteOrigin(entry)}
+      originTitle={new URL(entry).hostname}
       load={() =>
         load().catch((err: unknown) => {
           if (err instanceof RemoteDisabledError) return { default: () => <Off name={name} /> };
