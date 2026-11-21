@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 830" width="1200" height="830" role="img" aria-labelledby="t d">
   <title id="t">mfe-lab architecture</title>
-  <desc id="d">A browser page hosts the shell on port 3000, which loads the products remote on 3001 and the dashboard remote on 3002 through Module Federation. React, react-dom, react-router and auth-store are shared singletons. The remotes talk through a typed DOM event bus and reach the Fastify and SQLite API on 4000 through the /api proxy.</desc>
+  <desc id="d">A browser page hosts the shell on port 3000, which loads the products remote on 3001 and the dashboard remote on 3002 through Module Federation. React, react-dom, react-router and auth-store are shared singletons. The remotes talk through a typed DOM event bus and reach the Fastify and Postgres API on 4000 through the /api proxy.</desc>
   <style>
     text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; fill: #1f2328; font-size: 13px; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
@@ -99,6 +99,6 @@
   <g>
     <path d="M770 748v34a50 14 0 0 0 100 0v-34" fill="#fff" stroke="#3b5b92" stroke-width="1.6"/>
     <ellipse cx="820" cy="748" rx="50" ry="12" fill="#fff" stroke="#3b5b92" stroke-width="1.6"/>
-    <text x="820" y="772" class="c mono" style="font-size:12px">SQLite</text><text x="820" y="789" class="c s">app.db</text>
+    <text x="820" y="772" class="c mono" style="font-size:12px">Postgres</text><text x="820" y="789" class="c s">PGlite in dev</text>
   </g>
 </svg>

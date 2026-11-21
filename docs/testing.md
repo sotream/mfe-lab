@@ -10,7 +10,7 @@ Remote manifest URLs are baked into the shell at build time; override with `MF_P
 
 ## Testing
 
-- **Unit and component (black-box):** `pnpm test` runs Vitest. API tests use Fastify `inject` with in-memory SQLite; frontend tests use Testing Library. Tests are written from the task contract in `docs/PLAN.md`, not from the implementation.
+- **Unit and component (black-box):** `pnpm test` runs Vitest. API tests use Fastify `inject` with in-memory PGlite (Postgres in WASM, no Docker); frontend tests use Testing Library. Tests are written from the task contract in `docs/PLAN.md`, not from the implementation.
 - **E2E:** `pnpm e2e` runs one Playwright suite in `e2e/` against the dev servers in headless Chromium.
 - **E2E on Docker images:** `pnpm e2e:docker` runs the same specs against the compose stack.
 
@@ -26,7 +26,7 @@ Playwright starts the API (after seeding), products, dashboard and shell itself.
 
 ```bash
 docker compose up --build -d   # shell :3000, products :3001, dashboard :3002
-docker compose down -v         # stop and drop the DB volume
+docker compose down -v         # stop and drop the DB volume (the `db` Postgres container)
 ```
 
 One `Dockerfile`, three targets: `build` (install and build all apps), `api` (production deps only, seeds on start, then `node src/server.ts`) and `web` (nginx with build arg `APP`). nginx falls back to `index.html`, proxies `/api/` to the API with the prefix stripped, sends `Access-Control-Allow-Origin: *` and `no-store` for `mf-manifest.json` and `remoteEntry.js`. The API listens on `HOST` (default `127.0.0.1`, compose sets `0.0.0.0`) and is not published to the host. The compose `JWT_SECRET` is demo-only. Manifest URLs stay `localhost:3001/3002`, so this is a local setup. CI does not cover it: `act` runs inside Docker.

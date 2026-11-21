@@ -7,6 +7,7 @@ export default defineConfig({
     __MF_DASHBOARD_URL__: JSON.stringify('http://localhost:3002/mf-manifest.json'),
   },
   test: {
+    testTimeout: 30_000, // a fresh PGlite plus seed per test can pass 5 s under parallel load
     include: ['**/*.test.{ts,tsx}'],
     exclude: ['**/node_modules/**', '**/dist/**'],
   },

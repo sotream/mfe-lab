@@ -2,7 +2,6 @@
 **/dist
 .git
 .env
-*.db
 apps/api/data
 apps/*/releases
 e2e

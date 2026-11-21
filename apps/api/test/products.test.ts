@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { call, freshApp, isIso, keysOf, productKeys, setup, type Ctx } from './helpers.ts';
+import { call, freshApp, isIso, isoCol, keysOf, productKeys, setup, type Ctx } from './helpers.ts';
 
 type Product = {
   id: number;
@@ -25,9 +25,12 @@ const list = async (query: Record<string, string> = {}) => {
   expect(res.statusCode, `${JSON.stringify(query)} ${res.body}`).toBe(200);
   return res.json<Page>();
 };
-const allRows = () => ctx.app.db.prepare('SELECT * FROM products ORDER BY id').all() as Product[];
-const literalMatch = (q: string) =>
-  allRows()
+const allRows = () =>
+  ctx.app.db.query<Product>(
+    `SELECT id, sku, name, price_cents, stock, ${isoCol()} FROM products ORDER BY products.id`,
+  );
+const literalMatch = async (q: string) =>
+  (await allRows())
     .filter((p) => `${p.name}\n${p.sku}`.toLowerCase().includes(q.toLowerCase()))
     .map((p) => p.id);
 const expectError = (
@@ -62,10 +65,11 @@ describe('products: read', () => {
     for (const sort of sortFields) {
       for (const order of ['asc', 'desc'] as const) {
         const got = (await list({ sort, order, limit: '100' })).items.map((p) => p[sort]);
+        const sel = sort === 'created_at' ? isoCol('created_at').replace(/ AS .*/, '') : sort;
         const want = (
-          ctx.app.db
-            .prepare(`SELECT ${sort} AS v FROM products ORDER BY ${sort} ${order}`)
-            .all() as { v: unknown }[]
+          await ctx.app.db.query<{ v: unknown }>(
+            `SELECT ${sel} AS v FROM products ORDER BY ${sort} ${order}`,
+          )
         ).map((r) => r.v);
         expect(got, `${sort} ${order}`).toEqual(want);
       }
@@ -73,16 +77,16 @@ describe('products: read', () => {
   });
 
   it('Q-search: q matches sku and name substrings case-insensitively', async () => {
-    const [first] = allRows();
+    const [first] = await allRows();
     if (!first) throw new Error('seed has no products');
     const bySku = await list({ q: first.sku.toLowerCase(), limit: '100' });
     expect(bySku.items.map((p) => p.id)).toContain(first.id);
-    expect(bySku.total).toBe(literalMatch(first.sku).length);
+    expect(bySku.total).toBe((await literalMatch(first.sku)).length);
 
     const sub = first.name.slice(1, 4).toUpperCase();
     const byName = await list({ q: sub, limit: '100' });
-    expect(byName.items.map((p) => p.id).sort((a, b) => a - b)).toEqual(literalMatch(sub));
-    expect(byName.total).toBe(literalMatch(sub).length);
+    expect(byName.items.map((p) => p.id).sort((a, b) => a - b)).toEqual(await literalMatch(sub));
+    expect(byName.total).toBe((await literalMatch(sub)).length);
   });
 
   it('Q-q-special: %, quote and underscore are literal, never 500', async () => {
@@ -94,8 +98,8 @@ describe('products: read', () => {
       expect(
         body.items.map((p) => p.id).sort((a, b) => a - b),
         q,
-      ).toEqual(literalMatch(q));
-      expect(body.total, q).toBe(literalMatch(q).length);
+      ).toEqual(await literalMatch(q));
+      expect(body.total, q).toBe((await literalMatch(q)).length);
     }
   });
 
@@ -118,7 +122,7 @@ describe('products: read', () => {
     const res = await call(ctx, { url: '/products/1' });
     expect(res.statusCode).toBe(200);
     expect(keysOf(res.json<Product>())).toEqual(productKeys);
-    expect(res.json()).toEqual(allRows().find((p) => p.id === 1));
+    expect(res.json()).toEqual((await allRows()).find((p) => p.id === 1));
     expectError(await call(ctx, { url: '/products/9999' }), 404, 'not_found');
     for (const id of ['abc', '0']) {
       expectError(await call(ctx, { url: `/products/${id}` }), 400, 'invalid_params');
@@ -191,11 +195,9 @@ describe('products: write', () => {
 
   it('Q-delete: 409 when orders reference it, 204 then 404 otherwise', async () => {
     const c = await freshApp();
-    const { product_id: used } = c.app.db
-      .prepare('SELECT product_id FROM orders LIMIT 1')
-      .get() as {
-      product_id: number;
-    };
+    const [{ product_id: used }] = (await c.app.db.query<{ product_id: number }>(
+      'SELECT product_id FROM orders LIMIT 1',
+    )) as [{ product_id: number }];
     const del = (id: number) => call(c, { method: 'DELETE', url: `/products/${id}`, as: 'editor' });
     expectError(await del(used), 409, 'conflict');
     expect((await call(c, { url: `/products/${used}` })).statusCode).toBe(200);

@@ -19,7 +19,7 @@ export function registerErrorHandler(app: FastifyInstance) {
     if (code.startsWith('FST_ERR_CTP_')) {
       return reply.code(error.statusCode ?? 400).send({ error: 'invalid_body' });
     }
-    if (code === 'SQLITE_CONSTRAINT_UNIQUE' || code === 'SQLITE_CONSTRAINT_FOREIGNKEY') {
+    if (code === '23505' || code === '23503') {
       return reply.code(409).send({ error: 'conflict' });
     }
     request.log.error(error);

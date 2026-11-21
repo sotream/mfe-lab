@@ -8,11 +8,11 @@ RUN corepack install && pnpm install --frozen-lockfile && pnpm build \
   && pnpm --filter @mfe/api deploy --prod /out/api
 
 FROM node:26-slim AS api
-ENV NODE_ENV=production HOST=0.0.0.0 DB_PATH=/data/app.db
+ENV NODE_ENV=production HOST=0.0.0.0 
 WORKDIR /app
 COPY --from=build /out/api .
-# Seeding is idempotent: it skips when users already exist.
-CMD ["sh", "-c", "node src/seed.ts && node src/server.ts"]
+# DATABASE_URL comes from the environment. Migrating and seeding are idempotent.
+CMD ["sh", "-c", "node src/db.ts && node src/seed.ts && node src/server.ts"]
 
 FROM nginx:alpine AS web
 ARG APP

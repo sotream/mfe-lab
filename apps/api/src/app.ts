@@ -7,7 +7,7 @@ import {
   validatorCompiler,
 } from 'fastify-type-provider-zod';
 import { registerAuth } from './auth.ts';
-import { migrate, openDb, type Database } from './db.ts';
+import { migrate, openDb, type Db } from './db.ts';
 import { registerErrorHandler } from './errors.ts';
 import { flagRoutes } from './flags.ts';
 import { orderRoutes } from './orders.ts';
@@ -17,29 +17,28 @@ import { errorRoutes } from './telemetry.ts';
 
 declare module 'fastify' {
   interface FastifyInstance {
-    db: Database;
+    db: Db;
   }
 }
 
 export async function buildApp(opts: {
-  dbPath: string;
+  dbUrl: string;
   logger?: boolean;
   jwtSecret?: string;
+  migrate?: boolean;
 }): Promise<FastifyInstance> {
   const app = Fastify({ logger: opts.logger ?? false });
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
   registerErrorHandler(app);
 
-  const db = openDb(opts.dbPath);
-  migrate(db);
+  const db = await openDb(opts.dbUrl);
+  if (opts.migrate ?? process.env.NODE_ENV !== 'production') await migrate(db);
   app.decorate('db', db);
-  app.addHook('onClose', () => {
-    db.close();
-  });
+  app.addHook('onClose', () => db.close());
 
-  app.get('/health', () => {
-    db.prepare('select 1').get();
+  app.get('/health', async () => {
+    await db.query('select 1');
     return { status: 'ok' };
   });
 

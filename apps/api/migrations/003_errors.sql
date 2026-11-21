@@ -1,10 +1,10 @@
 CREATE TABLE errors (
-  id INTEGER PRIMARY KEY,
-  remote TEXT NOT NULL,
-  build TEXT NOT NULL,
-  kind TEXT NOT NULL,
-  message TEXT NOT NULL,
-  stack TEXT,
-  url TEXT NOT NULL,
-  at TEXT NOT NULL
+  id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  remote text NOT NULL,
+  build text NOT NULL,
+  kind text NOT NULL,
+  message text NOT NULL,
+  stack text,
+  url text NOT NULL,
+  at timestamptz NOT NULL
 );

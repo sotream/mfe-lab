@@ -3,28 +3,34 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, onTestFinished } from 'vitest';
 import { buildApp } from '../src/app.ts';
-import { migrate, openDb } from '../src/db.ts';
+import { migrate, openDb, type Db } from '../src/db.ts';
 import { seed } from '../src/seed.ts';
 
-export type Db = ReturnType<typeof openDb>;
+export type { Db };
 
-export const freshDb = (): Db => {
-  const db = openDb(':memory:');
-  migrate(db);
+export const freshDb = async (): Promise<Db> => {
+  const db = await openDb('pglite:memory');
+  await migrate(db);
   return db;
 };
 
-export const count = (db: Db, table: string): number =>
-  (db.prepare(`SELECT count(*) AS n FROM ${table}`).get() as { n: number }).n;
+// timestamptz columns come back from the driver as Date; select them as the API's ISO string.
+export const isoCol = (col = 'created_at') =>
+  `to_char(${col} at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS ${col}`;
 
-export const counts = (db: Db) => ({
-  users: count(db, 'users'),
-  products: count(db, 'products'),
-  orders: count(db, 'orders'),
+export const count = async (db: Db, table: string): Promise<number> =>
+  (await db.query<{ n: number }>(`SELECT count(*)::int AS n FROM ${table}`))[0]!.n;
+
+export const counts = async (db: Db) => ({
+  users: await count(db, 'users'),
+  products: await count(db, 'products'),
+  orders: await count(db, 'orders'),
 });
 
-export const userVersion = (db: Db): number =>
-  db.pragma('user_version', { simple: true }) as number;
+export const schemaVersions = async (db: Db): Promise<number[]> =>
+  (
+    await db.query<{ version: number }>('SELECT version FROM schema_migrations ORDER BY version')
+  ).map((r) => r.version);
 
 // One temp dir per test file, removed after the file's tests.
 export const tempDir = (): string => {
@@ -39,7 +45,7 @@ export type Role = (typeof roles)[number];
 export type Ctx = { app: Awaited<ReturnType<typeof buildApp>>; tokens: Record<Role, string> };
 
 export const setup = async (): Promise<Ctx> => {
-  const app = await buildApp({ dbPath: ':memory:', jwtSecret: 'test-secret' });
+  const app = await buildApp({ dbUrl: 'pglite:memory', jwtSecret: 'test-secret' });
   await seed(app.db);
   const tokens = {} as Record<Role, string>;
   for (const role of roles) {

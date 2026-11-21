@@ -1,10 +1,11 @@
 CREATE TABLE flags (
-  name TEXT PRIMARY KEY,
-  enabled INTEGER NOT NULL,
-  description TEXT NOT NULL
+  name text PRIMARY KEY,
+  enabled boolean NOT NULL,
+  description text NOT NULL
 );
 
-INSERT OR IGNORE INTO flags (name, enabled, description) VALUES
-  ('dashboard.revenue', 1, 'Show the Revenue by status section'),
-  ('products.detailPage', 1, 'Link product names to the detail page'),
-  ('products.crash', 0, 'Make ProductsPage throw on render (error tracking demo)');
+INSERT INTO flags (name, enabled, description) VALUES
+  ('dashboard.revenue', true, 'Show the Revenue by status section'),
+  ('products.detailPage', true, 'Link product names to the detail page'),
+  ('products.crash', false, 'Make ProductsPage throw on render (error tracking demo)')
+ON CONFLICT DO NOTHING;
