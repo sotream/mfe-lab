@@ -1,6 +1,6 @@
 # API
 
-Postgres, chosen by `DATABASE_URL` ([RFC 0013](rfc/0013-postgres-for-the-api.md)): `postgres://...` (Neon needs `sslmode=require`), `pglite:memory`, or `pglite:<dir>`. Empty means local PGlite in `apps/api/data/pg` (gitignored; relative dirs resolve against `apps/api/`). Migrations in `apps/api/migrations/*.sql` run on start (not when `NODE_ENV=production`), each in one transaction, tracked in `schema_migrations`. Run them by hand with `pnpm --filter @mfe/api migrate`.
+Postgres, chosen by `DATABASE_URL` ([RFC 0013](rfc/0013-postgres-for-the-api.md)): `postgres://...` (Neon needs `sslmode=verify-full`), `pglite:memory`, or `pglite:<dir>`. Empty means local PGlite in `apps/api/data/pg` (gitignored; relative dirs resolve against `apps/api/`). Migrations in `apps/api/migrations/*.sql` run on start (not when `NODE_ENV=production`), each in one transaction, tracked in `schema_migrations`. Run them by hand with `pnpm --filter @mfe/api migrate`.
 
 ```bash
 pnpm --filter @mfe/api migrate   # apply pending migrations, print the version

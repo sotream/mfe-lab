@@ -19,10 +19,12 @@ const expectedProjects = Object.entries(urls).map(([dir, u]) => ({
   dir,
   name: new URL(u).hostname.replace(/\.vercel\.app$/, ''),
 }));
-const DB_URI =
-  'postgres://neondb_owner:S3cretNeonPw@ep-demo-pooler.eu-central-1.aws.neon.tech/neondb';
-const DB_URI_NEW =
-  'postgres://neondb_owner:An0therPw@ep-demo-pooler.eu-central-1.aws.neon.tech/neondb';
+const HOST = 'ep-demo-pooler.eu-central-1.aws.neon.tech/neondb';
+// What the fake Neon returns (realistic), and what provision must store (sslmode pinned).
+const DB_URI = `postgres://neondb_owner:S3cretNeonPw@${HOST}?sslmode=require&channel_binding=require`;
+const DB_NORM = `postgres://neondb_owner:S3cretNeonPw@${HOST}?sslmode=verify-full&channel_binding=require`;
+const DB_URI_NEW = `postgres://neondb_owner:An0therPw@${HOST}?sslmode=require&channel_binding=require`;
+const DB_NORM_NEW = `postgres://neondb_owner:An0therPw@${HOST}?sslmode=verify-full&channel_binding=require`;
 
 type Env = { key: string; value: string; type?: string; target?: string[]; comment?: string };
 const fp = (v: string) => createHash('sha256').update(v).digest('hex').slice(0, 16);
@@ -181,7 +183,7 @@ function makeFake(opts: Opts = {}) {
 }
 
 // Seed helpers for the "everything exists" scenario.
-const seedAll = (f: ReturnType<typeof makeFake>, dbValue = DB_URI) => {
+const seedAll = (f: ReturnType<typeof makeFake>, dbValue = DB_NORM) => {
   f.st.neon.push({ id: 'neon-0', name: 'mfe-lab', region_id: 'aws-eu-central-1', pg_version: 17 });
   for (const { dir, name } of expectedProjects) {
     f.st.vercel.set(name, {
@@ -273,7 +275,7 @@ describe('provision', () => {
       expect(e.type, e.key).toBe('sensitive');
       expect(e.target ?? [], e.key).toEqual(expect.arrayContaining(['production', 'preview']));
     }
-    expect(valueOf(f, 'DATABASE_URL')).toBe(DB_URI);
+    expect(valueOf(f, 'DATABASE_URL')).toBe(DB_NORM);
     expect(valueOf(f, 'JWT_SECRET')!.length).toBeGreaterThanOrEqual(32);
     expect(valueOf(f, 'CRON_SECRET')!.length).toBeGreaterThanOrEqual(32);
     expect(valueOf(f, 'JWT_SECRET')).not.toBe(valueOf(f, 'CRON_SECRET'));
@@ -299,13 +301,13 @@ describe('provision', () => {
 
   it('Q-provision: a changed Neon URI updates DATABASE_URL but still rotates nothing else', async () => {
     const f = makeFake({ dbUri: DB_URI_NEW });
-    seedAll(f, DB_URI);
+    seedAll(f, DB_NORM);
     await run(f).done;
 
     expect(f.st.creates).toEqual([]);
-    expect(valueOf(f, 'DATABASE_URL')).toBe(DB_URI_NEW);
+    expect(valueOf(f, 'DATABASE_URL')).toBe(DB_NORM_NEW);
     expect(apiEnv(f).find((e) => e.key === 'DATABASE_URL')?.comment).toBe(
-      `sha256:${fp(DB_URI_NEW)}`,
+      `sha256:${fp(DB_NORM_NEW)}`,
     );
     expect(f.st.envWrites.every((w) => w.key === 'DATABASE_URL')).toBe(true);
     expect(valueOf(f, 'JWT_SECRET')).toBe('x'.repeat(48));
@@ -342,6 +344,7 @@ describe('provision', () => {
       valueOf(f, 'JWT_SECRET')!,
       valueOf(f, 'CRON_SECRET')!,
       DB_URI,
+      DB_NORM,
       'S3cretNeonPw',
       r.env.VERCEL_TOKEN,
       r.env.NEON_API_KEY,
@@ -358,7 +361,7 @@ describe('provision', () => {
     );
     expect(err).not.toBeNull();
     const everything = [String(err?.message), ...r.logs, ...r.out].join('\n');
-    for (const s of [DB_URI, 'S3cretNeonPw', r.env.VERCEL_TOKEN, r.env.NEON_API_KEY]) {
+    for (const s of [DB_URI, DB_NORM, 'S3cretNeonPw', r.env.VERCEL_TOKEN, r.env.NEON_API_KEY]) {
       expect(everything).not.toContain(s);
     }
   });
@@ -454,7 +457,7 @@ describe('provision scope (Amendment A)', () => {
   it('Q-scope: neonDatabaseUrl uses the same org discovery and returns the URI', async () => {
     const f = makeFake({ orgs: [ORG] });
     const uri = await neonDatabaseUrl(envFor(), f.fetch, quiet);
-    expect(uri).toBe(DB_URI);
+    expect(uri).toBe(DB_NORM);
     const list = neonReqs(f).find((r) => r.method === 'GET' && r.path === '/api/v2/projects')!;
     expect(list.search.get('org_id')).toBe(ORG.id);
     const conn = neonReqs(f).find((r) => /connection_uri$/.test(r.path))!;
@@ -466,5 +469,22 @@ describe('provision scope (Amendment A)', () => {
     const logs: string[] = [];
     await neonDatabaseUrl(envFor(), f.fetch, (...a: unknown[]) => void logs.push(a.join(' ')));
     expect(logs.join('\n')).not.toContain('S3cretNeonPw');
+  });
+
+  it('Q-sslmode: sslmode=require becomes verify-full, other params kept; no query string gets it added; hash is over the normalized URI', async () => {
+    const f = makeFake({ orgs: [ORG] });
+    const u = new URL(await neonDatabaseUrl(envFor(), f.fetch, quiet));
+    expect(u.searchParams.getAll('sslmode')).toEqual(['verify-full']);
+    expect(u.searchParams.get('channel_binding')).toBe('require');
+    expect(u.toString()).not.toContain('sslmode=require');
+
+    const bare = 'postgres://neondb_owner:S3cretNeonPw@' + HOST;
+    const g = makeFake({ orgs: [ORG], dbUri: bare });
+    const u2 = new URL(await neonDatabaseUrl(envFor(), g.fetch, quiet));
+    expect(u2.searchParams.get('sslmode')).toBe('verify-full');
+
+    const h = makeFake();
+    await run(h).done;
+    expect(apiEnv(h).find((e) => e.key === 'DATABASE_URL')?.comment).toBe(`sha256:${fp(DB_NORM)}`);
   });
 });

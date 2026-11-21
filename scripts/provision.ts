@@ -94,8 +94,16 @@ export async function neonDatabaseUrl(
 ) {
   const id = await neonProject(env, f, log);
   const q = `database_name=${DB}&role_name=${ROLE}&pooled=true`;
-  return (await call(f, env.NEON_API_KEY!, 'GET', `${NEON}/projects/${id}/connection_uri?${q}`))
-    .uri as string;
+  const { uri } = await call(
+    f,
+    env.NEON_API_KEY!,
+    'GET',
+    `${NEON}/projects/${id}/connection_uri?${q}`,
+  );
+  // pg warns on sslmode=require (alias of verify-full today, weaker in pg v9); Neon certs are publicly trusted.
+  const url = new URL(uri);
+  url.searchParams.set('sslmode', 'verify-full');
+  return url.toString();
 }
 
 async function vercelProject(v: Vercel, name: string, dir: string, log: (s: string) => void) {
