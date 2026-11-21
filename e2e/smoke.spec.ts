@@ -94,3 +94,9 @@ test('E-inspector: remotes up and shared deps loaded once', async ({ page }) => 
     ).toBeVisible();
   }
 });
+
+test('E-favicon: the shell serves favicon.svg as an SVG', async ({ request }) => {
+  const res = await request.get(`${BASE}/favicon.svg`);
+  expect(res.status()).toBe(200);
+  expect(res.headers()['content-type']).toMatch(/svg/);
+});
