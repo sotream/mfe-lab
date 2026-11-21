@@ -27,7 +27,7 @@ Each app is its own Vercel project, built from the monorepo with its own root di
 ## API (Vercel Function)
 
 - `pnpm build` in `apps/api` bundles `src/vercel.ts` with rolldown to `apps/api/api/index.js` (gitignored). Vercel does not resolve our `.ts` import specifiers, hence this one build step; local dev and Docker still run `.ts` directly.
-- The build also creates an empty `apps/api/public/` (gitignored) as the project's `outputDirectory`: with `framework: null` and a build command, `vercel build` fails with `STATIC_BUILD_NO_OUT_DIR` without one; the `api/` function is detected separately.
+- `apps/api/public/` holds only `robots.txt` (disallow all) because Vercel needs a non-empty static output directory: with `framework: null` and a build command, an empty or missing `outputDirectory` fails the build (`STATIC_BUILD_NO_OUT_DIR` / `STATIC_BUILD_EMPTY_OUT_DIR`). It also keeps the API out of search indexes; the `api/` function is detected separately.
 - `vercel.json` sets `framework: null` (no zero-config Fastify detection, which would pick `src/app.ts`) and rewrites every path to the function.
 - The function builds one Fastify app per warm instance, never calls `listen()`, and never migrates (`migrate: false`). Migrations run in CI (see Deploy flow); `provision.yml` also seeds once.
 - PGlite is imported dynamically only for `pglite:` URLs, so production never loads it. The `pg` pool has `max: 3` and a 10 s idle timeout; use Neon's pooled connection string.

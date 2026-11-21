@@ -9,4 +9,3 @@ coverage/
 releases/
 apps/api/api/
 .vercel
-apps/api/public/
