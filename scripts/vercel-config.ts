@@ -47,7 +47,7 @@ const api = {
   framework: null,
   regions: ['fra1'], // next to the Neon database (aws-eu-central-1)
   installCommand: 'pnpm install --frozen-lockfile --filter @mfe/api...',
-  buildCommand: 'pnpm build && mkdir -p public', // empty static output: vercel build requires one
+  buildCommand: 'pnpm build',
   outputDirectory: 'public',
   rewrites: [{ source: '/(.*)', destination: '/api' }],
   crons: [{ path: '/cron/reseed', schedule: '0 3 * * *' }],
