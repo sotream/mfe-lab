@@ -355,6 +355,10 @@ ol.panel-body {
   font-size: var(--ds1-text-xs);
 }
 
+.manifest.canary .ds1-tip {
+  max-width: 28ch;
+}
+
 /* reserve the final widths so "checking…" and "—" do not re-flow the columns (CLS) */
 .remotes .ver {
   min-width: 12ch;

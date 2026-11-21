@@ -182,7 +182,7 @@ function RegistryCells({ name }: { name: RemoteName }) {
         </>
       ) : (
         <>
-          <td className="ds1-mono manifest">
+          <td className="ds1-mono manifest canary">
             <Manifest url={row?.canaryUrl} />
           </td>
           <td className="ds1-mono">{row ? row.canaryPercent : '—'}</td>
