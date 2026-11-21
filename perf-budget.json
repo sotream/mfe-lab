@@ -17,7 +17,7 @@
   "vitals": {
     "lcpMs": 2500,
     "clsLogin": 0.1,
-    "timeToRemotesMs": 700,
+    "timeToRemotesMs": 1100,
     "clsHome": 0.1
   }
 }

@@ -36,7 +36,7 @@ It prints app, metric, size, budget and percent used, and exits 1 naming each me
 - `/login` cold: LCP and CLS, watched until 3 s after load (native `PerformanceObserver`).
 - Home after sign-in: time-to-remotes (submit until the first products row and the dashboard chart are visible) and the CLS of that step.
 
-Budgets: LCP 2500 ms (the Google "good" threshold), CLS 0.1, time-to-remotes the measured median plus 25%, rounded to 100 ms. The `vitals` job in `deploy.yml` runs after `smoke`, writes a table to the job summary and fails when a median is over.
+Budgets: LCP 2500 ms (the Google "good" threshold), CLS 0.1, time-to-remotes the measured median plus 25%, rounded up to 100 ms. Vitals budgets are calibrated on the CI runner, measured where the job runs, because that is where the job runs; the runner is in the US and the API in fra1, so it adds transatlantic API latency. Time-to-remotes was measured twice: laptop in Germany, median 495 ms; CI runner in the US, median 822 ms (p90 1351). The first CI run failed the 700 ms budget taken from the laptop number; the budget is 1100 ms (822 + 25% = 1028, rounded up). The `vitals` job in `deploy.yml` runs after `smoke`, writes a table to the job summary and fails when a median is over.
 
 **Raising a budget.** Edit `perf-budget.json` in the same PR as the change that needs it, with the reason and the new measurement in the PR text. A budget is never raised to make a red check pass without a reason.
 
