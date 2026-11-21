@@ -339,7 +339,55 @@ ol.panel-body {
 
 .manifest {
   color: var(--ds1-muted);
-  overflow-wrap: anywhere;
+}
+
+.manifest .ds1-tip {
+  max-width: 24ch;
+}
+
+/* keep the 11-column Remotes table inside the panel at 1440 (EN and DE, admin inputs included) */
+.remotes th,
+.remotes td {
+  padding-inline: var(--ds1-space-xs);
+}
+
+.remotes td.ds1-mono {
+  font-size: var(--ds1-text-xs);
+}
+
+/* reserve the final widths so "checking…" and "—" do not re-flow the columns (CLS) */
+.remotes .ver {
+  min-width: 21ch;
+}
+
+.remotes .st {
+  min-width: 7.5rem;
+}
+
+.remotes .ds1-select {
+  min-width: 7.5rem;
+}
+
+.remotes input[type='url'] {
+  width: 12ch;
+}
+
+.remotes input[type='number'] {
+  width: 6ch;
+}
+
+.hint-th {
+  white-space: nowrap;
+}
+
+.hint {
+  justify-content: center;
+  width: 1.2em;
+  height: 1.2em;
+  border: 1px solid var(--ds1-muted);
+  border-radius: 50%;
+  font: italic 0.75em/1.1 serif;
+  cursor: help;
 }
 
 code {

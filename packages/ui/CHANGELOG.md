@@ -2,6 +2,10 @@
 
 Breaking changes need a major bump, a new CSS prefix (`ds2-`) and an entry here (RFC 0008).
 
+## 1.10.0
+
+- `Tooltip` (`content`, `tabStop?`, plus span attributes): `role="tooltip"` in the top layer, placed by `placePopup`. Hover after 300 ms, focus at once; hides on leave, blur and Escape (focus stays); hoverable (WCAG 1.4.13). `MiddleTruncate` (`text`, `tail?`): one line with the ellipsis in the middle and the tail (default from the last `/`, else 12 characters, or the last N) always visible; pure CSS, the full text in a visually hidden span and in a tooltip, always a tab stop. Styles in `@mfe/ui/tooltip.css` (consumer imports it). Additive.
+
 ## 1.9.0
 
 - `Select`: a styled, accessible select-only combobox (APG) whose popup sits in the top layer (Popover API), so scroll regions and `overflow: clip` panels cannot clip it. Props: `options`, `value`, `onChange`, `labelId` or `aria-label`, `id`, `name`, `disabled`. Framework-free logic in `@mfe/ui/select-core` (`keyAction`, `typeahead`, `placePopup`, `attachPopup`, `bindLabel`) and the styles in `@mfe/ui/select.css` (the consumer imports it, so apps that do not use `Select` do not pay for it), reused by the Vue `DsSelect` in orders. Additive.

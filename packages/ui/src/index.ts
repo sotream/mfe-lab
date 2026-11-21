@@ -4,6 +4,8 @@ export { Skeleton } from './Skeleton.tsx';
 export { Table } from './Table.tsx';
 export { Field } from './Field.tsx';
 export { Select } from './Select.tsx';
+export { Tooltip } from './Tooltip.tsx';
+export { MiddleTruncate } from './MiddleTruncate.tsx';
 export {
   detectLocale,
   formatDate,
