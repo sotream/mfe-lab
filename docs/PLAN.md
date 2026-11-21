@@ -176,6 +176,11 @@ Goal: weekly grouped dependency update PRs via `.github/dependabot.yml`, with no
 - **Goal:** every app can be deployed to Vercel as its own project and the API runs as a Vercel Function against Neon. Nothing is deployed here; T31 adds the accounts, `deploy.yml` and the first deploy (`docs/deploy.md`).
 - **Done when:** `deploy/urls.json` and `node scripts/vercel-config.ts` generate the four committed `apps/*/vercel.json`; the static apps rewrite `/api/:path*` to the API, fall back to `/index.html`, send CORS (remotes), `no-store` on `mf-manifest.json` and `remoteEntry.js`, and `immutable` only on content-hashed files; the shell `build.env` has both production manifest URLs; the API has a Vercel entry that never listens or migrates and never loads PGlite; `GET /cron/reseed` is 404 without `CRON_SECRET`, 401 without the bearer token, and reseeds (3/30/60) with it; `docs/deploy.md` and the RFC 0013 hosting note exist; `pnpm lint && pnpm typecheck && pnpm test` pass.
 
+## T31 Provision and deploy from Actions
+
+- **Goal:** a live demo at `https://mfe-lab.vercel.app`. Provisioning and every deploy run in GitHub Actions; no secret value reaches a laptop, chat or log.
+- **Done when:** `scripts/provision.ts` (plain `fetch`, idempotent) creates or finds the Neon project and the four Vercel projects and sets the API env vars without printing or rotating secrets, and fails naming the real domain if a production domain differs from `deploy/urls.json`; `provision.yml` (manual) runs it, migrates, seeds and checks 3 users; `deploy.yml` deploys on green CI for `main` (or by hand) in the order api, remotes, shell, only the apps `scripts/changed-apps.ts` selects, then smoke-checks the live URLs; the api `vercel.json` has `regions: ["fra1"]`; actions are pinned by SHA and the Vercel CLI by exact version; `docs/deploy.md` and the README live-demo link are in; `pnpm lint && pnpm typecheck && pnpm test` pass. No PR previews.
+
 ## Later (not now)
 
 Nothing planned.
