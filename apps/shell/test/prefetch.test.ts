@@ -36,13 +36,14 @@ afterEach(() => {
 });
 
 describe('prefetchRemotes', () => {
-  it('Q-prefetch: calls preloadRemote once with both remotes', async () => {
+  it('Q-prefetch: calls preloadRemote once with all remotes', async () => {
     const { prefetchRemotes } = await fresh();
     prefetchRemotes();
     expect(rt.preloadRemote).toHaveBeenCalledTimes(1);
     expect(rt.preloadRemote).toHaveBeenCalledWith([
       { nameOrAlias: 'products', exposes: ['./ProductsPage'], resourceCategory: 'all' },
       { nameOrAlias: 'dashboard', exposes: ['./DashboardPage'], resourceCategory: 'all' },
+      { nameOrAlias: 'orders', exposes: ['./OrdersApp'], resourceCategory: 'all' },
     ]);
   });
 

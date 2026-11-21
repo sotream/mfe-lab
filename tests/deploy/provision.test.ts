@@ -391,7 +391,7 @@ describe('provision scope (Amendment A)', () => {
       expect(lastParam(r), `${r.method} ${r.path}`).toBe('teamId');
     }
     // creates and env writes did happen under that scope
-    expect(f.st.vercel.size).toBe(4);
+    expect(f.st.vercel.size).toBe(5);
     expect(apiEnv(f)).toHaveLength(3);
   });
 
@@ -400,7 +400,7 @@ describe('provision scope (Amendment A)', () => {
     await provision(envFor(), f.fetch, quiet);
     for (const r of vercelReqs(f))
       expect(r.search.has('teamId'), `${r.method} ${r.path}`).toBe(false);
-    expect(f.st.vercel.size).toBe(4);
+    expect(f.st.vercel.size).toBe(5);
   });
 
   it('Q-scope: two teams -> rejects naming both slugs, creates nothing', async () => {

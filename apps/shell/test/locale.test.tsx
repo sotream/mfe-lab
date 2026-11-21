@@ -153,7 +153,7 @@ describe('locale switch', () => {
 
   it('Q-locale-switch: shell text changes in place; route and focus are kept', async () => {
     await mount('/products', 'admin');
-    expect(navNames()).toEqual(['Home', 'Products', 'Dashboard', 'Inspector']); // the wordmark is outside nav
+    expect(navNames()).toEqual(['Home', 'Products', 'Dashboard', 'Orders', 'Inspector']); // the wordmark is outside nav
     const navEl = nav();
     const link = within(navEl).getByRole('link', { name: 'Products' });
     const skip = document.querySelector('.skip-link') as HTMLElement;
@@ -166,7 +166,13 @@ describe('locale switch', () => {
       await sleep(30);
     });
 
-    expect(navNames()).toEqual(['Startseite', 'Produkte', 'Dashboard', 'Inspector']);
+    expect(navNames()).toEqual([
+      'Startseite',
+      'Produkte',
+      'Dashboard',
+      'Bestellungen',
+      'Inspector',
+    ]);
     expect(nav()).toBe(navEl); // no remount
     expect(link.isConnected).toBe(true);
     expect(link.textContent).toBe('Produkte');
@@ -191,7 +197,13 @@ describe('German strings', () => {
   it('Q-de-strings: nav, skip link, h1 and titles per route', async () => {
     document.documentElement.lang = 'de';
     await mount('/', 'admin');
-    expect(navNames()).toEqual(['Startseite', 'Produkte', 'Dashboard', 'Inspector']);
+    expect(navNames()).toEqual([
+      'Startseite',
+      'Produkte',
+      'Dashboard',
+      'Bestellungen',
+      'Inspector',
+    ]);
     const skip = document.querySelector('.skip-link') as HTMLAnchorElement;
     expect(skip.textContent).toBe('Zum Inhalt springen');
     expect(skip.getAttribute('href')).toBe('#main');

@@ -78,7 +78,7 @@ describe('InspectorPage readings', () => {
     for (const l of ['Remotes up', 'Shared modules', 'Flags on', 'Events']) {
       expect(screen.getAllByText(l).length, l).toBeGreaterThan(0);
     }
-    expect(reading('Remotes up')).toContain('2/2');
+    expect(reading('Remotes up')).toContain('3/3');
     expect(reading('Shared modules')).toContain('1');
     expect(reading('Flags on')).toContain('—');
     expect(reading('Events')).toContain('0');
@@ -95,7 +95,7 @@ describe('InspectorPage readings', () => {
       ),
     );
     await mount();
-    expect(reading('Remotes up')).toContain('1/2');
+    expect(reading('Remotes up')).toContain('1/3');
   });
 
   it('Q-inspector-readings-flags: signed in, Flags on shows on/total', async () => {

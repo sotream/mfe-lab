@@ -1,5 +1,5 @@
-// Q-contract-kinds. ASSUMPTIONS (phase 2 adapts): federation.contract.ts exports `kinds` (remote -> 'react' | 'mount')
-// and the types MountModule / MountContext; loadPage('orders') resolves to MountModule, the others to a react module.
+// Q-contract-kinds. federation.contract.ts exports `kinds`, MountModule and MountContext; loadPage is for react
+// remotes and loadMount for mount remotes.
 // The type checks run in `pnpm typecheck` (shell tsconfig includes test/): a stale @ts-expect-error fails there.
 import { describe, expect, it, vi } from 'vitest';
 import {
@@ -17,7 +17,7 @@ vi.mock('@module-federation/enhanced/runtime', () => ({
   preloadRemote: vi.fn(),
 }));
 
-import { loadPage } from '../src/remotes.ts';
+import { loadMount, loadPage } from '../src/remotes.ts';
 
 // Never invoked: compile-time only.
 export function typeChecks() {
@@ -37,13 +37,18 @@ export function typeChecks() {
   // @ts-expect-error locale is de | en
   const badLocale: MountContext = { locale: 'fr', onError: () => {} };
 
-  // loadPage is typed per kind.
-  const orders: Promise<MountModule> = loadPage('orders');
-  void loadPage('orders', 'OrdersApp');
+  // The kind is part of the function: loadPage for react remotes, loadMount for mount remotes.
+  const orders: Promise<MountModule> = loadMount('orders');
+  void loadMount('orders', 'OrdersApp');
+  void loadPage('products');
   // @ts-expect-error a react remote does not load as a mount module
   const productsAsMount: Promise<MountModule> = loadPage('products');
+  // @ts-expect-error a mount remote does not load as a react module
+  void loadPage('orders');
+  // @ts-expect-error a react remote cannot go through loadMount
+  void loadMount('products');
   // @ts-expect-error orders does not expose ProductsPage
-  void loadPage('orders', 'ProductsPage');
+  void loadMount('orders', 'ProductsPage');
   // @ts-expect-error OrdersApp is not exposed by products
   void loadPage('products', 'OrdersApp');
   return [asReact, asMount, noUnmount, noVersion, badLocale, orders, productsAsMount];

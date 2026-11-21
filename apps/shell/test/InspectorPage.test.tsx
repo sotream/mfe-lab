@@ -53,6 +53,7 @@ describe('InspectorPage', () => {
     expect(initial.map((r) => within(r).getByRole('rowheader').textContent)).toEqual([
       'products',
       'dashboard',
+      'orders',
     ]);
     expect(within(rowFor(PRODUCTS)).getByText('checking…')).toBeTruthy();
     expect(within(rowFor(DASHBOARD)).getByText('checking…')).toBeTruthy();
@@ -174,7 +175,7 @@ describe('InspectorPage', () => {
       within(remotes)
         .getAllByRole('rowheader')
         .map((h) => h.textContent),
-    ).toEqual(['products', 'dashboard']);
+    ).toEqual(['products', 'dashboard', 'orders']);
     expect(
       within(shared)
         .getAllByRole('rowheader')
