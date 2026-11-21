@@ -229,3 +229,8 @@ Nothing planned.
 
 - **Goal:** one brand mark: flask = lab, shell body plus two remotes (cool, amber = loaded at runtime), tab lip with the amber hyphen of `mfe-lab`.
 - **Done when:** `packages/ui/brand/` (favicon.svg with a dark-mode media query, favicon-32.png, apple-touch-icon.png, icon-512.png) is copied unhashed to every app's `dist/` and linked from every `index.html`; the shell header and login wordmark show the mark before the text with the accessible name unchanged; README shows `docs/img/logo.svg` / `logo-light.svg`; the brand files do not match the immutable cache rule; no budget raised.
+
+## T41 Compact Remotes table and Details dialog
+
+- **Goal:** the inspector Remotes table has 5 two-line columns (Remote, Manifest, Build, Use, Rollout) and fits from 1024 px up; the full values and the admin registry form move to a Details dialog.
+- **Done when:** no horizontal scroll from 1024 px in EN and DE, for admin and viewer, with long canary URLs; Details (button or a click on the row) opens a native `<dialog>` with the full URLs and Copy, the build, variant, bucket, status and the manifest in use; admins edit canary URL, percent and Off there and Save through `updateRegistry`; Escape closes and focus returns to the Details button; inspector layout shift stays under 0.01; no new dependency and no budget raised.
