@@ -92,6 +92,6 @@ Repository secrets: `VERCEL_TOKEN`, `NEON_API_KEY`. The Vercel GitHub app is not
 
 ## Owner checklist
 
-1. Create Vercel and Neon accounts (personal; a Vercel team would need a `--scope` and `teamId`).
+1. Create Vercel and Neon accounts (a Vercel team and a Neon organization are fine: `scripts/provision.ts` discovers them from the tokens and `deploy.yml` passes `--scope`; nothing is stored, and several teams or orgs fail with a listing).
 2. `gh secret set VERCEL_TOKEN` and `gh secret set NEON_API_KEY`.
 3. After merge: run `provision.yml`, then `deploy.yml` with `all`.

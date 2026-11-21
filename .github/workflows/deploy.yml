@@ -92,10 +92,12 @@ jobs:
       - run: pnpm --filter @mfe/api migrate
       - name: Deploy api
         run: |
-          pnpm dlx "$VERCEL_CLI" link --yes --project mfe-lab-api --token "$VERCEL_TOKEN"
-          pnpm dlx "$VERCEL_CLI" pull --yes --environment=production --token "$VERCEL_TOKEN"
-          pnpm dlx "$VERCEL_CLI" build --prod --token "$VERCEL_TOKEN"
-          pnpm dlx "$VERCEL_CLI" deploy --prebuilt --prod --token "$VERCEL_TOKEN"
+          slug=$(node scripts/provision.ts vercel-scope)
+          scope=(); [ -z "$slug" ] || scope=(--scope "$slug")
+          pnpm dlx "$VERCEL_CLI" link --yes --project mfe-lab-api --token "$VERCEL_TOKEN" "${scope[@]}"
+          pnpm dlx "$VERCEL_CLI" pull --yes --environment=production --token "$VERCEL_TOKEN" "${scope[@]}"
+          pnpm dlx "$VERCEL_CLI" build --prod --token "$VERCEL_TOKEN" "${scope[@]}"
+          pnpm dlx "$VERCEL_CLI" deploy --prebuilt --prod --token "$VERCEL_TOKEN" "${scope[@]}"
 
   remotes:
     needs: [plan, api]
@@ -121,10 +123,12 @@ jobs:
           cache: pnpm
       - name: Deploy ${{ matrix.app }}
         run: |
-          pnpm dlx "$VERCEL_CLI" link --yes --project "mfe-lab-${{ matrix.app }}" --token "$VERCEL_TOKEN"
-          pnpm dlx "$VERCEL_CLI" pull --yes --environment=production --token "$VERCEL_TOKEN"
-          pnpm dlx "$VERCEL_CLI" build --prod --token "$VERCEL_TOKEN"
-          pnpm dlx "$VERCEL_CLI" deploy --prebuilt --prod --token "$VERCEL_TOKEN"
+          slug=$(node scripts/provision.ts vercel-scope)
+          scope=(); [ -z "$slug" ] || scope=(--scope "$slug")
+          pnpm dlx "$VERCEL_CLI" link --yes --project "mfe-lab-${{ matrix.app }}" --token "$VERCEL_TOKEN" "${scope[@]}"
+          pnpm dlx "$VERCEL_CLI" pull --yes --environment=production --token "$VERCEL_TOKEN" "${scope[@]}"
+          pnpm dlx "$VERCEL_CLI" build --prod --token "$VERCEL_TOKEN" "${scope[@]}"
+          pnpm dlx "$VERCEL_CLI" deploy --prebuilt --prod --token "$VERCEL_TOKEN" "${scope[@]}"
 
   shell:
     needs: [plan, remotes]
@@ -146,10 +150,12 @@ jobs:
           cache: pnpm
       - name: Deploy shell
         run: |
-          pnpm dlx "$VERCEL_CLI" link --yes --project "mfe-lab" --token "$VERCEL_TOKEN"
-          pnpm dlx "$VERCEL_CLI" pull --yes --environment=production --token "$VERCEL_TOKEN"
-          pnpm dlx "$VERCEL_CLI" build --prod --token "$VERCEL_TOKEN"
-          pnpm dlx "$VERCEL_CLI" deploy --prebuilt --prod --token "$VERCEL_TOKEN"
+          slug=$(node scripts/provision.ts vercel-scope)
+          scope=(); [ -z "$slug" ] || scope=(--scope "$slug")
+          pnpm dlx "$VERCEL_CLI" link --yes --project "mfe-lab" --token "$VERCEL_TOKEN" "${scope[@]}"
+          pnpm dlx "$VERCEL_CLI" pull --yes --environment=production --token "$VERCEL_TOKEN" "${scope[@]}"
+          pnpm dlx "$VERCEL_CLI" build --prod --token "$VERCEL_TOKEN" "${scope[@]}"
+          pnpm dlx "$VERCEL_CLI" deploy --prebuilt --prod --token "$VERCEL_TOKEN" "${scope[@]}"
 
   smoke:
     needs: [plan, shell]
