@@ -293,7 +293,7 @@ ol.panel-body {
   padding-left: calc(var(--ds1-space-md) + 1.5rem);
 }
 
-.panel-body li + li {
+.panel-body > li + li {
   margin-top: var(--ds1-space-xs);
 }
 
@@ -318,7 +318,7 @@ ol.panel-body {
   padding-left: var(--ds1-space-md);
 }
 
-.panel .ds1-table tr:last-child td {
+.panel .ds1-table tr:last-child > * {
   border-bottom: 0;
 }
 
