@@ -186,6 +186,11 @@ Goal: weekly grouped dependency update PRs via `.github/dependabot.yml`, with no
 - **Goal:** the live site shows where each remote really lives, and no dead config stays.
 - **Done when:** `RemoteFrame` takes an optional `origin` (label as is; else `:port`; else none) and `@mfe/ui` is 1.6.0 with a changelog entry; the shell passes `remoteOrigin(<current manifest URL>)` (`:<port>` on localhost, else the hostname) and follows the version selected in the inspector; the home lead has no port in EN and DE; the generated shell `vercel.json` has no `build.env` and `docs/deploy.md` says the URLs come from `deploy.yml`; `pnpm lint && pnpm typecheck && pnpm test` pass.
 
+## T33 Typed federation contract
+
+- **Goal:** a wrong or removed expose fails at typecheck, not in the browser (RFC 0014).
+- **Done when:** `federation.contract.ts` is the only list of exposed modules; both remotes generate `exposes` from it and `src/exposes.check.ts` makes a missing export or `buildVersion` a type error; the shell's `loadPage` and `Remote` accept only module names of the given remote; `apps/shell/src/remotes.d.ts` is gone; built manifests expose the same names as before; RFC 0014, RFC 0001 and `docs/architecture.md` are updated; `pnpm lint && pnpm typecheck && pnpm test` pass.
+
 ## Later (not now)
 
 Nothing planned.

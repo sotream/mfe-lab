@@ -129,6 +129,8 @@ One owner per concern ([RFC 0011](rfc/0011-accessibility-across-remotes.md)). Th
 
 The shell owns the locale ([RFC 0012](rfc/0012-locale-across-remotes.md)). Before the first render it sets `<html lang>` from `detectLocale()` (saved `localStorage['mfe-lab:locale']`, else a `de*` entry in `navigator.languages`, else `en`). The `DE` / `EN` switch in the top bar sets `lang`, saves the choice and emits `locale:changed` `{ locale }`. Every app reads the locale with `useLocale()` (the `lang` attribute, re-read on the event), so a switch re-renders all of them in place and a remote mounted later is already right. Each app owns `src/messages.ts` (`{ de, en }`, `en` typed as `typeof de`) behind its own `useT()`; a standalone remote sets `lang` in its bootstrap and has no switch. `@mfe/ui` exports `formatMoney`, `formatNumber`, `formatDate` and `formatTime` on `Intl` (`de-DE` or `en-GB`, EUR, 24-hour time). Prices are gross cents, shown with `inkl. 19 % MwSt.` on the detail page. Product names and flag descriptions are data and stay German. The footer links to `/impressum` and `/datenschutz`, public pages of the shell; the Impressum is a placeholder (`Max Mustermann`) and says so.
 
+The exposed modules are a typed contract: `federation.contract.ts` lists them per remote, the remotes generate their `exposes` from it and the shell's `loadPage` only accepts names from it, so a wrong or removed expose fails `pnpm typecheck` ([RFC 0014](rfc/0014-typed-federation-contract.md)).
+
 ## Data between remotes
 
 Server state: products and dashboard each fetch through their own TanStack Query client, created per page mount and per user, bundled in each remote and never shared. After a user change the page refetches, so one user's rows are not shown to the next.

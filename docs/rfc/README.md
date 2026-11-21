@@ -28,3 +28,4 @@ When an RFC is needed: anything that changes the architecture, a shared contract
 | 0011 | Accessibility across remotes                 | Accepted |
 | 0012 | Locale across remotes                        | Accepted |
 | 0013 | Postgres for the API                         | Accepted |
+| 0014 | Typed federation contract                    | Accepted |
