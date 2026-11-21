@@ -39,8 +39,8 @@ export default function ProductDetail() {
   } else {
     body = (
       <>
-        <h3 className="product-name">{data.name}</h3>
-        <dl className="ds1-readings product-readings">
+        <h3 className="products-name">{data.name}</h3>
+        <dl className="ds1-readings products-readings">
           <div>
             <dt>SKU</dt>
             <dd>{data.sku}</dd>
@@ -70,7 +70,7 @@ export default function ProductDetail() {
   }
   return (
     <div className="products">
-      <Link to=".." className="product-back">
+      <Link to=".." className="products-back">
         {t.back}
       </Link>
       {body}
