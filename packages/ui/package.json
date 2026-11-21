@@ -1,6 +1,6 @@
 {
   "name": "@mfe/ui",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -19,6 +19,7 @@
     ".": "./src/index.ts",
     "./base.css": "./src/base.css",
     "./select-core": "./src/select-core.ts",
-    "./select.css": "./src/select.css"
+    "./select.css": "./src/select.css",
+    "./tooltip.css": "./src/tooltip.css"
   }
 }

@@ -1,0 +1,72 @@
+/* Tooltip and MiddleTruncate. Tokens only. Imported by the consumer. */
+.ds1-tip {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.ds1-tip-pop {
+  inset: auto;
+  position: fixed;
+  margin: 0;
+  padding: var(--ds1-space-2xs) var(--ds1-space-xs);
+  max-width: min(480px, 100vw - 16px);
+  border: 1px solid var(--ds1-rule-2);
+  border-radius: var(--ds1-radius);
+  background: var(--ds1-paper-3);
+  color: var(--ds1-ink);
+  font: var(--ds1-text-xs) / 1.4 var(--ds1-font-mono);
+  overflow: visible; /* UA popover style clips; the bridge sits outside */
+  overflow-wrap: anywhere;
+  white-space: normal;
+  box-shadow: 0 8px 24px oklch(5% 0.01 250 / 0.5);
+}
+
+.ds1-tip-pop[hidden] {
+  display: none;
+}
+
+/* keeps the tooltip hoverable across the gap to the trigger */
+.ds1-tip-pop::before {
+  position: absolute;
+  right: 0;
+  left: 0;
+  height: 8px;
+  content: '';
+}
+
+.ds1-tip-pop[data-side='bottom']::before {
+  top: -8px;
+}
+
+.ds1-tip-pop[data-side='top']::before {
+  bottom: -8px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ds1-tip-pop:popover-open {
+    animation: ds1-tip-in 100ms var(--ds1-ease-out);
+  }
+}
+
+@keyframes ds1-tip-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.ds1-trunc-head {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ds1-trunc-tail {
+  flex: none;
+  white-space: nowrap;
+}
+
+.ds1-trunc-full {
+  user-select: none;
+}

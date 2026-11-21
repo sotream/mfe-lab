@@ -1,9 +1,11 @@
-export { RemoteFrame, type FrameError, type RemoteModule } from './RemoteFrame.tsx';
+export { BuildStamp, RemoteFrame, type FrameError, type RemoteModule } from './RemoteFrame.tsx';
 export { Button } from './Button.tsx';
 export { Skeleton } from './Skeleton.tsx';
 export { Table } from './Table.tsx';
 export { Field } from './Field.tsx';
 export { Select } from './Select.tsx';
+export { Tooltip } from './Tooltip.tsx';
+export { MiddleTruncate } from './MiddleTruncate.tsx';
 export {
   detectLocale,
   formatDate,

@@ -216,6 +216,11 @@ Goal: weekly grouped dependency update PRs via `.github/dependabot.yml`, with no
 - **Goal:** a styled, accessible select that looks the same in the React shell and the Vue remote and is never clipped by a scroll region (RFC 0011).
 - **Done when:** `@mfe/ui/select-core` holds `keyAction`, `typeahead` and `placePopup` with no framework import; `@mfe/ui` 1.9.0 has `Select` and `@mfe/ui/select.css`, and orders has `DsSelect.vue` on the same core and CSS; the inspector "Use" select and the orders status filter use them (APG select-only combobox, popup in the top layer, flips above near the viewport bottom); no new dependency and no budget raised; RFC 0011 and the `@mfe/ui` changelog are updated; `pnpm lint && pnpm typecheck && pnpm test` pass.
 
+## T39 Middle truncation with a tooltip
+
+- **Goal:** long values (the inspector manifest URLs) show one line with the ellipsis in the middle and the tail visible; the full value is in an accessible tooltip.
+- **Done when:** `@mfe/ui` 1.10.0 has `MiddleTruncate` and `Tooltip` (`@mfe/ui/tooltip.css`, top layer via `placePopup`); the Remotes table fits the panel at 1440 px in EN and DE without a horizontal scrollbar, the headers read Stable manifest, Canary manifest and Canary % with keyboard-reachable hints; the tooltip opens on hover and focus and closes on Escape; inspector layout shift stays under 0.01; no new dependency and no budget raised; RFC 0011 and the changelog are updated; `pnpm lint && pnpm typecheck && pnpm test` pass.
+
 ## Later (not now)
 
 Nothing planned.

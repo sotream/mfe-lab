@@ -27,7 +27,12 @@ const callsTo = (fetch: ReturnType<typeof stubFetch>, url: string) =>
   fetch.mock.calls.filter(([u]) => String(u) === url).length;
 const tick = (ms: number) => act(async () => void (await vi.advanceTimersByTimeAsync(ms)));
 const mount = () => act(async () => void render(<InspectorPage />));
-const rowFor = (cell: string) => screen.getByText(cell).closest('tr') as HTMLElement;
+// T39: the URL text is in the visually-hidden copy (.ds1-trunc-full) and in the hidden tooltip: take the former
+const fullText = (url: string) =>
+  Array.from(document.querySelectorAll('.ds1-trunc-full')).find(
+    (e) => e.textContent === url,
+  ) as HTMLElement;
+const rowFor = (cell: string) => fullText(cell).closest('tr') as HTMLElement;
 const remotesTable = () => screen.getAllByRole('table')[0] as HTMLElement;
 const sharedTable = () => screen.getAllByRole('table')[1] as HTMLElement;
 
@@ -47,7 +52,8 @@ describe('InspectorPage', () => {
     render(<InspectorPage />);
     expect(screen.getByRole('heading', { level: 1, name: 'Federation inspector' })).toBeTruthy();
     expect(screen.getByRole('heading', { level: 2, name: 'Remotes' })).toBeTruthy();
-    for (const h of ['Name', 'Manifest', 'Version', 'Status']) {
+    // T39: Manifest is now "Stable manifest" (a hint button joins the accessible name, so match the start)
+    for (const h of [/^Name/, /^Stable manifest/, /^Version/, /^Status/]) {
       expect(within(remotesTable()).getByRole('columnheader', { name: h })).toBeTruthy();
     }
     const initial = within(remotesTable()).getAllByRole('row').slice(1);

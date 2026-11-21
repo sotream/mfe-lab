@@ -11,7 +11,17 @@ import {
 import { useAuth } from '@mfe/auth-store/react';
 import { emit } from '@mfe/events';
 import '@mfe/ui/select.css';
-import { Button, formatTime, Select, Table, useLocale } from '@mfe/ui';
+import '@mfe/ui/tooltip.css';
+import {
+  BuildStamp,
+  Button,
+  formatTime,
+  MiddleTruncate,
+  Select,
+  Table,
+  Tooltip,
+  useLocale,
+} from '@mfe/ui';
 import { getInstance } from '@module-federation/enhanced/runtime';
 import {
   useEffect,
@@ -37,6 +47,21 @@ import {
   type RemoteName,
 } from './remotes.ts';
 import { pingRemote, sharedRows, type Ping, type ShareScope } from './inspector.ts';
+
+// Header with a keyboard-reachable info hint.
+function HintTh({ label, hint }: { label: string; hint: string }) {
+  return (
+    <th scope="col" className="hint-th">
+      {label}{' '}
+      <Tooltip tabStop role="img" aria-label={hint} className="hint" content={hint}>
+        i
+      </Tooltip>
+    </th>
+  );
+}
+
+const Manifest = ({ url }: { url?: string | null }) =>
+  url ? <MiddleTruncate text={url} /> : <>—</>;
 
 const remotes = remoteManifests.map(({ name }) => name as RemoteName);
 
@@ -157,7 +182,9 @@ function RegistryCells({ name }: { name: RemoteName }) {
         </>
       ) : (
         <>
-          <td className="ds1-mono manifest">{row?.canaryUrl ?? '—'}</td>
+          <td className="ds1-mono manifest canary">
+            <Manifest url={row?.canaryUrl} />
+          </td>
           <td className="ds1-mono">{row ? row.canaryPercent : '—'}</td>
           <td>{row ? (row.disabled ? t.variantNames.disabled : '—') : '—'}</td>
           <td />
@@ -421,18 +448,18 @@ export default function InspectorPage() {
       </dl>
       <section className="panel">
         <h2>{t.remotes}</h2>
-        <Table label={t.remotes}>
+        <Table className="remotes" label={t.remotes}>
           <thead>
             <tr>
               <th scope="col">{t.name}</th>
-              <th scope="col">{t.manifest}</th>
+              <HintTh label={t.manifest} hint={t.manifestHint} />
               <th scope="col">{t.version}</th>
               <th scope="col">{t.status}</th>
               <th scope="col">{t.use}</th>
               <th scope="col">{t.variant}</th>
               <th scope="col">{t.bucket}</th>
-              <th scope="col">{t.canaryUrl}</th>
-              <th scope="col">{t.canaryPercent}</th>
+              <HintTh label={t.canaryUrl} hint={t.canaryUrlHint} />
+              <HintTh label={t.canaryPercent} hint={t.canaryPercentHint} />
               <th scope="col">{t.off}</th>
               <th scope="col">{t.save}</th>
             </tr>
@@ -441,9 +468,13 @@ export default function InspectorPage() {
             {remotes.map((name) => (
               <tr key={name}>
                 <th scope="row">{name}</th>
-                <td className="ds1-mono manifest">{remoteEntry(name)}</td>
-                <td className="ds1-mono">{pings[name]?.version ?? '—'}</td>
-                <td>
+                <td className="ds1-mono manifest">
+                  <Manifest url={remoteEntry(name)} />
+                </td>
+                <td className="ds1-mono ver">
+                  {pings[name]?.version ? <BuildStamp v={pings[name].version} /> : '—'}
+                </td>
+                <td className="st">
                   <span className={`chip chip--${pings[name]?.status ?? 'idle'}`}>
                     {pings[name] ? t[pings[name].status] : t.checking}
                   </span>
