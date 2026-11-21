@@ -1,8 +1,17 @@
 // Black-box checks on `pnpm build` output. One file so builds never write dist/ concurrently;
 // tests run in order: default build first, MF_PRODUCTS_URL override last, then the shell is rebuilt
 // with defaults so dist/ is left in its normal state.
-import { execFileSync } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { execFileSync, spawnSync } from 'node:child_process';
+import {
+  existsSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
 import { exposes } from '../../federation.contract.ts';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -94,11 +103,83 @@ describe('federation build', { timeout: BUILD_TIMEOUT }, () => {
       for (const f of hit) {
         expect(basename(f), `${app} ${f}`).toMatch(/[0-9a-f]{8,}/);
       }
+      // Every hashed js, css and woff2 is immutable; entry files never are.
+      const hashed = files.filter(
+        (f) =>
+          /\.(js|css|woff2)$/.test(f) &&
+          /[0-9a-f]{16}/.test(basename(f)) &&
+          basename(f) !== 'remoteEntry.js',
+      );
+      expect(hashed.length, `${app} hashed js/css/woff2`).toBeGreaterThan(0);
+      for (const f of hashed) expect(hit, `${app} ${f} must be immutable`).toContain(f);
       for (const f of files.filter((f) =>
         /^(index\.html|mf-manifest\.json|remoteEntry\.js)$/.test(basename(f)),
       )) {
         expect(hit, `${app} ${f} must not be immutable`).not.toContain(f);
       }
+    }
+  });
+
+  it('Q-hashed-assets: every js and css except remoteEntry.js has a 16-hex hash; entry files stay unhashed', () => {
+    const hash = /[0-9a-f]{16}/;
+    for (const app of ['shell', 'products', 'dashboard']) {
+      const dist = join(root, 'apps', app, 'dist');
+      const files = readdirSync(dist, { recursive: true, encoding: 'utf8' }).filter((f) =>
+        statSync(join(dist, f)).isFile(),
+      );
+      const assets = files.filter((f) => /\.(js|css)$/.test(f) && basename(f) !== 'remoteEntry.js');
+      expect(assets.length, `${app} has js/css`).toBeGreaterThan(0);
+      for (const f of assets) expect(basename(f), `${app} ${f}`).toMatch(hash);
+      // The shell is a host: no remoteEntry.js.
+      if (app !== 'shell') {
+        expect(existsSync(join(dist, 'remoteEntry.js')), `${app} remoteEntry.js`).toBe(true);
+      }
+      expect(existsSync(join(dist, 'mf-manifest.json')), `${app} mf-manifest.json`).toBe(true);
+      expect(existsSync(join(dist, 'index.html')), `${app} index.html`).toBe(true);
+    }
+    const html = readFileSync(join(root, 'apps', 'shell', 'dist', 'index.html'), 'utf8');
+    const refs = [...html.matchAll(/(?:src|href)=["']([^"']+\.(?:js|css))(?:\?[^"']*)?["']/g)].map(
+      (m) => m[1]!,
+    );
+    expect(refs.length, 'index.html references scripts/styles').toBeGreaterThan(0);
+    for (const r of refs) expect(basename(r), `index.html -> ${r}`).toMatch(hash);
+  });
+
+  // Q-size-budget. ASSUMPTIONS (phase 2 adapts): `--budget <file>` overrides perf-budget.json;
+  // shape { shell|products|dashboard: { initialJsGzip, totalJsGzip, cssGzip }, vitals: {...} };
+  // violations are reported on stdout/stderr naming the app and metric.
+  const apps = ['shell', 'products', 'dashboard'] as const;
+  const metrics = ['initialJsGzip', 'totalJsGzip', 'cssGzip'] as const;
+  const sizeBudget = (args: string[] = []) =>
+    spawnSync('node', ['scripts/size-budget.ts', ...args], { cwd: root, encoding: 'utf8' });
+  const out = (r: { stdout: string; stderr: string }) => r.stdout + r.stderr;
+
+  it('Q-size-budget: exits 0 on the real build and prints every metric for every app', () => {
+    const r = sizeBudget();
+    expect(r.status, out(r)).toBe(0);
+    for (const app of apps) for (const m of metrics) expect(out(r), `${app} ${m}`).toContain(m);
+    for (const app of apps) expect(out(r)).toContain(app);
+  });
+
+  it('Q-size-budget: exits 1 and names the metric when a budget is below the actual size', () => {
+    const real = JSON.parse(readFileSync(join(root, 'perf-budget.json'), 'utf8')) as Record<
+      string,
+      Record<string, number>
+    >;
+    const dir = mkdtempSync(join(tmpdir(), 'mfe-budget-'));
+    try {
+      for (const m of metrics) {
+        const lowered = structuredClone(real);
+        lowered['shell']![m] = 1;
+        const file = join(dir, `${m}.json`);
+        writeFileSync(file, JSON.stringify(lowered));
+        const r = sizeBudget(['--budget', file]);
+        expect(r.status, `${m}: ${out(r)}`).toBe(1);
+        expect(out(r), m).toContain(m);
+        expect(out(r), m).toContain('shell');
+      }
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
     }
   });
 
