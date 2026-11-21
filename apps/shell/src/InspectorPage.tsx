@@ -4,6 +4,7 @@ import {
   listErrors,
   listFlags,
   setFlag,
+  updateRegistry,
   type ErrorRow,
   type Flag,
 } from '@mfe/api-client';
@@ -21,6 +22,11 @@ import {
 import { useT } from './messages.ts';
 import { eventLog, subscribeEventLog } from './eventLog.ts';
 import {
+  applyRegistryRow,
+  describeRemote,
+  registryAvailable,
+  registryRow,
+  registryVersion,
   releaseManifestUrl,
   releasesUrl,
   remoteEntry,
@@ -72,6 +78,100 @@ function VersionSelect({ name }: { name: RemoteName }) {
         </option>
       ))}
     </select>
+  );
+}
+
+// Variant and, for admins, the editable registry fields of one remote (RFC 0017).
+function RegistryCells({ name }: { name: RemoteName }) {
+  const tt = useT();
+  const t = tt.inspector;
+  const isAdmin = useAuth((s) => s.user?.role === 'admin');
+  useSyncExternalStore(subscribeRemotes, registryVersion);
+  const row = registryRow(name);
+  const { shown, bucket } = describeRemote(name);
+  const [url, setUrl] = useState(row?.canaryUrl ?? '');
+  const [percent, setPercent] = useState(String(row?.canaryPercent ?? 0));
+  const [failed, setFailed] = useState(false);
+  const loaded = row !== undefined;
+
+  async function save(patch: {
+    canaryUrl?: string | null;
+    canaryPercent?: number;
+    disabled?: boolean;
+  }) {
+    try {
+      const updated = await updateRegistry(name, patch);
+      applyRegistryRow(updated);
+      setFailed(false);
+      emit('a11y:announce', { message: tt.inspector.registrySaved(name) });
+    } catch {
+      setFailed(true);
+    }
+  }
+
+  return (
+    <>
+      <td>
+        <span className={`chip ${shown === 'stable' ? '' : 'chip--down'}`}>
+          {t.variantNames[shown]}
+        </span>
+      </td>
+      <td className="ds1-mono">{bucket ?? '—'}</td>
+      {isAdmin && loaded ? (
+        <>
+          <td>
+            <input
+              className="ds1-input ds1-mono"
+              type="url"
+              aria-label={t.canaryUrlOf(name)}
+              placeholder="https://…/mf-manifest.json"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+            />
+          </td>
+          <td>
+            <input
+              className="ds1-input ds1-mono"
+              type="number"
+              min={0}
+              max={100}
+              step={1}
+              aria-label={t.canaryPercentOf(name)}
+              value={percent}
+              onChange={(e) => setPercent(e.target.value)}
+            />
+          </td>
+          <td>
+            <input
+              type="checkbox"
+              className="switch"
+              aria-label={t.offOf(name)}
+              checked={row.disabled}
+              onChange={(e) => void save({ disabled: e.target.checked })}
+            />
+          </td>
+          <td>
+            <Button
+              className="ds1-button--sm"
+              aria-label={t.saveOf(name)}
+              onClick={() =>
+                void save({ canaryUrl: url.trim() || null, canaryPercent: Number(percent) })
+              }
+            >
+              {t.save}
+            </Button>
+            {failed && <span role="alert">{t.registryFailed}</span>}
+          </td>
+        </>
+      ) : (
+        <>
+          <td className="ds1-mono manifest">{row?.canaryUrl ?? '—'}</td>
+          <td className="ds1-mono">{row ? row.canaryPercent : '—'}</td>
+          <td>{row ? (row.disabled ? t.variantNames.disabled : '—') : '—'}</td>
+          <td />
+        </>
+      )}
+    </>
   );
 }
 
@@ -253,6 +353,7 @@ export default function InspectorPage() {
   const entries = useSyncExternalStore(subscribeRemotes, () =>
     remotes.map((n) => remoteEntry(n)).join('|'),
   );
+  useSyncExternalStore(subscribeRemotes, registryVersion);
   const [rows, setRows] = useState(readShared);
   const user = useAuth((s) => s.user);
   const [flags, setFlags] = useState<Flag[]>([]);
@@ -315,6 +416,12 @@ export default function InspectorPage() {
               <th scope="col">{t.version}</th>
               <th scope="col">{t.status}</th>
               <th scope="col">{t.use}</th>
+              <th scope="col">{t.variant}</th>
+              <th scope="col">{t.bucket}</th>
+              <th scope="col">{t.canaryUrl}</th>
+              <th scope="col">{t.canaryPercent}</th>
+              <th scope="col">{t.off}</th>
+              <th scope="col">{t.save}</th>
             </tr>
           </thead>
           <tbody>
@@ -331,10 +438,18 @@ export default function InspectorPage() {
                 <td>
                   <VersionSelect name={name} />
                 </td>
+                <RegistryCells
+                  // A saved or reloaded row remounts the cells, so the inputs show what the server holds.
+                  key={`${registryRow(name)?.canaryUrl}|${registryRow(name)?.canaryPercent}`}
+                  name={name}
+                />
               </tr>
             ))}
           </tbody>
         </Table>
+        <p className="panel-body">
+          {registryAvailable() === false ? t.registryUnavailable : t.registryHint}
+        </p>
       </section>
       <section className="panel">
         <h2>{t.shared}</h2>
