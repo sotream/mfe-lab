@@ -82,10 +82,12 @@ describe('workflows', () => {
 
   it('Q-workflows: deploy.yml runs pull, build and deploy per app, resolving projects by name', () => {
     const t = code(files['deploy.yml']);
-    expect(t).toMatch(/vercel link --yes --project/);
-    expect(t).toMatch(/vercel pull --yes --environment=production/);
-    expect(t).toMatch(/vercel build --prod/);
-    expect(t).toMatch(/vercel deploy --prebuilt --prod/);
+    // The CLI is invoked through a pinned variable: `pnpm dlx "$VERCEL_CLI" <cmd>`.
+    expect(t).toMatch(/VERCEL_CLI:\s*vercel@\d+\.\d+\.\d+/);
+    expect(t).toMatch(/"\$VERCEL_CLI" link --yes --project/);
+    expect(t).toMatch(/"\$VERCEL_CLI" pull --yes --environment=production/);
+    expect(t).toMatch(/"\$VERCEL_CLI" build --prod/);
+    expect(t).toMatch(/"\$VERCEL_CLI" deploy --prebuilt --prod/);
   });
 
   it('Q-workflows: secrets are only VERCEL_TOKEN and NEON_API_KEY, via ${{ secrets.X }}', () => {
@@ -107,7 +109,9 @@ describe('workflows', () => {
     expect(t).toMatch(/scripts\/provision\.ts/);
     expect(t).toMatch(/@mfe\/api migrate/);
     expect(t).toMatch(/@mfe\/api seed/);
-    expect(t).toMatch(/::add-mask::/);
+    // Masking lives in the `db-url` subcommand, which exports DATABASE_URL for the next steps.
+    expect(t).toMatch(/scripts\/provision\.ts db-url/);
+    expect(readFileSync(resolve(root, 'scripts/provision.ts'), 'utf8')).toMatch(/::add-mask::/);
   });
 
   it('Q-workflows: deploy.yml migrates the api, orders api -> remotes -> shell, and smoke-checks', () => {
@@ -121,9 +125,30 @@ describe('workflows', () => {
       const m = new RegExp(`^  ${job}:[\\s\\S]*?^    needs:\\s*(.+)$`, 'm').exec(t);
       return m?.[1] ?? '';
     };
-    expect(needs('shell')).toMatch(/products/);
-    expect(needs('shell')).toMatch(/dashboard/);
-    expect(needs('products')).toMatch(/api/);
-    expect(needs('dashboard')).toMatch(/api/);
+    // The remotes (products, dashboard) are one matrix job.
+    expect(needs('shell')).toMatch(/remotes/);
+    expect(needs('remotes')).toMatch(/\bapi\b/);
+    expect(t).toMatch(/remotes=/);
+  });
+
+  it('Q-workflows: every vercel link/pull/build/deploy line in deploy.yml carries the scope array', () => {
+    const t = code(files['deploy.yml']);
+    const lines = t
+      .split('\n')
+      .filter((l) =>
+        /\$VERCEL_CLI"?\s+(link|pull|build|deploy)\b|\bvercel(@\S+)?\s+(link|pull|build|deploy)\b/.test(
+          l,
+        ),
+      );
+    // api + matrix remotes + shell, four commands each
+    expect(lines.length).toBeGreaterThanOrEqual(12);
+    for (const l of lines) expect(l, l).toMatch(/"\$\{scope\[@\]\}"/);
+  });
+
+  it('Q-workflows: the scope array is built from the vercel-scope subcommand, empty when personal', () => {
+    const t = code(files['deploy.yml']);
+    expect(t).toMatch(/provision\.ts vercel-scope/);
+    expect(t).toMatch(/--scope "\$slug"/);
+    expect(t).toMatch(/\[ -z "\$slug" \] \|\|/);
   });
 });

@@ -1,14 +1,13 @@
 // Q-provision: scripts/provision.ts against an in-memory fake of the Vercel and Neon APIs.
-// ASSUMPTIONS (phase 2 adjusts):
-//  - scripts/provision.ts exports `async provision({ fetch, env, log })`; it rejects on failure;
-//  - env carries VERCEL_TOKEN and NEON_API_KEY;
-//  - it reads deploy/urls.json itself (cwd = repo root).
-// All URL/payload knowledge lives in `makeFake().route` below; adapt only that helper.
-import { randomBytes } from 'node:crypto';
+// Interface: provision(env, fetch, log) async, throws on failure; neonDatabaseUrl(env, fetch, log);
+// vercelScope(env, fetch) -> {id, slug} | undefined, throws when several teams.
+// Vercel sensitive values are unreadable: the fake never returns them, only key/id/comment.
+// All URL/payload knowledge lives in `makeFake` below.
+import { createHash, randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { provision } from '../../scripts/provision.ts';
+import { neonDatabaseUrl, provision, vercelScope } from '../../scripts/provision.ts';
 
 const root = resolve(import.meta.dirname, '../..');
 const urls = JSON.parse(readFileSync(resolve(root, 'deploy/urls.json'), 'utf8')) as Record<
@@ -25,7 +24,8 @@ const DB_URI =
 const DB_URI_NEW =
   'postgres://neondb_owner:An0therPw@ep-demo-pooler.eu-central-1.aws.neon.tech/neondb';
 
-type Env = { key: string; value: string; type?: string; target?: string[] };
+type Env = { key: string; value: string; type?: string; target?: string[]; comment?: string };
+const fp = (v: string) => createHash('sha256').update(v).digest('hex').slice(0, 16);
 type VProject = {
   id: string;
   name: string;
@@ -38,7 +38,13 @@ type VProject = {
 type Body = Record<string, unknown>;
 type NProject = { id: string; name: string; region_id: string; pg_version: number };
 
-function makeFake(opts: { dbUri?: string; domainFor?: (name: string) => string } = {}) {
+type Opts = {
+  dbUri?: string;
+  domainFor?: (name: string) => string;
+  teams?: { id: string; slug: string }[];
+  orgs?: { id: string }[];
+};
+function makeFake(opts: Opts = {}) {
   const st = {
     neon: [] as NProject[],
     vercel: new Map<string, VProject>(),
@@ -52,6 +58,13 @@ function makeFake(opts: { dbUri?: string; domainFor?: (name: string) => string }
       target?: string[];
     }[],
     calls: [] as string[],
+    reqs: [] as {
+      host: string;
+      method: string;
+      path: string;
+      search: URLSearchParams;
+      body: Body;
+    }[],
   };
   let n = 0;
   const json = (status: number, body: unknown) =>
@@ -66,6 +79,7 @@ function makeFake(opts: { dbUri?: string; domainFor?: (name: string) => string }
 
   // ---- the only place that knows endpoints and payload shapes ----
   const neonRoute = (method: string, p: string, body: Body): Response => {
+    if (/\/users\/me\/organizations$/.test(p)) return json(200, { organizations: opts.orgs ?? [] });
     if (method === 'POST' && /\/projects$/.test(p)) {
       const pr = body.project as NProject;
       const rec = {
@@ -86,9 +100,16 @@ function makeFake(opts: { dbUri?: string; domainFor?: (name: string) => string }
     id: string | undefined,
     body: Body,
   ): Response => {
-    // ASSUMPTION: the fake returns env values so "unchanged" is detectable (real Vercel hides sensitive ones).
     if (method === 'GET')
-      return json(200, { envs: proj.envs.map((e, i) => ({ id: `env_${i}`, ...e })) });
+      return json(200, {
+        envs: proj.envs.map((e, i) => ({
+          id: `env_${i}`,
+          key: e.key,
+          type: e.type,
+          target: e.target,
+          comment: e.comment,
+        })),
+      });
     if (method === 'POST') {
       for (const e of (Array.isArray(body) ? body : [body]) as Env[]) {
         proj.envs = proj.envs.filter((x) => x.key !== e.key);
@@ -109,6 +130,7 @@ function makeFake(opts: { dbUri?: string; domainFor?: (name: string) => string }
     return json(200, {});
   };
   const vercelRoute = (method: string, p: string, body: Body): Response => {
+    if (method === 'GET' && p === '/v2/teams') return json(200, { teams: opts.teams ?? [] });
     if (method === 'GET' && /\/projects$/.test(p))
       return json(200, { projects: [...st.vercel.values()] });
     if (method === 'POST' && /\/projects$/.test(p)) {
@@ -130,7 +152,9 @@ function makeFake(opts: { dbUri?: string; domainFor?: (name: string) => string }
     const proj = [...st.vercel.values()].find((x) => x.name === m?.[1] || x.id === m?.[1]);
     if (!m || !proj) return json(404, { error: { code: 'not_found' } });
     if (m[4]) return json(200, { domains: [{ name: proj.domain }] });
-    return m[2] ? envRoute(method, proj, m[3], body) : json(200, withDomain(proj));
+    if (m[2]) return envRoute(method, proj, m[3], body);
+    if (method === 'PATCH') Object.assign(proj, body); // e.g. nodeVersion, which create does not accept
+    return json(200, withDomain(proj));
   };
   const withDomain = (r: VProject) => ({
     ...r,
@@ -150,6 +174,7 @@ function makeFake(opts: { dbUri?: string; domainFor?: (name: string) => string }
     let body: Body = {};
     if (typeof init?.body === 'string' && init.body) body = JSON.parse(init.body);
     st.calls.push(`${method} ${u.pathname}`);
+    st.reqs.push({ host: u.hostname, method, path: u.pathname, search: u.searchParams, body });
     return route(method, u, body);
   };
   return { st, fetch: fetch as typeof globalThis.fetch };
@@ -168,7 +193,13 @@ const seedAll = (f: ReturnType<typeof makeFake>, dbValue = DB_URI) => {
       envs:
         dir === 'api'
           ? ['production', 'preview'].flatMap((t) => [
-              { key: 'DATABASE_URL', value: dbValue, type: 'sensitive', target: [t] },
+              {
+                key: 'DATABASE_URL',
+                value: dbValue,
+                type: 'sensitive',
+                target: [t],
+                comment: `sha256:${fp(dbValue)}`,
+              },
               { key: 'JWT_SECRET', value: 'x'.repeat(48), type: 'sensitive', target: [t] },
               { key: 'CRON_SECRET', value: 'y'.repeat(48), type: 'sensitive', target: [t] },
             ])
@@ -192,11 +223,7 @@ const run = (f: ReturnType<typeof makeFake>) => {
     VERCEL_TOKEN: 'vtok_' + randomBytes(8).toString('hex'),
     NEON_API_KEY: 'nkey_' + randomBytes(8).toString('hex'),
   };
-  const done = provision({
-    fetch: f.fetch,
-    env,
-    log: (...a: unknown[]) => void logs.push(a.join(' ')),
-  } as never);
+  const done = provision(env, f.fetch, (...a: unknown[]) => void logs.push(a.join(' ')));
   return { done, logs, out, env, so, se };
 };
 afterEach(() => vi.restoreAllMocks());
@@ -263,7 +290,7 @@ describe('provision', () => {
     expect(valueOf(f, 'CRON_SECRET')).toBe('y'.repeat(48));
   });
 
-  it('Q-provision: unchanged DATABASE_URL is not rewritten', async () => {
+  it('Q-provision: unchanged DATABASE_URL (same hash in comment) is not rewritten', async () => {
     const f = makeFake();
     seedAll(f);
     await run(f).done;
@@ -277,6 +304,10 @@ describe('provision', () => {
 
     expect(f.st.creates).toEqual([]);
     expect(valueOf(f, 'DATABASE_URL')).toBe(DB_URI_NEW);
+    expect(apiEnv(f).find((e) => e.key === 'DATABASE_URL')?.comment).toBe(
+      `sha256:${fp(DB_URI_NEW)}`,
+    );
+    expect(f.st.envWrites.every((w) => w.key === 'DATABASE_URL')).toBe(true);
     expect(valueOf(f, 'JWT_SECRET')).toBe('x'.repeat(48));
     expect(valueOf(f, 'CRON_SECRET')).toBe('y'.repeat(48));
   });
@@ -330,5 +361,110 @@ describe('provision', () => {
     for (const s of [DB_URI, 'S3cretNeonPw', r.env.VERCEL_TOKEN, r.env.NEON_API_KEY]) {
       expect(everything).not.toContain(s);
     }
+  });
+});
+
+// ---------- Amendment A: scope discovery ----------
+const TEAM = { id: 'team_abc', slug: 'my-team' };
+const ORG = { id: 'org-xyz-123' };
+const envFor = () => ({ VERCEL_TOKEN: 'vtok_t', NEON_API_KEY: 'nkey_t' });
+const quiet = () => {};
+const vercelReqs = (f: ReturnType<typeof makeFake>) =>
+  f.st.reqs.filter((r) => r.host === 'api.vercel.com');
+const neonReqs = (f: ReturnType<typeof makeFake>) =>
+  f.st.reqs.filter((r) => r.host === 'console.neon.tech');
+const lastParam = (r: { search: URLSearchParams }) => [...r.search.keys()].at(-1);
+
+describe('provision scope (Amendment A)', () => {
+  it('Q-scope: one team -> teamId on every Vercel request except /v2/teams', async () => {
+    const f = makeFake({ teams: [TEAM] });
+    await provision(envFor(), f.fetch, quiet);
+    const reqs = vercelReqs(f);
+    expect(reqs.some((r) => r.path === '/v2/teams')).toBe(true);
+    expect(reqs.length).toBeGreaterThan(10);
+    for (const r of reqs.filter((r) => r.path !== '/v2/teams')) {
+      expect(r.search.get('teamId'), `${r.method} ${r.path}`).toBe(TEAM.id);
+      expect(lastParam(r), `${r.method} ${r.path}`).toBe('teamId');
+    }
+    // creates and env writes did happen under that scope
+    expect(f.st.vercel.size).toBe(4);
+    expect(apiEnv(f)).toHaveLength(3);
+  });
+
+  it('Q-scope: zero teams -> no teamId anywhere', async () => {
+    const f = makeFake();
+    await provision(envFor(), f.fetch, quiet);
+    for (const r of vercelReqs(f))
+      expect(r.search.has('teamId'), `${r.method} ${r.path}`).toBe(false);
+    expect(f.st.vercel.size).toBe(4);
+  });
+
+  it('Q-scope: two teams -> rejects naming both slugs, creates nothing', async () => {
+    const f = makeFake({ teams: [TEAM, { id: 'team_2', slug: 'other-team' }] });
+    await expect(provision(envFor(), f.fetch, quiet)).rejects.toThrow(/my-team.*other-team/s);
+    expect(f.st.creates).toEqual([]);
+  });
+
+  it('Q-scope: vercelScope returns {id, slug} for one team, undefined for none', async () => {
+    expect(await vercelScope(envFor(), makeFake({ teams: [TEAM] }).fetch)).toMatchObject(TEAM);
+    expect(await vercelScope(envFor(), makeFake().fetch)).toBeUndefined();
+  });
+
+  it('Q-scope: vercelScope rejects with several teams listing their slugs', async () => {
+    const f = makeFake({ teams: [TEAM, { id: 'team_2', slug: 'other-team' }] });
+    await expect(vercelScope(envFor(), f.fetch)).rejects.toThrow(/several Vercel teams: .*my-team/);
+    await expect(vercelScope(envFor(), f.fetch)).rejects.toThrow(/other-team/);
+  });
+
+  it('Q-scope: one Neon org -> org_id on project list and create', async () => {
+    const f = makeFake({ orgs: [ORG] });
+    await provision(envFor(), f.fetch, quiet);
+    const list = neonReqs(f).filter((r) => r.method === 'GET' && r.path === '/api/v2/projects');
+    const create = neonReqs(f).filter((r) => r.method === 'POST' && r.path === '/api/v2/projects');
+    expect(list.length).toBeGreaterThan(0);
+    for (const r of list) expect(r.search.get('org_id')).toBe(ORG.id);
+    expect(create).toHaveLength(1);
+    expect((create[0]!.body.project as { org_id?: string }).org_id).toBe(ORG.id);
+  });
+
+  it('Q-scope: existing project is listed with org_id and not recreated', async () => {
+    const f = makeFake({ orgs: [ORG] });
+    seedAll(f);
+    await provision(envFor(), f.fetch, quiet);
+    expect(f.st.creates).toEqual([]);
+    const list = neonReqs(f).filter((r) => r.method === 'GET' && r.path === '/api/v2/projects');
+    expect(list.length).toBeGreaterThan(0);
+    for (const r of list) expect(r.search.get('org_id')).toBe(ORG.id);
+  });
+
+  it('Q-scope: zero Neon orgs -> no org_id on list or create', async () => {
+    const f = makeFake();
+    await provision(envFor(), f.fetch, quiet);
+    for (const r of neonReqs(f)) expect(r.search.has('org_id'), r.path).toBe(false);
+    const create = neonReqs(f).find((r) => r.method === 'POST')!;
+    expect((create.body.project as { org_id?: string }).org_id ?? undefined).toBeUndefined();
+  });
+
+  it('Q-scope: two Neon orgs -> rejects naming both ids, creates nothing', async () => {
+    const f = makeFake({ orgs: [ORG, { id: 'org-two-456' }] });
+    await expect(provision(envFor(), f.fetch, quiet)).rejects.toThrow(/org-xyz-123.*org-two-456/s);
+    expect(f.st.creates).toEqual([]);
+  });
+
+  it('Q-scope: neonDatabaseUrl uses the same org discovery and returns the URI', async () => {
+    const f = makeFake({ orgs: [ORG] });
+    const uri = await neonDatabaseUrl(envFor(), f.fetch, quiet);
+    expect(uri).toBe(DB_URI);
+    const list = neonReqs(f).find((r) => r.method === 'GET' && r.path === '/api/v2/projects')!;
+    expect(list.search.get('org_id')).toBe(ORG.id);
+    const conn = neonReqs(f).find((r) => /connection_uri$/.test(r.path))!;
+    expect(conn.search.get('pooled')).toBe('true');
+  });
+
+  it('Q-scope: neonDatabaseUrl does not log the URI', async () => {
+    const f = makeFake({ orgs: [ORG] });
+    const logs: string[] = [];
+    await neonDatabaseUrl(envFor(), f.fetch, (...a: unknown[]) => void logs.push(a.join(' ')));
+    expect(logs.join('\n')).not.toContain('S3cretNeonPw');
   });
 });

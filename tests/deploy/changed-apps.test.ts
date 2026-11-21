@@ -1,10 +1,12 @@
 // Q-changed-apps: path -> apps mapping.
-// ASSUMPTION (phase 2 adjusts): scripts/changed-apps.ts exports `changedApps(paths: string[]): string[]`
-// returning a sorted list of app names.
+// changedApps(paths) returns app names in DEPLOY order: api, products, dashboard, shell.
+// Also a CLI: paths on stdin, one app per line on stdout.
+import { spawnSync } from 'node:child_process';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { changedApps } from '../../scripts/changed-apps.ts';
 
-const all = ['api', 'dashboard', 'products', 'shell'];
+const all = ['api', 'products', 'dashboard', 'shell'];
 
 const cases: [string, string[], string[]][] = [
   ['shell source', ['apps/shell/src/App.tsx'], ['shell']],
@@ -25,7 +27,17 @@ const cases: [string, string[], string[]][] = [
   ['e2e', ['e2e/login.spec.ts'], []],
   ['other workflows', ['.github/workflows/ci.yml', '.github/dependabot.yml'], []],
   ['empty input', [], []],
-  ['two apps, sorted', ['apps/shell/a.ts', 'apps/api/b.ts'], ['api', 'shell']],
+  ['two apps, deploy order', ['apps/shell/a.ts', 'apps/api/b.ts'], ['api', 'shell']],
+  [
+    'remotes, deploy order',
+    ['apps/dashboard/a.ts', 'apps/products/b.ts'],
+    ['products', 'dashboard'],
+  ],
+  [
+    'all four apps, reverse input',
+    ['apps/shell/a', 'apps/dashboard/a', 'apps/products/a', 'apps/api/a'],
+    all,
+  ],
   ['duplicates collapse', ['apps/shell/a.ts', 'apps/shell/b.ts'], ['shell']],
   ['app plus docs', ['apps/products/a.ts', 'docs/x.md'], ['products']],
   ['one app plus global wins', ['apps/shell/a.ts', 'packages/x/y.ts'], all],
@@ -41,5 +53,25 @@ describe('changed-apps', () => {
     const p = ['apps/shell/a.ts', 'apps/api/b.ts'];
     changedApps(p);
     expect(p).toEqual(['apps/shell/a.ts', 'apps/api/b.ts']);
+  });
+
+  it('Q-changed-apps: CLI reads paths on stdin, prints one app per line in deploy order', () => {
+    const r = spawnSync('node', ['scripts/changed-apps.ts'], {
+      cwd: resolve(import.meta.dirname, '../..'),
+      input: 'apps/shell/a.ts\napps/dashboard/b.ts\ndocs/x.md\n',
+      encoding: 'utf8',
+    });
+    expect(r.status).toBe(0);
+    expect(r.stdout.trim().split('\n')).toEqual(['dashboard', 'shell']);
+  });
+
+  it('Q-changed-apps: CLI prints nothing for docs-only changes', () => {
+    const r = spawnSync('node', ['scripts/changed-apps.ts'], {
+      cwd: resolve(import.meta.dirname, '../..'),
+      input: 'docs/x.md\n',
+      encoding: 'utf8',
+    });
+    expect(r.status).toBe(0);
+    expect(r.stdout.trim()).toBe('');
   });
 });
