@@ -181,6 +181,11 @@ Goal: weekly grouped dependency update PRs via `.github/dependabot.yml`, with no
 - **Goal:** a live demo at `https://mfe-lab.vercel.app`. Provisioning and every deploy run in GitHub Actions; no secret value reaches a laptop, chat or log.
 - **Done when:** `scripts/provision.ts` (plain `fetch`, idempotent) creates or finds the Neon project and the four Vercel projects and sets the API env vars without printing or rotating secrets, and fails naming the real domain if a production domain differs from `deploy/urls.json`; `provision.yml` (manual) runs it, migrates, seeds and checks 3 users; `deploy.yml` deploys on green CI for `main` (or by hand) in the order api, remotes, shell, only the apps `scripts/changed-apps.ts` selects, then smoke-checks the live URLs; the api `vercel.json` has `regions: ["fra1"]`; actions are pinned by SHA and the Vercel CLI by exact version; `docs/deploy.md` and the README live-demo link are in; `pnpm lint && pnpm typecheck && pnpm test` pass. No PR previews.
 
+## T32 Live polish after the first deploy
+
+- **Goal:** the live site shows where each remote really lives, and no dead config stays.
+- **Done when:** `RemoteFrame` takes an optional `origin` (label as is; else `:port`; else none) and `@mfe/ui` is 1.6.0 with a changelog entry; the shell passes `remoteOrigin(<current manifest URL>)` (`:<port>` on localhost, else the hostname) and follows the version selected in the inspector; the home lead has no port in EN and DE; the generated shell `vercel.json` has no `build.env` and `docs/deploy.md` says the URLs come from `deploy.yml`; `pnpm lint && pnpm typecheck && pnpm test` pass.
+
 ## Later (not now)
 
 Nothing planned.

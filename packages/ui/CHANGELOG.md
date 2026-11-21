@@ -2,6 +2,10 @@
 
 Breaking changes need a major bump, a new CSS prefix (`ds2-`) and an entry here (RFC 0008).
 
+## 1.6.0
+
+- `RemoteFrame` takes an optional `origin` shown as the header label as is; `port` is now optional (label `:port` when only it is given, no label with neither). Additive.
+
 ## 1.5.0
 
 - `Table` with a `label` also renders a visually hidden `<caption>` with it, so the table has an accessible name. Table `th` body cells may be row headers (`th scope="row"`), styled like `td`. `.visually-hidden` now lives in `@mfe/ui/base.css`. Additive.

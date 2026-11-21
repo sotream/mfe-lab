@@ -208,6 +208,17 @@ describe('German strings', () => {
     expect(document.activeElement).toBe(h1());
   });
 
+  it('Q-lead: the German home lead has no port', async () => {
+    document.documentElement.lang = 'de';
+    await mount('/', 'admin');
+    expect(
+      screen.getByText(
+        'Die Shell lädt Produkte und Dashboard zur Laufzeit. Jede App wird einzeln gebaut und ausgeliefert.',
+      ),
+    ).toBeTruthy();
+    expect(document.body.textContent).not.toContain(':3000');
+  });
+
   it('Q-de-strings: /login signed out is "Anmelden – mfe-lab"', async () => {
     document.documentElement.lang = 'de';
     await mount('/login');

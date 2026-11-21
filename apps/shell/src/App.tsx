@@ -1,7 +1,7 @@
 import { logout, useAuth } from '@mfe/auth-store';
 import { report } from '@mfe/telemetry';
 import { Button, RemoteFrame, useLocale, type Locale } from '@mfe/ui';
-import { useEffect, useLayoutEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef, useSyncExternalStore } from 'react';
 import { createBrowserRouter, Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import { DatenschutzPage, ImpressumPage } from './LegalPages.tsx';
 import { LiveRegion } from './LiveRegion.tsx';
@@ -11,20 +11,30 @@ import { RequireAuth } from './RequireAuth.tsx';
 import { Wordmark } from './Wordmark.tsx';
 import { setLocale } from './locale.ts';
 import { useT } from './messages.ts';
-import { loadPage, remotePort, type RemoteName } from './remotes.ts';
+import {
+  loadPage,
+  remoteEntry,
+  remoteOrigin,
+  subscribeRemotes,
+  type RemoteName,
+} from './remotes.ts';
 
 declare const __BUILD_VERSION__: string;
 
-const Remote = ({ name, module }: { name: RemoteName; module?: string }) => (
-  <RemoteFrame
-    // A new key per remote and module: a route change must not reuse the frame that loaded another remote.
-    key={`${name}:${module ?? ''}`}
-    name={name}
-    port={remotePort(name)}
-    load={() => loadPage(name, module)}
-    report={report}
-  />
-);
+const Remote = ({ name, module }: { name: RemoteName; module?: string }) => {
+  // Follows the version selected in the inspector.
+  const entry = useSyncExternalStore(subscribeRemotes, () => remoteEntry(name));
+  return (
+    <RemoteFrame
+      // A new key per remote and module: a route change must not reuse the frame that loaded another remote.
+      key={`${name}:${module ?? ''}`}
+      name={name}
+      origin={remoteOrigin(entry)}
+      load={() => loadPage(name, module)}
+      report={report}
+    />
+  );
+};
 
 // Page title per top-level route (key into the messages); a remote owns the title below its route (RFC 0011).
 const TITLE_KEYS = {

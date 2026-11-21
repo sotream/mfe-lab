@@ -6,8 +6,8 @@ declare const __MF_PRODUCTS_URL__: string;
 declare const __MF_DASHBOARD_URL__: string;
 
 const entries = {
-  products: { entry: __MF_PRODUCTS_URL__, module: 'ProductsPage', port: 3001 },
-  dashboard: { entry: __MF_DASHBOARD_URL__, module: 'DashboardPage', port: 3002 },
+  products: { entry: __MF_PRODUCTS_URL__, module: 'ProductsPage' },
+  dashboard: { entry: __MF_DASHBOARD_URL__, module: 'DashboardPage' },
 } as const;
 
 export const remoteManifests = Object.entries(entries).map(([name, { entry }]) => ({
@@ -16,7 +16,11 @@ export const remoteManifests = Object.entries(entries).map(([name, { entry }]) =
 }));
 
 export type RemoteName = keyof typeof entries;
-export const remotePort = (name: RemoteName): number => entries[name].port;
+// Where a remote lives, for the frame label: ":port" on localhost, else the hostname.
+export function remoteOrigin(manifestUrl: string): string {
+  const { hostname, port } = new URL(manifestUrl);
+  return hostname === 'localhost' || hostname === '127.0.0.1' ? `:${port}` : hostname;
+}
 
 registerRemotes(Object.entries(entries).map(([name, { entry }]) => ({ name, entry })));
 

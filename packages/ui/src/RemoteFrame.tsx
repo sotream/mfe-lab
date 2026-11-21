@@ -15,7 +15,9 @@ export type FrameError = {
 
 type Props = {
   name: string;
-  port: number;
+  // Header label: `origin` as is, else `:${port}`, else none.
+  origin?: string;
+  port?: number;
   load: () => Promise<RemoteModule>;
   // Optional so that ui does not depend on @mfe/telemetry; the shell passes `report`.
   report?: (e: FrameError) => void;
@@ -64,7 +66,7 @@ class Boundary extends Component<
 }
 
 // Not React.lazy: it caches a rejection forever. Here Retry calls load() again.
-export function RemoteFrame({ name, port, load, report }: Props) {
+export function RemoteFrame({ name, origin, port, load, report }: Props) {
   const t = useT();
   const [attempt, setAttempt] = useState(0);
   const [promise, setPromise] = useState(() => start(load));
@@ -89,7 +91,9 @@ export function RemoteFrame({ name, port, load, report }: Props) {
   return (
     <section data-remote={name} aria-label={t.remote(name)}>
       <h2 className="remote-frame-label">{name}</h2>
-      <span className="remote-frame-port">{`:${port}`}</span>
+      {(origin ?? port) !== undefined && (
+        <span className="remote-frame-port">{origin ?? `:${port}`}</span>
+      )}
       <Boundary
         key={attempt}
         onError={onError}
