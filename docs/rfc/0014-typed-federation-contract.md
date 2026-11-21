@@ -32,3 +32,7 @@ What each remote exposes lives in one file, `federation.contract.ts` at the repo
 ## Consequences
 
 Changing an expose is a contract change in one file; both sides fail typecheck until they agree. Old `/releases/*` builds are not re-checked, so the runtime frame still handles a missing module.
+
+## Update (RFC 0016): module kinds
+
+The contract now also has `kinds` (remote to `react` or `mount`) and the types `MountContext` and `MountModule`. `exposes.orders = ['OrdersApp']` is a `mount` module: `{ mount(el, ctx), buildVersion }`. `exposesMap` maps a `mount` remote's names to `./src/<Name>.ts`. `loadPage` takes only `react` remotes and `loadMount` only `mount` remotes, so a wrong kind fails typecheck.

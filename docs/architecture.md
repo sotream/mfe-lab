@@ -1,6 +1,6 @@
 # How it works
 
-The shell (`:3000`) is a Module Federation host. At runtime it loads two independently built and served remotes, `products` (`:3001`) and `dashboard` (`:3002`), by fetching their `mf-manifest.json`, then `remoteEntry.js`. `react`, `react-dom`, `react-router` and `@mfe/auth-store` are singletons: loaded once from the shell, and the remotes reuse that copy. Every remote slot is wrapped in `RemoteFrame` (error boundary, Suspense, labelled frame, Retry), so a dead remote shows a fallback and the rest of the page keeps working. The remotes call the API on `:4000` through the shell's `/api` proxy. After the first render the shell prefetches both remotes (manifest, entry, expose chunks) on browser idle, so the first visit to a remote page loads from cache (RFC 0005).
+The shell (`:3000`) is a Module Federation host. At runtime it loads three independently built and served remotes, `products` (`:3001`), `dashboard` (`:3002`) and `orders` (`:3003`, Vue), by fetching their `mf-manifest.json`, then `remoteEntry.js`. `react`, `react-dom`, `react-router` and `@mfe/auth-store` are singletons: loaded once from the shell, and the remotes reuse that copy (`orders` uses only the framework-free `@mfe/auth-store`). Every remote slot is wrapped in `RemoteFrame` (error boundary, Suspense, labelled frame, Retry), so a dead remote shows a fallback and the rest of the page keeps working. The remotes call the API on `:4000` through the shell's `/api` proxy. After the first render the shell prefetches both remotes (manifest, entry, expose chunks) on browser idle, so the first visit to a remote page loads from cache (RFC 0005).
 
 ```mermaid
 flowchart TB
@@ -11,13 +11,16 @@ flowchart TB
     FP["RemoteFrame<br/>products slot"]
     SH[("shared singletons<br/>react · react-dom<br/>react-router · @mfe/auth-store<br/>loaded once")]
     FD["RemoteFrame<br/>dashboard slot"]
+    FO["RemoteFrame + mountAdapter<br/>orders slot"]
   end
 
   FP -- "loadRemote()<br/>mf-manifest.json → remoteEntry.js" --> P["products :3001<br/>exposes ./ProductsPage"]
   FD -- "loadRemote()<br/>mf-manifest.json → remoteEntry.js" --> D["dashboard :3002<br/>exposes ./DashboardPage"]
+  FO -- "loadRemote()<br/>mf-manifest.json → remoteEntry.js" --> O["orders :3003 · Vue 3.5<br/>exposes ./OrdersApp<br/>mount(el, ctx) into a shadow root"]
   P -. "reuses" .-> SH
   D -. "reuses" .-> SH
-  P & D -. "REST + JWT" .-> A[("api :4000 · Postgres")]
+  O -. "reuses auth-store only" .-> SH
+  P & D & O -. "REST + JWT" .-> A[("api :4000 · Postgres")]
 ```
 
 Loading one remote, including the "remote down" path:
@@ -110,6 +113,10 @@ The token lives in memory only, so **a page reload logs you out** (accepted trad
 `apps/products` exposes `./ProductsPage` (no props): a table with search (300 ms debounce), sortable columns, pagination (10 per page), an add/edit dialog and a delete confirmation, all through `@mfe/api-client`. Admin and editor see the write actions; viewers only read. Validation lives in `apps/products/src/productForm.ts` (price is entered in dollars, stored as cents).
 
 It also runs on its own: `pnpm --filter @mfe/products dev` serves it on `:3001` with a "Standalone dev" bar that signs in as the admin, editor or viewer demo account (the bar is not part of the exposed module, so the shell never shows it).
+
+## Orders remote (Vue, `mount` kind)
+
+`apps/orders` exposes `./OrdersApp`, a `mount(el, ctx)` module (RFC 0016), not a React component. The shell adapter `mountAdapter` (`apps/shell/src/MountAdapter.tsx`) turns it into a page module for `RemoteFrame`, so the label, build stamp, Retry and error reports work as for the React remotes. `mount` attaches an open shadow root to the host element, injects its CSS as a `<style>` inside it and mounts the Vue app there. The lab's global CSS does not reach in; `--ds1-*` tokens, fonts and inherited properties do. It follows `locale:changed` itself (no remount), refetches on `products:changed`, and reads the same token as the React remotes through the framework-free `@mfe/auth-store`. The React hook is `@mfe/auth-store/react`. `GET /orders` has no product names, so the remote joins them from `GET /products`. It runs standalone on `:3003` with a sign-in bar and has no versioned releases.
 
 ## Dashboard remote
 

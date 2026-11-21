@@ -30,7 +30,7 @@ It answers the questions a real micro frontend platform runs into:
 
 Every answer is running code, covered by black-box tests and argued in a short RFC.
 
-![Architecture: browser, shell host, shared singletons, products and dashboard remotes, event bus, API](docs/img/architecture.svg)
+![Architecture: browser, shell host, shared singletons, products, dashboard and orders remotes, event bus, API](docs/img/architecture.svg)
 
 ## What it shows
 
@@ -44,8 +44,9 @@ Every answer is running code, covered by black-box tests and argued in a short R
 - **Error tracking per remote.** Errors are attributed to the remote and build that threw them. ([RFC 0010](docs/rfc/0010-error-tracking.md))
 - **Accessibility across remotes.** One owner per concern: the shell owns title, focus and the live region, remotes announce through a typed event, and lint and axe guard it. ([RFC 0011](docs/rfc/0011-accessibility-across-remotes.md))
 - **Locale across remotes.** German by default for German browsers, with an EN switch. The shell owns the language (`<html lang>` plus an event), each remote owns its strings, and `Intl` formats prices, dates and times. ([RFC 0012](docs/rfc/0012-locale-across-remotes.md))
+- **Mixed frameworks and CSS isolation.** The `orders` remote is Vue 3.5. The shell mounts it through a framework-agnostic `mount(el, ctx)` contract, and it renders in a Shadow DOM, so the lab's global CSS cannot reach it. The React remotes follow a checked class-prefix rule. ([RFC 0016](docs/rfc/0016-framework-agnostic-remotes-and-css-isolation.md))
 - **Prefetch on idle.** Measured first: −31.5% median time to the first product row on Fast 4G. ([RFC 0005](docs/rfc/0005-prefetch-remotes.md))
-- **Performance budgets.** Gzipped bundle size is gated in CI (shell initial JS 33.5 KB of 37 KB, products 64 KB of 71 KB, dashboard 51 KB of 56 KB); lab LCP, CLS and time-to-remotes are checked on the live site after each deploy (LCP median 1.6 s on Fast 4G). ([RFC 0015](docs/rfc/0015-performance-budgets.md))
+- **Performance budgets.** Gzipped bundle size is gated in CI (shell initial JS 33.5 KB of 37 KB, products 64 KB of 71 KB, dashboard 51 KB of 56 KB, orders 64 KB of 72 KB); lab LCP, CLS and time-to-remotes are checked on the live site after each deploy (LCP median 1.6 s on Fast 4G). ([RFC 0015](docs/rfc/0015-performance-budgets.md))
 - **An inspector page.** It shows remotes, versions, shared dependencies, flags, errors and a live event log.
 
 | Two remotes, one page                                   | One remote down                                                               | Live event log                                         |
@@ -61,7 +62,7 @@ Node 26 (`nvm use`) and pnpm 12.
 ```bash
 pnpm i
 pnpm seed
-pnpm dev     # shell :3000, products :3001, dashboard :3002, api :4000
+pnpm dev     # shell :3000, products :3001, dashboard :3002, orders :3003, api :4000
 ```
 
 Open <http://localhost:3000> and sign in as `admin@lab.test`, `editor@lab.test` or `viewer@lab.test`. All three use the password `lab12345`; these are demo-only credentials. Each remote also runs standalone on its own port.
@@ -76,18 +77,19 @@ pnpm build                                 # apps/*/dist, remotes emit mf-manife
 To run the stack in Docker:
 
 ```bash
-docker compose up --build -d   # shell :3000, products :3001, dashboard :3002
+docker compose up --build -d   # shell :3000, products :3001, dashboard :3002, orders :3003
 docker compose down -v         # stop and drop the DB volume
 ```
 
 ## Stack
 
-React 19, Rspack 2, `@module-federation/enhanced` 2, React Router, TanStack Query, Redux Toolkit, plain CSS. Fastify, Postgres (Neon-ready; PGlite for dev and tests), zod, JWT. Vitest, Testing Library, Playwright. TypeScript in strict mode and ESM throughout, as a pnpm workspace.
+React 19 (and Vue 3.5 for one remote), Rspack 2, `@module-federation/enhanced` 2, React Router, TanStack Query, Redux Toolkit, plain CSS. Fastify, Postgres (Neon-ready; PGlite for dev and tests), zod, JWT. Vitest, Testing Library, Playwright. TypeScript in strict mode and ESM throughout, as a pnpm workspace.
 
 ```
 apps/shell       host: routing, login, inspector
 apps/products    remote: product list, detail, CRUD
 apps/dashboard   remote: stats and charts
+apps/orders      remote: orders table, Vue 3.5 in a Shadow DOM
 apps/api         Fastify + Postgres
 packages/        auth-store, api-client, events, ui, telemetry
 ```

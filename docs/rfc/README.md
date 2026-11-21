@@ -30,3 +30,4 @@ When an RFC is needed: anything that changes the architecture, a shared contract
 | 0013 | Postgres for the API                         | Accepted |
 | 0014 | Typed federation contract                    | Accepted |
 | 0015 | Performance budgets                          | Accepted |
+| 0016 | Framework-agnostic remotes and CSS isolation | Accepted |
