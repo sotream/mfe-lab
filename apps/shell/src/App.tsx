@@ -1,4 +1,5 @@
-import { logout, useAuth } from '@mfe/auth-store';
+import { logout } from '@mfe/auth-store';
+import { useAuth } from '@mfe/auth-store/react';
 import { report } from '@mfe/telemetry';
 import { Button, RemoteFrame, useLocale, type Locale } from '@mfe/ui';
 import { useEffect, useLayoutEffect, useRef, useSyncExternalStore } from 'react';

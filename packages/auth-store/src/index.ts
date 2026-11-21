@@ -1,5 +1,5 @@
-import { useSyncExternalStore } from 'react';
-
+// Framework-free core (RFC 0002, RFC 0016): no UI framework import, so a Vue or plain-JS remote shares the
+// same singleton. The React hook is the subpath `@mfe/auth-store/react`.
 export type Role = 'admin' | 'editor' | 'viewer';
 export type User = { id: number; email: string; role: Role };
 export type Status = 'anonymous' | 'loading' | 'authenticated';
@@ -15,16 +15,14 @@ function setState(next: AuthState) {
   listeners.forEach((l) => l());
 }
 
-function subscribe(listener: () => void) {
+export function subscribe(listener: () => void) {
   listeners.add(listener);
   return () => {
     listeners.delete(listener);
   };
 }
 
-export function useAuth<T>(selector: (s: AuthState) => T): T {
-  return useSyncExternalStore(subscribe, () => selector(state));
-}
+export const getState = (): AuthState => state;
 
 export const getToken = (): string | null => state.token;
 

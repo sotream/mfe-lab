@@ -1,4 +1,5 @@
-import { login, useAuth } from '@mfe/auth-store';
+import { login } from '@mfe/auth-store';
+import { useAuth } from '@mfe/auth-store/react';
 import { Button, detectLocale } from '@mfe/ui';
 import '@mfe/ui/base.css';
 import { createRoot } from 'react-dom/client';

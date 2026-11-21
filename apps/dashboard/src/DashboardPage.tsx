@@ -1,5 +1,5 @@
 import { getStats, type Stats } from '@mfe/api-client';
-import { useAuth } from '@mfe/auth-store';
+import { useAuth } from '@mfe/auth-store/react';
 import { on } from '@mfe/events';
 import { Button, formatDate, formatMoney, formatNumber, Table, useLocale } from '@mfe/ui';
 import {

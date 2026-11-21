@@ -1,5 +1,5 @@
 import { Route, Routes } from 'react-router';
-import { useAuth } from '@mfe/auth-store';
+import { useAuth } from '@mfe/auth-store/react';
 import ProductDetail from './ProductDetail.tsx';
 import { ProductsContent, ProductsRoot } from './ProductsPage.tsx';
 

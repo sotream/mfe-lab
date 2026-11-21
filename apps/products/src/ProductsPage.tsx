@@ -8,7 +8,7 @@ import {
   type Product,
   type ProductInput,
 } from '@mfe/api-client';
-import { useAuth } from '@mfe/auth-store';
+import { useAuth } from '@mfe/auth-store/react';
 import { emit } from '@mfe/events';
 import { Button, Field, formatDate, formatMoney, Table, useLocale, type Locale } from '@mfe/ui';
 import {
