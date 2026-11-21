@@ -34,7 +34,7 @@ flowchart LR
 - **Remotes:** expose one page component each (`./ProductsPage`, `./DashboardPage`). Each app's `src/index.ts` dynamically imports `bootstrap.tsx` (the async boundary that lets shared modules resolve) and, run on its own, mounts the page with a small dev-only sign-in bar.
 - **Shared:** `react`, `react-dom`, `react-router` (v8 ships no `react-router-dom`), `@mfe/auth-store` (added in T5) with `singleton: true`. One list in the root `federation.shared.ts`, imported by all three Rspack configs. Versions are pinned once in the pnpm `catalog:`; Module Federation cannot read `catalog:` specifiers, so `requiredVersion` is derived from the installed package version (`^x.y.z`) in that file.
 - **Isolation:** every remote mounts inside `RemoteFrame` = error boundary + Suspense + visible frame. The shell loads remotes with the runtime `loadRemote()`, not `React.lazy(import())`, because `React.lazy` caches a rejection forever and Retry would never refetch. A failed `import()` renders a fallback with a retry button, never a blank page. After a failure the shell re-registers the remote with `force: true`, which drops the cached manifest state, so Retry refetches once the remote is back.
-- **Types:** `dts: false`; remote module types are declared by hand in `apps/shell/src/remotes.d.ts`.
+- **Types:** `dts: false`; the remote contract is one file, `federation.contract.ts`, checked on both sides at compile time ([RFC 0014](0014-typed-federation-contract.md)).
 - **Contract:** the exposed module is the only public surface. Props: none for pages (they read auth from the shared store and router from the shared singleton). Adding props needs a new RFC.
 - **Versioning (lab level):** the build stamp is `MF_BUILD_VERSION` if set, else the UTC build time. It goes into `mf-manifest.json` (`metaData.buildInfo.buildVersion`), is baked in as `__BUILD_VERSION__`, and is shown in each remote frame and the shell footer. The inspector reads the manifests and the share scope. No semver negotiation between remotes.
 
@@ -72,3 +72,4 @@ T4 (host + stubs), T6 and T7 (real remotes), T8 (inspector, build stamps), T9 (P
 - 2026-11-20: T8: inspector and build stamps as described under Versioning.
 - 2026-11-20: T9: Proposal synced with the code (runtime `registerRemotes`, `bootstrap.tsx`, build stamp source). The Playwright smoke test covers the remote-down fallback by aborting requests to `:3001`.
 - 2026-11-20: T16: open question resolved, the shell prefetches remotes on idle (RFC 0005).
+- 2026-11-21: T33: `remotes.d.ts` replaced by the typed `federation.contract.ts` (RFC 0014).

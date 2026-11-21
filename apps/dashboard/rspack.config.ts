@@ -2,6 +2,7 @@ import { join } from 'node:path';
 import { defineConfig } from '@rspack/cli';
 import { rspack } from '@rspack/core';
 import { ModuleFederationPlugin } from '@module-federation/enhanced/rspack';
+import { exposesMap } from '../../federation.contract.ts';
 import { buildVersion, shared } from '../../federation.shared.ts';
 
 export default defineConfig({
@@ -39,7 +40,7 @@ export default defineConfig({
     new ModuleFederationPlugin({
       name: 'dashboard',
       filename: 'remoteEntry.js',
-      exposes: { './DashboardPage': './src/DashboardPage.tsx' },
+      exposes: exposesMap('dashboard'),
       shared,
       manifest: true,
       dts: false,

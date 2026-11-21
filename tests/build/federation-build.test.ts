@@ -4,6 +4,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
+import { exposes } from '../../federation.contract.ts';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 const root = resolve(import.meta.dirname, '../..');
@@ -56,6 +57,15 @@ describe('federation build', { timeout: BUILD_TIMEOUT }, () => {
       expect(m.name).toBe(app);
       expect(m.exposes).toContainEqual(expect.objectContaining({ path }));
       expectSingletons(m);
+    }
+  });
+
+  it('Q-contract-manifest: each remote manifest exposes exactly the contract names', () => {
+    for (const [app, names] of Object.entries(exposes)) {
+      const got = manifest(app)
+        .exposes.map((e) => e.path)
+        .sort();
+      expect(got, app).toEqual(names.map((n) => `./${n}`).sort());
     }
   });
 
