@@ -45,6 +45,7 @@ function staticApp(name: 'shell' | 'products' | 'dashboard') {
 // The function is apps/api/api/index.js (built by `pnpm build`); every path goes to it.
 const api = {
   framework: null,
+  regions: ['fra1'], // next to the Neon database (aws-eu-central-1)
   installCommand: 'pnpm install --frozen-lockfile --filter @mfe/api...',
   buildCommand: 'pnpm build',
   rewrites: [{ source: '/(.*)', destination: '/api' }],

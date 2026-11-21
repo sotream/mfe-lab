@@ -1,5 +1,6 @@
 {
   "framework": null,
+  "regions": ["fra1"],
   "installCommand": "pnpm install --frozen-lockfile --filter @mfe/api...",
   "buildCommand": "pnpm build",
   "rewrites": [
