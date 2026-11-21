@@ -54,6 +54,7 @@ With several independently deployed remotes, "something broke" is not enough: we
 
 - **Known limit:** a cross-origin script error without `crossorigin` on the script tag reaches `window` as `"Script error."` with no filename and no stack. Module Federation loads remote scripts without `crossorigin`, so such errors cannot be attributed and land in `unknown`. Render and load errors do not have this limit, because React and the runtime catch them in the shell.
 - `POST /errors` is public: anyone can fill the table. The 1000-row cap and truncation bound the damage; it is a lab.
+- A canary that fails and falls back to stable is reported by the shell as `kind: 'load'`, `build: 'canary'` ([RFC 0017](0017-remote-registry-canary-and-kill-switch.md)).
 - De-dupe is per bundle and per page load, in memory.
 
 ## Rollout

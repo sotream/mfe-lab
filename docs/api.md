@@ -23,21 +23,23 @@ Demo users (**demo-only credentials, never reuse**): `admin@lab.test`, `editor@l
 
 All routes except `GET /health`, `POST /auth/login`, `POST /errors` and `/docs*` need `Authorization: Bearer <token>` (auth runs before validation, so no token is always `401`). Errors are always `{ "error": "<code>" }`: `invalid_body` / `invalid_query` / `invalid_params` (400), `unauthorized` (401), `forbidden` (403), `not_found` (404), `conflict` (409), `internal` (500).
 
-| Route                                   | Roles allowed | Notes                                                                                                          |
-| --------------------------------------- | ------------- | -------------------------------------------------------------------------------------------------------------- |
-| `GET /products`                         | any           | `?page&limit&sort&order&q`; returns `{ items, total, page, limit }`; `q` matches name or sku, case-insensitive |
-| `GET /products/:id`                     | any           |                                                                                                                |
-| `POST /products`, `PATCH /products/:id` | admin, editor | duplicate sku gives `409`                                                                                      |
-| `DELETE /products/:id`                  | admin, editor | `409` if the product has orders                                                                                |
-| `GET /orders`                           | any           | `?page&limit&status`; newest first                                                                             |
-| `POST /orders`, `PATCH /orders/:id`     | admin         | create sets status `new`; PATCH sets `status`                                                                  |
-| `GET /stats`                            | any           | counts, revenue by status, orders per day (UTC)                                                                |
-| `GET /flags`                            | any           | `{ name, enabled, description }[]` sorted by name                                                              |
-| `PATCH /flags/:name`                    | admin         | body `{ enabled }`; unknown name gives `404`                                                                   |
-| `POST /errors`                          | none          | error report from a browser; `message` cut to 500, `stack` to 4000; keeps the newest 1000 rows                 |
-| `GET /errors`                           | admin         | `?remote`; newest 50                                                                                           |
-| `GET /errors/summary`                   | admin         | `{ remote, count }[]`                                                                                          |
-| `DELETE /errors`                        | admin         | returns `204`                                                                                                  |
+| Route                                   | Roles allowed | Notes                                                                                                                                     |
+| --------------------------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /products`                         | any           | `?page&limit&sort&order&q`; returns `{ items, total, page, limit }`; `q` matches name or sku, case-insensitive                            |
+| `GET /products/:id`                     | any           |                                                                                                                                           |
+| `POST /products`, `PATCH /products/:id` | admin, editor | duplicate sku gives `409`                                                                                                                 |
+| `DELETE /products/:id`                  | admin, editor | `409` if the product has orders                                                                                                           |
+| `GET /orders`                           | any           | `?page&limit&status`; newest first                                                                                                        |
+| `POST /orders`, `PATCH /orders/:id`     | admin         | create sets status `new`; PATCH sets `status`                                                                                             |
+| `GET /stats`                            | any           | counts, revenue by status, orders per day (UTC)                                                                                           |
+| `GET /flags`                            | any           | `{ name, enabled, description }[]` sorted by name                                                                                         |
+| `GET /registry`                         | public        | `{ name, canaryUrl, canaryPercent, disabled }[]` sorted by name, `Cache-Control: no-store`                                                |
+| `PATCH /registry/:name`                 | admin         | optional `canaryUrl` (https, or localhost with a port, ending `/mf-manifest.json`), `canaryPercent` 0-100, `disabled`; unknown name `404` |
+| `PATCH /flags/:name`                    | admin         | body `{ enabled }`; unknown name gives `404`                                                                                              |
+| `POST /errors`                          | none          | error report from a browser; `message` cut to 500, `stack` to 4000; keeps the newest 1000 rows                                            |
+| `GET /errors`                           | admin         | `?remote`; newest 50                                                                                                                      |
+| `GET /errors/summary`                   | admin         | `{ remote, count }[]`                                                                                                                     |
+| `DELETE /errors`                        | admin         | returns `204`                                                                                                                             |
 
 Pagination defaults to `page=1&limit=20` (max `limit` 100); `sort` is one of `id, sku, name, price_cents, stock, created_at`.
 
