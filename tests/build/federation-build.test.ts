@@ -2,8 +2,8 @@
 // tests run in order: default build first, MF_PRODUCTS_URL override last, then the shell is rebuilt
 // with defaults so dist/ is left in its normal state.
 import { execFileSync } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { basename, join, resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 const root = resolve(import.meta.dirname, '../..');
@@ -62,6 +62,34 @@ describe('federation build', { timeout: BUILD_TIMEOUT }, () => {
   it('Q-shell-build: shell has index.html and a manifest with the singletons', () => {
     expect(existsSync(join(root, 'apps', 'shell', 'dist', 'index.html'))).toBe(true);
     expectSingletons(manifest('shell'));
+  });
+
+  it('Q-cache-hashed: the immutable header only matches content-hashed files in each dist', () => {
+    // Pattern comes from each app's vercel.json (Vercel `source`, regex-compatible); built in
+    // the shared beforeAll build so dist/ is never built twice.
+    for (const app of ['shell', 'products', 'dashboard']) {
+      const cfg = JSON.parse(readFileSync(join(root, 'apps', app, 'vercel.json'), 'utf8')) as {
+        headers: { source: string; headers: { key: string; value: string }[] }[];
+      };
+      const immutable = cfg.headers
+        .filter((h) => h.headers.some((x) => /immutable/.test(x.value)))
+        .map((h) => new RegExp(`^${h.source}$`));
+      expect(immutable.length, `${app} has an immutable rule`).toBeGreaterThan(0);
+      const dist = join(root, 'apps', app, 'dist');
+      const files = readdirSync(dist, { recursive: true, encoding: 'utf8' }).filter((f) =>
+        statSync(join(dist, f)).isFile(),
+      );
+      const hit = files.filter((f) => immutable.some((re) => re.test(`/${f}`)));
+      expect(hit.length, `${app} has hashed files`).toBeGreaterThan(0);
+      for (const f of hit) {
+        expect(basename(f), `${app} ${f}`).toMatch(/[0-9a-f]{8,}/);
+      }
+      for (const f of files.filter((f) =>
+        /^(index\.html|mf-manifest\.json|remoteEntry\.js)$/.test(basename(f)),
+      )) {
+        expect(hit, `${app} ${f} must not be immutable`).not.toContain(f);
+      }
+    }
   });
 
   it('Q-remotes-env: default remote URLs, then MF_PRODUCTS_URL override', () => {
