@@ -46,6 +46,8 @@ export default defineConfig({
       __MF_DASHBOARD_URL__: JSON.stringify(dashboardUrl),
       __MF_ORDERS_URL__: JSON.stringify(ordersUrl),
     }),
+    // Brand icons: unhashed, copied to the dist root.
+    new rspack.CopyRspackPlugin({ patterns: [{ from: '../../packages/ui/brand' }] }),
     new rspack.HtmlRspackPlugin({ template: './index.html', publicPath: '/' }),
   ],
   devServer: {

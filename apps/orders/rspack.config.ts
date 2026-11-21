@@ -54,6 +54,8 @@ export default defineConfig({
       __VUE_PROD_DEVTOOLS__: false,
       __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: false,
     }),
+    // Brand icons: unhashed, copied to the dist root.
+    new rspack.CopyRspackPlugin({ patterns: [{ from: '../../packages/ui/brand' }] }),
     new rspack.HtmlRspackPlugin({ template: './index.html' }),
   ],
   devServer: {

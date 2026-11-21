@@ -144,6 +144,21 @@ describe('federation build', { timeout: BUILD_TIMEOUT }, () => {
     }
   });
 
+  it('Q-icons: every app ships the favicons and links them from index.html', () => {
+    for (const app of ['shell', 'products', 'dashboard', 'orders']) {
+      const dist = join(root, 'apps', app, 'dist');
+      for (const f of ['favicon.svg', 'favicon-32.png', 'apple-touch-icon.png']) {
+        expect(existsSync(join(dist, f)), `${app} dist/${f}`).toBe(true);
+      }
+      const html = readFileSync(join(dist, 'index.html'), 'utf8');
+      expect(html, app).toMatch(/<link[^>]*rel="icon"[^>]*href="\/favicon\.svg"/);
+      expect(html, app).toMatch(/<link[^>]*rel="icon"[^>]*href="\/favicon-32\.png"/);
+      expect(html, app).toMatch(
+        /<link[^>]*rel="apple-touch-icon"[^>]*href="\/apple-touch-icon\.png"/,
+      );
+    }
+  });
+
   it('Q-hashed-assets: every js and css except remoteEntry.js has a 16-hex hash; entry files stay unhashed', () => {
     const hash = /[0-9a-f]{16}/;
     for (const app of ['shell', 'products', 'dashboard', 'orders']) {

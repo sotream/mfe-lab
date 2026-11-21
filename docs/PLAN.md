@@ -219,3 +219,8 @@ Goal: weekly grouped dependency update PRs via `.github/dependabot.yml`, with no
 ## Later (not now)
 
 Nothing planned.
+
+## T40 Logo mark, favicon and lockup
+
+- **Goal:** one brand mark: flask = lab, shell body plus two remotes (cool, amber = loaded at runtime), tab lip with the amber hyphen of `mfe-lab`.
+- **Done when:** `packages/ui/brand/` (favicon.svg with a dark-mode media query, favicon-32.png, apple-touch-icon.png, icon-512.png) is copied unhashed to every app's `dist/` and linked from every `index.html`; the shell header and login wordmark show the mark before the text with the accessible name unchanged; README shows `docs/img/logo.svg` / `logo-light.svg`; the brand files do not match the immutable cache rule; no budget raised.
