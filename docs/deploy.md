@@ -2,6 +2,8 @@
 
 Each app is its own Vercel project, built from the monorepo with its own root directory. Nothing here changes local dev, Docker or e2e.
 
+The Swagger UI (`/docs`) is not served on Vercel: `@fastify/swagger-ui` pulls in an ESM-only dependency through `require()`, which the Vercel function loader rejects. The OpenAPI spec is still built; use `/docs` locally.
+
 | Vercel project      | Root dir         | Production URL                         |
 | ------------------- | ---------------- | -------------------------------------- |
 | `mfe-lab` (shell)   | `apps/shell`     | `https://mfe-lab.vercel.app`           |
