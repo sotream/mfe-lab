@@ -92,6 +92,10 @@ export async function seed(db: Db, opts: { reset?: boolean } = {}): Promise<Seed
       ]);
     }
 
+    // Registry back to stable: no canary, 0%, enabled (RFC 0017).
+    await t.exec('truncate remotes');
+    await t.exec("insert into remotes (name) values ('dashboard'), ('orders'), ('products')");
+
     const productIds: number[] = [];
     for (let i = 0; i < PRODUCTS; i++) {
       const name = NAMES[i]!;
