@@ -27,6 +27,7 @@ Each app is its own Vercel project, built from the monorepo with its own root di
 ## API (Vercel Function)
 
 - `pnpm build` in `apps/api` bundles `src/vercel.ts` with rolldown to `apps/api/api/index.js` (gitignored). Vercel does not resolve our `.ts` import specifiers, hence this one build step; local dev and Docker still run `.ts` directly.
+- The deploy job runs `pnpm --filter @mfe/api build` before `vercel build`: Vercel detects `api/*` functions before `buildCommand` runs, so a bundle produced only by it is never seen and the API 404s; a guard step fails the job if `.vercel/output/functions` has no `.func`.
 - `apps/api/public/` holds only `robots.txt` (disallow all) because Vercel needs a non-empty static output directory: with `framework: null` and a build command, an empty or missing `outputDirectory` fails the build (`STATIC_BUILD_NO_OUT_DIR` / `STATIC_BUILD_EMPTY_OUT_DIR`). It also keeps the API out of search indexes; the `api/` function is detected separately.
 - `vercel.json` sets `framework: null` (no zero-config Fastify detection, which would pick `src/app.ts`) and rewrites every path to the function.
 - The function builds one Fastify app per warm instance, never calls `listen()`, and never migrates (`migrate: false`). Migrations run in CI (see Deploy flow); `provision.yml` also seeds once.
