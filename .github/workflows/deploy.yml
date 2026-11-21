@@ -54,13 +54,13 @@ jobs:
         run: |
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           if [ "$APPS" = all ]; then
-            apps="api products dashboard shell"
+            apps="api products dashboard orders shell"
           else
             apps=$(git diff --name-only HEAD~1 HEAD | node scripts/changed-apps.ts | tr '\n' ' ')
           fi
           echo "apps: ${apps:-none}"
           has() { case " $apps " in *" $1 "*) echo true;; *) echo false;; esac; }
-          remotes=$(for a in products dashboard; do [ "$(has "$a")" = true ] && echo "\"$a\""; done | paste -sd, -)
+          remotes=$(for a in products dashboard orders; do [ "$(has "$a")" = true ] && echo "\"$a\""; done | paste -sd, -)
           {
             echo "api=$(has api)"
             echo "shell=$(has shell)"
@@ -161,7 +161,8 @@ jobs:
           # `vercel build` ignores vercel.json build.env, so pass the remote manifests from the single source of truth.
           MF_PRODUCTS_URL="$(node -p "require('./deploy/urls.json').products")/mf-manifest.json"
           MF_DASHBOARD_URL="$(node -p "require('./deploy/urls.json').dashboard")/mf-manifest.json"
-          export MF_PRODUCTS_URL MF_DASHBOARD_URL
+          MF_ORDERS_URL="$(node -p "require('./deploy/urls.json').orders")/mf-manifest.json"
+          export MF_PRODUCTS_URL MF_DASHBOARD_URL MF_ORDERS_URL
           pnpm dlx "$VERCEL_CLI" build --prod --token "$VERCEL_TOKEN" "${scope[@]}"
           # Fail instead of shipping a shell that points at localhost remotes.
           ! grep -rl 'localhost:300' .vercel/output/static || { echo "localhost remote URL in the shell build" >&2; exit 1; }
@@ -184,6 +185,10 @@ jobs:
           echo "$m" | head -1 | grep -q ' 200'
           echo "$m" | grep -qi '^access-control-allow-origin: \*'
           echo "$m" | grep -i '^cache-control:' | grep -qi 'no-store'
+          o=$(h https://mfe-lab-orders.vercel.app/mf-manifest.json)
+          echo "$o" | head -1 | grep -q ' 200'
+          echo "$o" | grep -qi '^access-control-allow-origin: \*'
+          echo "$o" | grep -i '^cache-control:' | grep -qi 'no-store'
           [ "$(code https://mfe-lab-api.vercel.app/cron/reseed)" = 401 ]
           echo smoke ok
 

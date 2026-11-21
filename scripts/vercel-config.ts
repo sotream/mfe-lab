@@ -1,10 +1,10 @@
-// Generates apps/{shell,products,dashboard,api}/vercel.json from deploy/urls.json.
+// Generates apps/{shell,products,dashboard,orders,api}/vercel.json from deploy/urls.json.
 // Usage: node scripts/vercel-config.ts [outDir]   (default: the repo root, files are committed)
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..');
-const urls: Record<'shell' | 'products' | 'dashboard' | 'api', string> = JSON.parse(
+const urls: Record<'shell' | 'products' | 'dashboard' | 'orders' | 'api', string> = JSON.parse(
   readFileSync(join(root, 'deploy/urls.json'), 'utf8'),
 );
 const out = resolve(process.argv[2] ?? root);
@@ -15,7 +15,7 @@ const header = (source: string, key: string, value: string) => ({
 });
 
 // Mirrors docker/nginx.conf.template: API proxy, SPA fallback, CORS for remotes, no-store entries.
-function staticApp(name: 'shell' | 'products' | 'dashboard') {
+function staticApp(name: 'shell' | 'products' | 'dashboard' | 'orders') {
   const remote = name !== 'shell';
   return {
     installCommand: `pnpm install --frozen-lockfile --filter @mfe/${name}...`,
@@ -54,6 +54,7 @@ const files = {
   shell: staticApp('shell'),
   products: staticApp('products'),
   dashboard: staticApp('dashboard'),
+  orders: staticApp('orders'),
   api,
 };
 for (const [name, config] of Object.entries(files)) {

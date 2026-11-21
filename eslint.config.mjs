@@ -8,7 +8,7 @@ import prettier from 'eslint-config-prettier';
 import globals from 'globals';
 
 const frontend = [
-  'apps/{shell,products,dashboard}/**/*.{ts,tsx}',
+  'apps/{shell,products,dashboard,orders}/**/*.{ts,tsx}',
   'packages/{ui,auth-store}/**/*.{ts,tsx}',
 ];
 

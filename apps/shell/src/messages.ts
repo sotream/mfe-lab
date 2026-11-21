@@ -1,11 +1,18 @@
 import { useLocale } from '@mfe/ui';
 
 const de = {
-  nav: { home: 'Startseite', products: 'Produkte', dashboard: 'Dashboard', inspector: 'Inspector' },
+  nav: {
+    home: 'Startseite',
+    products: 'Produkte',
+    dashboard: 'Dashboard',
+    orders: 'Bestellungen',
+    inspector: 'Inspector',
+  },
   titles: {
     home: 'Startseite',
     products: 'Produkte',
     dashboard: 'Dashboard',
+    orders: 'Bestellungen',
     inspector: 'Inspector',
     login: 'Anmelden',
     impressum: 'Impressum',
@@ -112,11 +119,18 @@ const de = {
 };
 
 const en: typeof de = {
-  nav: { home: 'Home', products: 'Products', dashboard: 'Dashboard', inspector: 'Inspector' },
+  nav: {
+    home: 'Home',
+    products: 'Products',
+    dashboard: 'Dashboard',
+    orders: 'Orders',
+    inspector: 'Inspector',
+  },
   titles: {
     home: 'Home',
     products: 'Products',
     dashboard: 'Dashboard',
+    orders: 'Orders',
     inspector: 'Inspector',
     login: 'Sign in',
     impressum: 'Legal notice',

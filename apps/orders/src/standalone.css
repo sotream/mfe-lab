@@ -1,0 +1,27 @@
+.orders-standalone-bar {
+  display: flex;
+  gap: var(--ds1-space-xs);
+  flex-wrap: wrap;
+  align-items: center;
+  padding: var(--ds1-space-xs) var(--ds1-gutter);
+  border-bottom: 1px solid var(--ds1-rule);
+  background-color: var(--ds1-paper-3);
+  color: var(--ds1-ink-2);
+  font-size: var(--ds1-text-sm);
+}
+
+.orders-standalone-bar button {
+  height: 30px;
+  padding: 0 var(--ds1-space-xs);
+  border: 1px solid var(--ds1-control-edge);
+  border-radius: var(--ds1-radius);
+  background-color: var(--ds1-paper-2);
+  color: var(--ds1-ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.orders-standalone-title {
+  color: var(--ds1-ink);
+  font-weight: 500;
+}

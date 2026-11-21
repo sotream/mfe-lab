@@ -37,6 +37,7 @@ export default defineConfig({
         ),
         server('pnpm --filter @mfe/products dev', 'http://localhost:3001/mf-manifest.json'),
         server('pnpm --filter @mfe/dashboard dev', 'http://localhost:3002/mf-manifest.json'),
+        server('pnpm --filter @mfe/orders dev', 'http://localhost:3003/mf-manifest.json'),
         server('pnpm --filter @mfe/shell dev', 'http://localhost:3000'),
       ],
 });
