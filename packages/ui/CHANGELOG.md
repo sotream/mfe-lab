@@ -2,6 +2,10 @@
 
 Breaking changes need a major bump, a new CSS prefix (`ds2-`) and an entry here (RFC 0008).
 
+## 1.7.0
+
+- `RemoteFrame` takes an optional `originTitle` (tooltip on the origin label). An ISO UTC build version shows compact as `build DD.MM HH:MMZ` in a `<time>` carrying the full value; other versions render unchanged. Additive.
+
 ## 1.6.1
 
 - `RemoteFrame` header wraps instead of truncating: the build stamp moves to its own line when the label and origin leave no room, and a long origin wraps. No API change.

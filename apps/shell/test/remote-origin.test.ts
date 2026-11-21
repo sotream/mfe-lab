@@ -16,11 +16,8 @@ describe('remoteOrigin', () => {
   it.each([
     ['http://localhost:3001/mf-manifest.json', ':3001'],
     ['http://127.0.0.1:3002/x/mf-manifest.json', ':3002'],
-    ['https://mfe-lab-products.vercel.app/mf-manifest.json', 'mfe-lab-products.vercel.app'],
-    [
-      'https://mfe-lab-products.vercel.app/releases/1.2.0/mf-manifest.json',
-      'mfe-lab-products.vercel.app',
-    ],
+    ['https://mfe-lab-products.vercel.app/mf-manifest.json', 'mfe-lab-products'],
+    ['https://mfe-lab-products.vercel.app/releases/1.2.0/mf-manifest.json', 'mfe-lab-products'],
   ])('Q-origin: %s gives %s', (url, expected) => {
     expect(remoteOrigin(url)).toBe(expected);
   });

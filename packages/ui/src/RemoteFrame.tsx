@@ -17,6 +17,8 @@ type Props = {
   name: string;
   // Header label: `origin` as is, else `:${port}`, else none.
   origin?: string;
+  // Tooltip for the origin label, e.g. the full hostname behind a shortened label.
+  originTitle?: string;
   port?: number;
   load: () => Promise<RemoteModule>;
   // Optional so that ui does not depend on @mfe/telemetry; the shell passes `report`.
@@ -36,11 +38,23 @@ function start(load: Props['load']): Promise<RemoteModule> {
   return p;
 }
 
+// An ISO UTC timestamp reads as "21.11 19:39Z"; releases and other strings stay as they are.
+function BuildStamp({ v }: { v: string }) {
+  const m = /^\d{4}-(\d\d)-(\d\d)T(\d\d:\d\d)(?::\d\d)?Z$/.exec(v);
+  if (!m) return v;
+  return <time dateTime={v} title={v}>{`${m[2]}.${m[1]} ${m[3]}Z`}</time>;
+}
+
 function Remote({ promise }: { promise: Promise<RemoteModule> }) {
   const { default: Page, buildVersion } = use(promise);
   return (
     <>
-      {buildVersion && <span className="remote-frame-build">{`build ${buildVersion}`}</span>}
+      {buildVersion && (
+        <span className="remote-frame-build">
+          {'build '}
+          <BuildStamp v={buildVersion} />
+        </span>
+      )}
       <div className="remote-frame-body">
         <Page />
       </div>
@@ -66,7 +80,7 @@ class Boundary extends Component<
 }
 
 // Not React.lazy: it caches a rejection forever. Here Retry calls load() again.
-export function RemoteFrame({ name, origin, port, load, report }: Props) {
+export function RemoteFrame({ name, origin, originTitle, port, load, report }: Props) {
   const t = useT();
   const [attempt, setAttempt] = useState(0);
   const [promise, setPromise] = useState(() => start(load));
@@ -92,7 +106,9 @@ export function RemoteFrame({ name, origin, port, load, report }: Props) {
     <section data-remote={name} aria-label={t.remote(name)}>
       <h2 className="remote-frame-label">{name}</h2>
       {(origin ?? port) !== undefined && (
-        <span className="remote-frame-port">{origin ?? `:${port}`}</span>
+        <span className="remote-frame-port" title={originTitle}>
+          {origin ?? `:${port}`}
+        </span>
       )}
       <Boundary
         key={attempt}
