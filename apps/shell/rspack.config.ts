@@ -9,7 +9,15 @@ const dashboardUrl = process.env.MF_DASHBOARD_URL ?? 'http://localhost:3002/mf-m
 
 export default defineConfig({
   entry: './src/index.ts',
-  output: { publicPath: 'auto', clean: true },
+  output: {
+    publicPath: 'auto',
+    clean: true,
+    // Content-hashed names: cacheable forever. remoteEntry.js keeps its fixed name (MF filename).
+    filename: '[name].[contenthash:16].js',
+    chunkFilename: '[name].[contenthash:16].js',
+    cssFilename: '[name].[contenthash:16].css',
+    cssChunkFilename: '[name].[contenthash:16].css',
+  },
   resolve: { extensions: ['.ts', '.tsx', '.js'] },
   experiments: { css: true },
   module: {

@@ -17,6 +17,8 @@
     "typecheck": "tsc --noEmit -p . && pnpm -r --if-present typecheck",
     "test": "vitest run --passWithNoTests",
     "e2e": "playwright test",
+    "vitals": "node scripts/vitals.ts",
+    "size": "node scripts/size-budget.ts",
     "e2e:docker": "E2E_TARGET=docker playwright test"
   },
   "devDependencies": {

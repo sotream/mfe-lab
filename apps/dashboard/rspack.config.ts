@@ -12,6 +12,11 @@ export default defineConfig({
     path: process.env.MF_RELEASE_DIR,
     publicPath: 'auto',
     clean: true,
+    // Content-hashed names: cacheable forever. remoteEntry.js keeps its fixed name (MF filename).
+    filename: '[name].[contenthash:16].js',
+    chunkFilename: '[name].[contenthash:16].js',
+    cssFilename: '[name].[contenthash:16].css',
+    cssChunkFilename: '[name].[contenthash:16].css',
     // The chunk registry is a page global, by default the same for every build of this remote. A
     // second release's remoteEntry would pick up the first release's same-id chunks from it and
     // run the old code. One global per version keeps releases apart.
