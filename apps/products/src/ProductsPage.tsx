@@ -10,7 +10,16 @@ import {
 } from '@mfe/api-client';
 import { useAuth } from '@mfe/auth-store/react';
 import { emit } from '@mfe/events';
-import { Button, Field, formatDate, formatMoney, Table, useLocale, type Locale } from '@mfe/ui';
+import {
+  Button,
+  Field,
+  formatDate,
+  formatMoney,
+  Skeleton,
+  Table,
+  useLocale,
+  type Locale,
+} from '@mfe/ui';
 import {
   keepPreviousData,
   QueryClient,
@@ -356,15 +365,59 @@ function ProductsTable({
   );
 }
 
+function ProductsSkeleton({ canWrite }: { canWrite: boolean }) {
+  const t = useT();
+  const cols = COLUMNS.length + (canWrite ? 1 : 0);
+  return (
+    <>
+      <p role="status" className="visually-hidden">
+        {t.loadingProducts}
+      </p>
+      <div className="products-table">
+        <Table
+          label={t.table}
+          loading={{ rows: LIMIT, cols, rowHeight: canWrite ? 47 : undefined }}
+        >
+          <thead>
+            <tr>
+              {COLUMNS.map(({ label, field }) => (
+                <th
+                  scope="col"
+                  key={field}
+                  className={field === 'price_cents' || field === 'stock' ? 'ds1-num' : undefined}
+                >
+                  {t.columns[label]}
+                </th>
+              ))}
+              {canWrite && (
+                <th scope="col" className="products-actions-head">
+                  {t.actions}
+                </th>
+              )}
+            </tr>
+          </thead>
+        </Table>
+      </div>
+      <div className="products-pager" aria-hidden="true">
+        <Skeleton width={72} height={36} />
+        <Skeleton width={80} />
+        <Skeleton width={72} height={36} />
+      </div>
+    </>
+  );
+}
+
 function Content({
   data,
   failed,
   onRetry,
+  canWrite,
   children,
 }: {
   data: Page<Product> | null;
   failed: boolean;
   onRetry: () => void;
+  canWrite: boolean;
   children: ReactNode;
 }) {
   const t = useT();
@@ -376,7 +429,7 @@ function Content({
       </div>
     );
   }
-  if (!data) return <p role="status">{t.loadingProducts}</p>;
+  if (!data) return <ProductsSkeleton canWrite={canWrite} />;
   return children;
 }
 
@@ -443,7 +496,7 @@ export function ProductsContent({ base }: { base: string }) {
         )}
       </div>
 
-      <Content data={data} failed={failed} onRetry={reload}>
+      <Content data={data} failed={failed} onRetry={reload} canWrite={canWrite}>
         <ProductsTable
           items={data?.items ?? []}
           query={query}

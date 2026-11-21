@@ -52,7 +52,8 @@ let host: HTMLElement;
 let unmount: (() => void) | undefined;
 const onError = vi.fn();
 const root = () => host.shadowRoot!;
-const rows = () => root().querySelectorAll('table tbody tr');
+// skeleton rows are aria-hidden and sit in the same tbody while loading: only real rows count
+const rows = () => root().querySelectorAll('table tbody tr:not([aria-hidden="true"])');
 const start = (locale: 'de' | 'en' = 'en') => {
   unmount = mount(host, { locale, onError });
 };

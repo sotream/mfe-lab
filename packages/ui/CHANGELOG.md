@@ -2,6 +2,10 @@
 
 Breaking changes need a major bump, a new CSS prefix (`ds2-`) and an entry here (RFC 0008).
 
+## 1.8.0
+
+- New `Skeleton` (`width`, `height`, `radius`): a decorative `.ds1-skeleton` block with a slow shimmer (none under `prefers-reduced-motion`). `Table` takes `loading={{ rows, cols?, rowHeight? }}`: it renders `children` (the `<thead>`), then `rows` skeleton rows (`aria-hidden`) and sets `aria-busy`. `RemoteFrame` takes `fallback` (default a block skeleton) and its loading text is now visually hidden (still `role="status"`). Additive.
+
 ## 1.7.0
 
 - `RemoteFrame` takes an optional `originTitle` (tooltip on the origin label). An ISO UTC build version shows compact as `build DD.MM HH:MMZ` in a `<time>` carrying the full value; other versions render unchanged. Additive.

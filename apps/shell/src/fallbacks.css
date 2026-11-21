@@ -1,0 +1,77 @@
+/* Frame fallbacks (Fallbacks.tsx): sizes mirror the remotes' first views. */
+.fb-toolbar,
+.fb-pager {
+  display: flex;
+  gap: var(--ds1-space-md);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.fb-toolbar {
+  margin-bottom: var(--ds1-space-md);
+}
+
+.fb-orders {
+  padding: var(--ds1-space-md);
+}
+
+.fb-pager {
+  justify-content: flex-start;
+  margin-top: var(--ds1-space-md);
+}
+
+.fb-dashboard {
+  container-type: inline-size;
+}
+
+.fb-tiles {
+  --ds1-cols: 2;
+}
+
+@container (min-width: 44rem) {
+  .fb-tiles {
+    --ds1-cols: 4;
+  }
+}
+
+.fb-block {
+  padding: var(--ds1-space-lg) 0;
+  border-bottom: 1px solid var(--ds1-rule);
+}
+
+.fb-title {
+  height: calc(1rem * 1.55);
+  margin-bottom: var(--ds1-space-md);
+}
+
+/* The revenue heading is an h3 (line-height 1.2), the chart caption a figcaption (1.55). */
+.fb-title--h3 {
+  height: calc(1rem * 1.2);
+}
+
+/* The closed "show data table" toggle at the end of the loaded view. */
+.fb-details {
+  height: calc(var(--ds1-space-lg) + 0.875rem * 1.55 + var(--ds1-space-sm));
+}
+
+.fb-chart {
+  display: block;
+  max-width: 660px;
+  aspect-ratio: 660 / 192;
+}
+
+.fb-bar {
+  display: grid;
+  grid-template-columns: 5rem minmax(0, 1fr) 8rem;
+  gap: var(--ds1-space-sm);
+  align-items: center;
+  min-height: calc(0.875rem * 1.55);
+  margin-bottom: var(--ds1-space-xs);
+  font-size: var(--ds1-text-sm);
+}
+
+.fb-bar > span {
+  display: block;
+  height: 14px;
+  overflow: clip;
+}

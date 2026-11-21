@@ -1,5 +1,6 @@
 export { RemoteFrame, type FrameError, type RemoteModule } from './RemoteFrame.tsx';
 export { Button } from './Button.tsx';
+export { Skeleton } from './Skeleton.tsx';
 export { Table } from './Table.tsx';
 export { Field } from './Field.tsx';
 export {

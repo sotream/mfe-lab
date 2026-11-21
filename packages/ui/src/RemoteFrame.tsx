@@ -1,5 +1,6 @@
 import { Component, Suspense, use, useState, type ComponentType, type ReactNode } from 'react';
 import { Button } from './Button.tsx';
+import { Skeleton } from './Skeleton.tsx';
 import { useT } from './messages.ts';
 import './frame.css';
 
@@ -23,6 +24,8 @@ type Props = {
   load: () => Promise<RemoteModule>;
   // Optional so that ui does not depend on @mfe/telemetry; the shell passes `report`.
   report?: (e: FrameError) => void;
+  // Shown (aria-hidden) while the remote module loads: mirror the remote's first view so nothing moves.
+  fallback?: ReactNode;
 };
 
 // Build of each module that resolved; a boundary catch with no entry here was a load failure.
@@ -80,7 +83,7 @@ class Boundary extends Component<
 }
 
 // Not React.lazy: it caches a rejection forever. Here Retry calls load() again.
-export function RemoteFrame({ name, origin, originTitle, port, load, report }: Props) {
+export function RemoteFrame({ name, origin, originTitle, port, load, report, fallback }: Props) {
   const t = useT();
   const [attempt, setAttempt] = useState(0);
   const [promise, setPromise] = useState(() => start(load));
@@ -129,9 +132,12 @@ export function RemoteFrame({ name, origin, originTitle, port, load, report }: P
       >
         <Suspense
           fallback={
-            <p role="status" className="remote-frame-body">
-              {t.loading(name)}
-            </p>
+            <div className="remote-frame-body">
+              <p role="status" className="visually-hidden">
+                {t.loading(name)}
+              </p>
+              <div aria-hidden="true">{fallback ?? <Skeleton width="100%" height="12rem" />}</div>
+            </div>
           }
         >
           <Remote promise={promise} />

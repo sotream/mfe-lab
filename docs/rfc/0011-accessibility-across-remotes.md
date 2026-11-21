@@ -50,6 +50,8 @@ A page built from independently deployed apps has no single author, so page-leve
 
 **Automation.** `eslint-plugin-jsx-a11y` (recommended) runs on `apps/**` and `packages/**`. `@axe-core/playwright` runs the `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa` and `wcag22aa` rule sets in the e2e suite and fails on `serious` and `critical` violations.
 
+**Loading states.** A loading view is a skeleton with the final layout's size, not a text line. The skeleton is `aria-hidden`; the loading text stays in the DOM as a visually hidden `role="status"`, so it is still announced. A table that loads gets `aria-busy="true"`. The shimmer is off under `prefers-reduced-motion: reduce`. The Vue remote follows the same rules with its own CSS inside its shadow root.
+
 **Versions.** `@mfe/ui` 1.3.0 (additive): `Table` `label`, and the `h2` in the frame bar. `requiredVersion` stays `^1.0.0`. `@mfe/events` gets one event.
 
 ## Alternatives considered

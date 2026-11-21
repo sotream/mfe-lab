@@ -1,5 +1,5 @@
 import { ApiError, getProduct } from '@mfe/api-client';
-import { Button, formatDate, formatMoney, formatNumber, useLocale } from '@mfe/ui';
+import { Button, formatDate, formatMoney, formatNumber, Skeleton, useLocale } from '@mfe/ui';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { Link, useParams } from 'react-router';
@@ -35,7 +35,32 @@ export default function ProductDetail() {
       </div>
     );
   } else if (!data) {
-    body = <p role="status">{t.loading}</p>;
+    body = (
+      <>
+        <p role="status" className="visually-hidden">
+          {t.loading}
+        </p>
+        <h3 className="products-name" aria-hidden="true">
+          <Skeleton width="40%" height="0.8em" />
+        </h3>
+        <dl className="ds1-readings products-readings" aria-hidden="true">
+          {[
+            [t.columns.sku, '70%'],
+            [t.columns.price, '60%'],
+            [t.columns.stock, '45%'],
+            [t.columns.created, '75%'],
+          ].map(([label, width], i) => (
+            <div key={label} className={i === 1 ? 'price' : undefined}>
+              <dt>{label}</dt>
+              <dd>
+                <Skeleton width={width} height="0.8em" />
+                {i === 1 && <small className="vat">&nbsp;</small>}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </>
+    );
   } else {
     body = (
       <>
