@@ -96,7 +96,11 @@ jobs:
           scope=(); [ -z "$slug" ] || scope=(--scope "$slug")
           pnpm dlx "$VERCEL_CLI" link --yes --project mfe-lab-api --token "$VERCEL_TOKEN" "${scope[@]}"
           pnpm dlx "$VERCEL_CLI" pull --yes --environment=production --token "$VERCEL_TOKEN" "${scope[@]}"
+          # Vercel detects api/*.js functions before it runs buildCommand; the bundle is gitignored, so build it first.
+          pnpm --filter @mfe/api build
           pnpm dlx "$VERCEL_CLI" build --prod --token "$VERCEL_TOKEN" "${scope[@]}"
+          # Fail loudly instead of deploying a function-less API (every path 404s).
+          [ -n "$(find .vercel/output/functions -name '*.func' -type d 2>/dev/null)" ] || { echo "no function in .vercel/output/functions" >&2; exit 1; }
           pnpm dlx "$VERCEL_CLI" deploy --prebuilt --prod --token "$VERCEL_TOKEN" "${scope[@]}"
 
   remotes:
