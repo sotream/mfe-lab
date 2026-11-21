@@ -1,3 +1,11 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/img/logo.svg">
+    <img src="docs/img/logo-light.svg" alt="mfe-lab mark: a flask whose lip is a browser tab with a hyphen, holding two remotes" width="72">
+  </picture>
+  <br><b>mfe-lab</b>
+</p>
+
 <h1 align="center">
   <img src="docs/img/banner.svg" alt="mfe-lab: federated micro frontends, built the way a platform team ships them" width="100%">
 </h1>

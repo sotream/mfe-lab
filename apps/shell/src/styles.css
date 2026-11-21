@@ -69,7 +69,16 @@
   font-weight: 500;
 }
 
-.wordmark span {
+.wordmark {
+  gap: var(--ds1-space-2xs);
+}
+
+.wordmark .mark {
+  flex: none;
+  color: var(--ds1-ink);
+}
+
+.wordmark-text span {
   color: var(--ds1-accent);
 }
 
@@ -203,6 +212,11 @@ footer .build {
 
 .login-intro .wordmark {
   font-size: var(--ds1-text-xl);
+}
+
+.login-intro .wordmark .mark {
+  width: 2em;
+  height: 2em;
 }
 
 .login-intro h1 {

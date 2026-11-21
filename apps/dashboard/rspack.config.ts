@@ -51,6 +51,8 @@ export default defineConfig({
       dts: false,
     }),
     new rspack.DefinePlugin({ __BUILD_VERSION__: JSON.stringify(buildVersion) }),
+    // Brand icons: unhashed, copied to the dist root.
+    new rspack.CopyRspackPlugin({ patterns: [{ from: '../../packages/ui/brand' }] }),
     new rspack.HtmlRspackPlugin({ template: './index.html' }),
   ],
   devServer: {
