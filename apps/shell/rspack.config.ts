@@ -6,6 +6,7 @@ import { buildVersion, shared } from '../../federation.shared.ts';
 // Remote manifest URLs, overridable at build time (see src/remotes.ts).
 const productsUrl = process.env.MF_PRODUCTS_URL ?? 'http://localhost:3001/mf-manifest.json';
 const dashboardUrl = process.env.MF_DASHBOARD_URL ?? 'http://localhost:3002/mf-manifest.json';
+const ordersUrl = process.env.MF_ORDERS_URL ?? 'http://localhost:3003/mf-manifest.json';
 
 export default defineConfig({
   entry: './src/index.ts',
@@ -43,6 +44,7 @@ export default defineConfig({
       __BUILD_VERSION__: JSON.stringify(buildVersion),
       __MF_PRODUCTS_URL__: JSON.stringify(productsUrl),
       __MF_DASHBOARD_URL__: JSON.stringify(dashboardUrl),
+      __MF_ORDERS_URL__: JSON.stringify(ordersUrl),
     }),
     new rspack.HtmlRspackPlugin({ template: './index.html', publicPath: '/' }),
   ],

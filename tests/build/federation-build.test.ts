@@ -79,6 +79,29 @@ describe('federation build', { timeout: BUILD_TIMEOUT }, () => {
     }
   });
 
+  it('Q-orders-manifest: orders exposes ./OrdersApp and shares auth-store but no react', () => {
+    const m = manifest('orders');
+    expect(m.name).toBe('orders');
+    expect(m.exposes).toContainEqual(expect.objectContaining({ path: './OrdersApp' }));
+    expect(m.shared.map((s) => s.name).filter((n) => /^react/.test(n))).toEqual([]);
+  });
+
+  it('Q-no-react-in-orders: no react-dom or jsx-runtime code in apps/orders/dist', () => {
+    const dist = join(root, 'apps', 'orders', 'dist');
+    const js = readdirSync(dist, { recursive: true, encoding: 'utf8' }).filter((f) =>
+      f.endsWith('.js'),
+    );
+    expect(js.length).toBeGreaterThan(0);
+    for (const f of js) {
+      const t = readFileSync(join(dist, f), 'utf8');
+      expect(t, f).not.toMatch(/react-dom/);
+      expect(t, f).not.toMatch(/react\/jsx-(dev-)?runtime/);
+      // react-dom's and react's own markers, in case names were minified away
+      expect(t, f).not.toMatch(/__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED/);
+      expect(t, f).not.toMatch(/react\.element|react\.transitional\.element/);
+    }
+  });
+
   it('Q-shell-build: shell has index.html and a manifest with the singletons', () => {
     expect(existsSync(join(root, 'apps', 'shell', 'dist', 'index.html'))).toBe(true);
     expectSingletons(manifest('shell'));
@@ -87,7 +110,7 @@ describe('federation build', { timeout: BUILD_TIMEOUT }, () => {
   it('Q-cache-hashed: the immutable header only matches content-hashed files in each dist', () => {
     // Pattern comes from each app's vercel.json (Vercel `source`, compiled with path-to-regexp 6.1.0 like Vercel does); built in
     // the shared beforeAll build so dist/ is never built twice.
-    for (const app of ['shell', 'products', 'dashboard']) {
+    for (const app of ['shell', 'products', 'dashboard', 'orders']) {
       const cfg = JSON.parse(readFileSync(join(root, 'apps', app, 'vercel.json'), 'utf8')) as {
         headers: { source: string; headers: { key: string; value: string }[] }[];
       };
@@ -123,7 +146,7 @@ describe('federation build', { timeout: BUILD_TIMEOUT }, () => {
 
   it('Q-hashed-assets: every js and css except remoteEntry.js has a 16-hex hash; entry files stay unhashed', () => {
     const hash = /[0-9a-f]{16}/;
-    for (const app of ['shell', 'products', 'dashboard']) {
+    for (const app of ['shell', 'products', 'dashboard', 'orders']) {
       const dist = join(root, 'apps', app, 'dist');
       const files = readdirSync(dist, { recursive: true, encoding: 'utf8' }).filter((f) =>
         statSync(join(dist, f)).isFile(),
@@ -149,7 +172,7 @@ describe('federation build', { timeout: BUILD_TIMEOUT }, () => {
   // Q-size-budget. ASSUMPTIONS (phase 2 adapts): `--budget <file>` overrides perf-budget.json;
   // shape { shell|products|dashboard: { initialJsGzip, totalJsGzip, cssGzip }, vitals: {...} };
   // violations are reported on stdout/stderr naming the app and metric.
-  const apps = ['shell', 'products', 'dashboard'] as const;
+  const apps = ['shell', 'products', 'dashboard', 'orders'] as const;
   const metrics = ['initialJsGzip', 'totalJsGzip', 'cssGzip'] as const;
   const sizeBudget = (args: string[] = []) =>
     spawnSync('node', ['scripts/size-budget.ts', ...args], { cwd: root, encoding: 'utf8' });
@@ -194,6 +217,7 @@ describe('federation build', { timeout: BUILD_TIMEOUT }, () => {
     const js = shellJs();
     expect(js).toContain('http://localhost:3001/mf-manifest.json');
     expect(js).toContain('http://localhost:3002/mf-manifest.json');
+    expect(js).toContain('http://localhost:3003/mf-manifest.json');
 
     buildShell({ ...defaultEnv, MF_PRODUCTS_URL: overrideUrl });
     const overridden = shellJs();
@@ -201,8 +225,8 @@ describe('federation build', { timeout: BUILD_TIMEOUT }, () => {
     expect(overridden).not.toContain('localhost:3001/mf-manifest.json');
   });
 
-  it('Q-manifest-auth-store: shell and both remotes share @mfe/auth-store as a singleton', () => {
-    for (const app of ['shell', 'products', 'dashboard']) {
+  it('Q-manifest-auth-store: shell and all remotes share @mfe/auth-store as a singleton', () => {
+    for (const app of ['shell', 'products', 'dashboard', 'orders']) {
       expect(manifest(app).shared, app).toContainEqual(
         expect.objectContaining({ name: '@mfe/auth-store', singleton: true }),
       );

@@ -19,7 +19,7 @@ Project: `mfe-lab`, a private learning monorepo for Federated Micro Frontends. R
 ## Stack rules
 
 - TypeScript strict everywhere. ESM. Node 26 (latest LTS). pnpm only.
-- Frontend: React 19, Rspack, `@module-federation/enhanced`. No UI library, plain CSS (CSS variables), no Tailwind.
+- Frontend: React 19, Rspack, `@module-federation/enhanced`. No UI library, plain CSS (CSS variables), no Tailwind. One exception: the `orders` remote is Vue 3.5 (SFCs, `vue-loader`), to demo framework-agnostic remotes (RFC 0016). It imports no React and not the React entry of `@mfe/ui`.
 - Fonts, if any, self-hosted in the repo. No CDN, no external requests at runtime.
 - API: Fastify, Postgres (`pg`; PGlite in dev and tests), zod, `@fastify/jwt`. Prefer stdlib and what is installed; add a dependency only with a one-line reason in the PR.
 - Shared singletons: `react`, `react-dom`, `react-router`, `@mfe/auth-store`. Everything shared is declared once in the root `federation.shared.ts`; versions are pinned in the pnpm catalog (`pnpm-workspace.yaml`).
@@ -33,7 +33,7 @@ Project: `mfe-lab`, a private learning monorepo for Federated Micro Frontends. R
 
 ## Ports
 
-shell 3000, products 3001, dashboard 3002, api 4000. Check free ports before starting servers; never kill processes you did not start.
+shell 3000, products 3001, dashboard 3002, orders 3003, api 4000. Check free ports before starting servers; never kill processes you did not start.
 
 ## Definition of done per task
 

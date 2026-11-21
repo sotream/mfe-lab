@@ -235,7 +235,7 @@ const valueOf = (f: ReturnType<typeof makeFake>, key: string) =>
   apiEnv(f).find((e) => e.key === key)?.value;
 
 describe('provision', () => {
-  it('Q-provision: fresh accounts get a Neon project and four Vercel projects', async () => {
+  it('Q-provision: fresh accounts get a Neon project and five Vercel projects', async () => {
     const f = makeFake();
     const r = run(f);
     await r.done;
@@ -251,6 +251,7 @@ describe('provision', () => {
       'mfe-lab',
       'mfe-lab-api',
       'mfe-lab-dashboard',
+      'mfe-lab-orders',
       'mfe-lab-products',
     ]);
     for (const { dir, name } of expectedProjects) {
@@ -259,7 +260,7 @@ describe('provision', () => {
       expect(p.framework ?? null, name).toBeNull();
       expect(p.nodeVersion, name).toMatch(/^26/);
     }
-    expect(f.st.creates).toHaveLength(5);
+    expect(f.st.creates).toHaveLength(6);
   });
 
   it('Q-provision: fresh run sets DATABASE_URL, JWT_SECRET, CRON_SECRET on api only, as sensitive, prod + preview', async () => {
@@ -390,7 +391,7 @@ describe('provision scope (Amendment A)', () => {
       expect(lastParam(r), `${r.method} ${r.path}`).toBe('teamId');
     }
     // creates and env writes did happen under that scope
-    expect(f.st.vercel.size).toBe(4);
+    expect(f.st.vercel.size).toBe(5);
     expect(apiEnv(f)).toHaveLength(3);
   });
 
@@ -399,7 +400,7 @@ describe('provision scope (Amendment A)', () => {
     await provision(envFor(), f.fetch, quiet);
     for (const r of vercelReqs(f))
       expect(r.search.has('teamId'), `${r.method} ${r.path}`).toBe(false);
-    expect(f.st.vercel.size).toBe(4);
+    expect(f.st.vercel.size).toBe(5);
   });
 
   it('Q-scope: two teams -> rejects naming both slugs, creates nothing', async () => {

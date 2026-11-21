@@ -85,6 +85,10 @@ A remote can be frozen into a release and the shell can switch to it at runtime,
 
 The selection lives in memory only: a reload goes back to `dev`. To clean up, delete `apps/products/releases`.
 
+### A Vue remote in a Shadow DOM
+
+Sign in and open `Orders` (`/orders`). The `orders` frame is a Vue 3.5 app mounted through `mount(el, ctx)`; its frame label reads `:3003`. In the browser devtools the frame body holds a `#shadow-root (open)` with the table inside, and `document.head` has no orders style. Switch DE/EN: the labels, money and dates change in place and the host element is the same one (no remount). Change a product in the products frame on Home, come back: `products:changed` makes orders refetch. The a11y e2e scans it with axe through the shadow root. Details: [RFC 0016](rfc/0016-framework-agnostic-remotes-and-css-isolation.md).
+
 ### Feature flags
 
 Flags live in the API (`GET /flags`, admin-only `PATCH /flags/:name`). Each remote reads them through `useFlag(name, fallback)` with its own query client; the fallback applies while loading, on error and when signed out, so a remote still works standalone. A toggle emits `flags:changed` and mounted remotes refetch. Seeded flags: `dashboard.revenue` (hides Revenue by status), `products.detailPage` (names become plain text), `products.crash` (ProductsPage throws, so the shell frame shows its error fallback). Details: [RFC 0009](rfc/0009-feature-flags.md).

@@ -1,17 +1,19 @@
 // Q-changed-apps: path -> apps mapping.
-// changedApps(paths) returns app names in DEPLOY order: api, products, dashboard, shell.
+// changedApps(paths) returns app names in DEPLOY order: api, products, dashboard, orders, shell.
 // Also a CLI: paths on stdin, one app per line on stdout.
 import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { changedApps } from '../../scripts/changed-apps.ts';
 
-const all = ['api', 'products', 'dashboard', 'shell'];
+const all = ['api', 'products', 'dashboard', 'orders', 'shell'];
 
 const cases: [string, string[], string[]][] = [
   ['shell source', ['apps/shell/src/App.tsx'], ['shell']],
   ['products source', ['apps/products/src/x.tsx'], ['products']],
   ['dashboard source', ['apps/dashboard/rspack.config.ts'], ['dashboard']],
+  ['orders source', ['apps/orders/src/OrdersApp.ts'], ['orders']],
+  ['orders vue file', ['apps/orders/src/Orders.vue'], ['orders']],
   ['api source', ['apps/api/src/server.ts'], ['api']],
   ['api migration', ['apps/api/migrations/003_x.sql'], ['api']],
   ['packages', ['packages/auth-store/src/index.ts'], all],
@@ -34,8 +36,14 @@ const cases: [string, string[], string[]][] = [
     ['products', 'dashboard'],
   ],
   [
-    'all four apps, reverse input',
-    ['apps/shell/a', 'apps/dashboard/a', 'apps/products/a', 'apps/api/a'],
+    'orders joins the remotes, deploy order',
+    ['apps/orders/a.ts', 'apps/dashboard/a.ts', 'apps/products/b.ts'],
+    ['products', 'dashboard', 'orders'],
+  ],
+  ['orders then shell', ['apps/shell/a.ts', 'apps/orders/a.ts'], ['orders', 'shell']],
+  [
+    'all five apps, reverse input',
+    ['apps/shell/a', 'apps/orders/a', 'apps/dashboard/a', 'apps/products/a', 'apps/api/a'],
     all,
   ],
   ['duplicates collapse', ['apps/shell/a.ts', 'apps/shell/b.ts'], ['shell']],

@@ -9,18 +9,19 @@ The Swagger UI (`/docs`) is not served on Vercel: `@fastify/swagger-ui` pulls in
 | `mfe-lab` (shell)   | `apps/shell`     | `https://mfe-lab.vercel.app`           |
 | `mfe-lab-products`  | `apps/products`  | `https://mfe-lab-products.vercel.app`  |
 | `mfe-lab-dashboard` | `apps/dashboard` | `https://mfe-lab-dashboard.vercel.app` |
+| `mfe-lab-orders`    | `apps/orders`    | `https://mfe-lab-orders.vercel.app`    |
 | `mfe-lab-api`       | `apps/api`       | `https://mfe-lab-api.vercel.app`       |
 
 ## One place for URLs
 
-`deploy/urls.json` holds the four URLs. `node scripts/vercel-config.ts` generates the four `apps/*/vercel.json` from it (the generated files are committed; a test checks they are up to date). If a `*.vercel.app` name is taken, edit `urls.json` and rerun the script.
+`deploy/urls.json` holds the five URLs. `node scripts/vercel-config.ts` generates the five `apps/*/vercel.json` from it (the generated files are committed; a test checks they are up to date). If a `*.vercel.app` name is taken, edit `urls.json` and rerun the script.
 
-## Static apps (shell, products, dashboard)
+## Static apps (shell, products, dashboard, orders)
 
 `vercel.json` mirrors `docker/nginx.conf.template`:
 
 - `/api/:path*` is rewritten to the API project (prefix stripped), so the browser stays same-origin and needs no CORS for the API; then everything else falls back to `/index.html`.
-- products and dashboard send `Access-Control-Allow-Origin: *` (the shell loads their manifests and chunks).
+- products, dashboard and orders send `Access-Control-Allow-Origin: *` (the shell loads their manifests and chunks).
 - `/mf-manifest.json` and `/remoteEntry.js` are `no-store`.
 - `Cache-Control: public, max-age=31536000, immutable` only on content-hashed files (`<name>.<16 hex>.js`, `.css`, `<16 hex>.woff2`). `remoteEntry.js`, `mf-manifest.json` and `index.html` keep fixed names and are never immutable (RFC 0015).
 - Install and build run from the root-dir project with `pnpm install --frozen-lockfile --filter @mfe/<app>...` and `pnpm build`; output is `dist`. Vercel needs "Include source files outside of the Root Directory" enabled (the default).
@@ -60,12 +61,14 @@ All three are type `sensitive` on the production and preview targets. The API fu
 `.github/workflows/provision.yml` (manual, `workflow_dispatch`) runs `node scripts/provision.ts`, which uses the Vercel and Neon REST APIs with plain `fetch` and is idempotent:
 
 - Neon: finds or creates the project `mfe-lab` (Postgres 17, `aws-eu-central-1`).
-- Vercel: finds or creates the four projects (`framework: null`, root dir `apps/<name>`, Node 26.x), then checks that each production domain is the `*.vercel.app` URL in `deploy/urls.json` and fails naming the actual domain if not.
+- Vercel: finds or creates a project per entry of `deploy/urls.json` (five) (`framework: null`, root dir `apps/<name>`, Node 26.x), then checks that each production domain is the `*.vercel.app` URL in `deploy/urls.json` and fails naming the actual domain if not.
 - API env vars as above. `DATABASE_URL` is a sensitive value that cannot be read back, so its comment holds a short hash of the URI; the script rewrites it only when the hash differs.
 - The Neon URI is stored with `sslmode=verify-full` (not `require`, which pg warns about); the first run after this change rewrites `DATABASE_URL` once.
 - The workflow then migrates and seeds Neon and checks that the database has 3 users. The pooled URI is fetched inside the job and masked with `::add-mask::`.
 
 The script logs only names, ids and created / exists / updated. Re-run it any time; a second run changes nothing.
+
+`orders` is a Vue remote (RFC 0016). It deploys like the other remotes, but it has no `release` script, so it is not versioned from the inspector.
 
 ## Deploy flow
 
@@ -73,9 +76,9 @@ The script logs only names, ids and created / exists / updated. Re-run it any ti
 
 1. `plan` checks out the commit CI ran on (`workflow_run.head_sha`; the default checkout would be the newest `main`), and lists the files of `HEAD~1..HEAD` (a squash merge is one commit per PR). `scripts/changed-apps.ts` maps them to apps.
 2. `api`: migrate Neon, then deploy.
-3. `products` and `dashboard` in parallel.
+3. `products`, `dashboard` and `orders` in parallel.
 4. `shell` last.
-5. `smoke` checks the live URLs: shell `<title>`, `/api/health` 200, the products manifest (200, CORS `*`, `no-store`), and `/cron/reseed` 401 without auth.
+5. `smoke` checks the live URLs: shell `<title>`, `/api/health` 200, the products and orders manifests (200, CORS `*`, `no-store`), and `/cron/reseed` 401 without auth.
 6. `vitals` runs `node scripts/vitals.ts` against the shell URL from `deploy/urls.json`: Chromium on Fast 4G and 4x CPU, 5 cold runs, median LCP, CLS and time-to-remotes against `perf-budget.json`. The table goes to the job summary; a median over budget fails the job. It runs only after a green `smoke`, and a failure does not roll the deploy back. Locally: `VITALS_URL=<base> pnpm vitals`.
 
 Per app: `vercel link --yes --project <name>` (so no project id is stored), `vercel pull --yes --environment=production`, `vercel build --prod`, `vercel deploy --prebuilt --prod`. The CLI is pinned in `deploy.yml` (`VERCEL_CLI`) and runs with `pnpm dlx`. Jobs run under `concurrency: deploy` without cancelling.
@@ -85,7 +88,7 @@ Per app: `vercel link --yes --project <name>` (so no project id is stored), `ver
 | Changed path                                                                                                                                                                 | Apps     |
 | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
 | `apps/<x>/**` (the API's migrations included)                                                                                                                                | `<x>`    |
-| `packages/**`, `federation.shared.ts`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, root `package.json`, `deploy/**`, `scripts/vercel-config.ts`, `.github/workflows/deploy.yml` | all four |
+| `packages/**`, `federation.shared.ts`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, root `package.json`, `deploy/**`, `scripts/vercel-config.ts`, `.github/workflows/deploy.yml` | all five |
 | docs, tests, `e2e/`, the rest of `.github/**`                                                                                                                                | none     |
 
 If two merges land while a deploy is running, the queue keeps only the newest pending run, so the skipped commit's changes are not deployed. Run `deploy.yml` with `all` to catch up.

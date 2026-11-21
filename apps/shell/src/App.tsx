@@ -1,17 +1,20 @@
-import { logout, useAuth } from '@mfe/auth-store';
+import { logout } from '@mfe/auth-store';
+import { useAuth } from '@mfe/auth-store/react';
 import { report } from '@mfe/telemetry';
-import { Button, RemoteFrame, useLocale, type Locale } from '@mfe/ui';
+import { Button, RemoteFrame, useLocale, type Locale, type RemoteModule } from '@mfe/ui';
 import { useEffect, useLayoutEffect, useRef, useSyncExternalStore } from 'react';
 import { createBrowserRouter, Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import { DatenschutzPage, ImpressumPage } from './LegalPages.tsx';
 import { LiveRegion } from './LiveRegion.tsx';
 import InspectorPage from './InspectorPage.tsx';
 import { LoginPage } from './LoginPage.tsx';
+import { mountAdapter } from './MountAdapter.tsx';
 import { RequireAuth } from './RequireAuth.tsx';
 import { Wordmark } from './Wordmark.tsx';
 import { setLocale } from './locale.ts';
 import { useT } from './messages.ts';
 import {
+  loadMount,
   loadPage,
   remoteEntry,
   remoteOrigin,
@@ -19,29 +22,58 @@ import {
   type ExposedName,
   type RemoteName,
 } from './remotes.ts';
+import type { RemoteOfKind } from '../../../federation.contract.ts';
 
 declare const __BUILD_VERSION__: string;
 
-const Remote = <R extends RemoteName>({ name, module }: { name: R; module?: ExposedName<R> }) => {
+const Frame = ({
+  name,
+  frameKey,
+  load,
+}: {
+  name: RemoteName;
+  frameKey: string;
+  load: () => Promise<RemoteModule>;
+}) => {
   // Follows the version selected in the inspector.
   const entry = useSyncExternalStore(subscribeRemotes, () => remoteEntry(name));
   return (
     <RemoteFrame
       // A new key per remote and module: a route change must not reuse the frame that loaded another remote.
-      key={`${name}:${module ?? ''}`}
+      key={frameKey}
       name={name}
       origin={remoteOrigin(entry)}
-      load={() => loadPage(name, module)}
+      load={load}
       report={report}
     />
   );
 };
+
+const Remote = <R extends RemoteOfKind<'react'>>({
+  name,
+  module,
+}: {
+  name: R;
+  module?: ExposedName<R>;
+}) => (
+  <Frame name={name} frameKey={`${name}:${module ?? ''}`} load={() => loadPage(name, module)} />
+);
+
+// A `mount`-kind remote (own framework, RFC 0016) goes through the adapter into the same frame.
+const MountRemote = <R extends RemoteOfKind<'mount'>>({ name }: { name: R }) => (
+  <Frame
+    name={name}
+    frameKey={name}
+    load={() => loadMount(name).then((mod) => mountAdapter(name, mod))}
+  />
+);
 
 // Page title per top-level route (key into the messages); a remote owns the title below its route (RFC 0011).
 const TITLE_KEYS = {
   '': 'home',
   products: 'products',
   dashboard: 'dashboard',
+  orders: 'orders',
   inspector: 'inspector',
   login: 'login',
   impressum: 'impressum',
@@ -114,6 +146,9 @@ function Layout() {
                 <NavLink to="/dashboard">{t.nav.dashboard}</NavLink>
               </li>
               <li>
+                <NavLink to="/orders">{t.nav.orders}</NavLink>
+              </li>
+              <li>
                 <NavLink to="/inspector">{t.nav.inspector}</NavLink>
               </li>
             </ul>
@@ -155,7 +190,7 @@ function Layout() {
   );
 }
 
-function Heading({ k }: { k: 'products' | 'dashboard' }) {
+function Heading({ k }: { k: 'products' | 'dashboard' | 'orders' }) {
   const t = useT();
   return (
     <div className="page-head">
@@ -206,6 +241,15 @@ export const router = createBrowserRouter([
           <RequireAuth>
             <Heading k="dashboard" />
             <Remote name="dashboard" />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'orders',
+        element: (
+          <RequireAuth>
+            <Heading k="orders" />
+            <MountRemote name="orders" />
           </RequireAuth>
         ),
       },

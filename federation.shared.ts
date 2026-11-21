@@ -4,9 +4,13 @@ import { createRequire } from 'node:module';
 // MF cannot infer requiredVersion from `catalog:` specifiers, so it is read from the installed
 // package instead; the pnpm catalog is the single place versions are pinned.
 const require = createRequire(`${process.cwd()}/`);
+// requiredVersion is read on first access, so a remote that shares only some of these (orders has
+// no react installed, RFC 0016) can pick its entries without resolving the others.
 const singleton = (pkg: string) => ({
   singleton: true,
-  requiredVersion: `^${(require(`${pkg}/package.json`) as { version: string }).version}`,
+  get requiredVersion() {
+    return `^${(require(`${pkg}/package.json`) as { version: string }).version}`;
+  },
 });
 
 export const shared = {

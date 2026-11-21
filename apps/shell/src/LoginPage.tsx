@@ -1,4 +1,5 @@
-import { login, useAuth } from '@mfe/auth-store';
+import { login } from '@mfe/auth-store';
+import { useAuth } from '@mfe/auth-store/react';
 import { Button, Field } from '@mfe/ui';
 import { useState, type FormEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';

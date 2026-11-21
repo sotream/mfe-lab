@@ -1,5 +1,5 @@
 import { listFlags } from '@mfe/api-client';
-import { useAuth } from '@mfe/auth-store';
+import { useAuth } from '@mfe/auth-store/react';
 import { on } from '@mfe/events';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';

@@ -1,4 +1,4 @@
-// One-time (idempotent) provisioning: a Neon project and the four Vercel projects, plus the API env.
+// One-time (idempotent) provisioning: a Neon project and a Vercel project per entry of deploy/urls.json, plus the API env.
 // Runs in GitHub Actions (provision.yml) with VERCEL_TOKEN and NEON_API_KEY. Plain fetch, no SDK.
 // Logs only names, ids and created/exists/updated, never a secret or the database URI.
 //   node scripts/provision.ts           provision

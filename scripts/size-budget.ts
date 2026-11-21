@@ -10,7 +10,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { gzipSync } from 'node:zlib';
 
-export const apps = ['shell', 'products', 'dashboard'] as const;
+export const apps = ['shell', 'products', 'dashboard', 'orders'] as const;
 export const metrics = ['initialJsGzip', 'totalJsGzip', 'cssGzip'] as const;
 export type Metric = (typeof metrics)[number];
 export type Budget = Record<string, Partial<Record<Metric, number>> & Record<string, unknown>>;

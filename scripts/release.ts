@@ -1,5 +1,7 @@
 // Usage (from an app dir, via its "release" script): node ../../scripts/release.ts <version>
 // Freezes a build into releases/<version>/ and refreshes releases/index.json.
+// Only the React remotes (products, dashboard) have a `release` script: `orders` is not versioned
+// from the inspector (RFC 0016), so it has none and is shown there as dev only.
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

@@ -1,0 +1,23 @@
+{
+  "name": "@mfe/orders",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "rspack dev",
+    "build": "rspack build",
+    "typecheck": "vue-tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "@mfe/api-client": "workspace:*",
+    "@mfe/auth-store": "workspace:*",
+    "@mfe/events": "workspace:*",
+    "@mfe/telemetry": "workspace:*",
+    "@mfe/ui": "workspace:*",
+    "vue": "catalog:"
+  },
+  "devDependencies": {
+    "vue-loader": "catalog:",
+    "vue-tsc": "catalog:"
+  }
+}

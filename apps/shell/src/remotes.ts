@@ -4,18 +4,22 @@ import {
   exposes,
   type ExposedModule,
   type ExposedName,
+  type MountModule,
   type RemoteName,
+  type RemoteOfKind,
 } from '../../../federation.contract.ts';
 
 // Manifest URLs are baked in at build time: MF_*_URL env overrides the localhost defaults.
 declare const __MF_PRODUCTS_URL__: string;
 declare const __MF_DASHBOARD_URL__: string;
+declare const __MF_ORDERS_URL__: string;
 
 type PageModule = ExposedModule<ComponentType>;
 
 const urls: Record<RemoteName, string> = {
   products: __MF_PRODUCTS_URL__,
   dashboard: __MF_DASHBOARD_URL__,
+  orders: __MF_ORDERS_URL__,
 };
 // Remote names and the default (first) module per remote come from the federation contract.
 const entries = Object.fromEntries(
@@ -67,17 +71,14 @@ export const releaseManifestUrl = (name: RemoteName, version: string): string =>
 
 const failed = new Set<RemoteName>();
 
-export async function loadPage<R extends RemoteName>(
-  name: R,
-  module: ExposedName<R> = entries[name].module,
-): Promise<PageModule> {
+async function load<M>(name: RemoteName, module: string): Promise<M> {
   // The runtime caches a failed manifest/entry fetch, so after a failure re-register the
   // remote with force: that drops the cached state and the next loadRemote refetches.
   if (failed.has(name)) {
     registerRemotes([{ name, entry: remoteEntry(name) }], { force: true });
   }
   try {
-    const mod = await loadRemote<PageModule>(`${name}/${module}`);
+    const mod = await loadRemote<M>(`${name}/${module}`);
     if (!mod) throw new Error(`${name} returned no module`);
     failed.delete(name);
     return mod;
@@ -87,9 +88,21 @@ export async function loadPage<R extends RemoteName>(
   }
 }
 
+// Typed per kind (RFC 0016): loadPage only takes React remotes, loadMount only `mount` remotes, so
+// loading a remote as the wrong kind does not compile.
+export const loadPage = <R extends RemoteOfKind<'react'>>(
+  name: R,
+  module: ExposedName<R> = entries[name].module,
+): Promise<PageModule> => load<PageModule>(name, module);
+
+export const loadMount = <R extends RemoteOfKind<'mount'>>(
+  name: R,
+  module: ExposedName<R> = entries[name].module,
+): Promise<MountModule> => load<MountModule>(name, module);
+
 let prefetched = false;
 
-// Warm the browser cache with both remotes (manifest, entry, expose chunks incl. async) once per page load.
+// Warm the browser cache with every remote (manifest, entry, expose chunks incl. async) once per page load.
 export function prefetchRemotes(): void {
   if (prefetched) return;
   prefetched = true;

@@ -1,7 +1,9 @@
 /** @vitest-environment jsdom */
 import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { getToken, login, logout, useAuth, type AuthState } from '../src/index.ts';
+import { getToken, login, logout, type AuthState } from '../src/index.ts';
+// T35: the React hook lives in the `@mfe/auth-store/react` subpath (file name assumed).
+import { useAuth } from '../src/react.ts';
 
 const admin = { id: 1, email: 'admin@lab.test', role: 'admin' } as const;
 const json = (status: number, body: unknown) =>

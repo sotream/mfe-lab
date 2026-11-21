@@ -1,4 +1,5 @@
-import { login, useAuth } from '@mfe/auth-store';
+import { login } from '@mfe/auth-store';
+import { useAuth } from '@mfe/auth-store/react';
 import { Button, detectLocale } from '@mfe/ui';
 import '@mfe/ui/base.css';
 import { createRoot } from 'react-dom/client';
@@ -15,8 +16,8 @@ function StandaloneBar() {
   const user = useAuth((s) => s.user);
   const t = useT().standalone;
   return (
-    <div className="standalone-bar">
-      <span className="standalone-title">{t.title}</span>
+    <div className="products-standalone-bar">
+      <span className="products-standalone-title">{t.title}</span>
       {ROLES.map((role) => (
         <Button
           key={role}

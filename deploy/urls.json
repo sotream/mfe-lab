@@ -2,5 +2,6 @@
   "shell": "https://mfe-lab.vercel.app",
   "products": "https://mfe-lab-products.vercel.app",
   "dashboard": "https://mfe-lab-dashboard.vercel.app",
+  "orders": "https://mfe-lab-orders.vercel.app",
   "api": "https://mfe-lab-api.vercel.app"
 }

@@ -7,7 +7,7 @@ import {
   type ErrorRow,
   type Flag,
 } from '@mfe/api-client';
-import { useAuth } from '@mfe/auth-store';
+import { useAuth } from '@mfe/auth-store/react';
 import { emit } from '@mfe/events';
 import { Button, formatTime, Table, useLocale } from '@mfe/ui';
 import { getInstance } from '@module-federation/enhanced/runtime';

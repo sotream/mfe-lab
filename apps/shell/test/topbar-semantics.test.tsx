@@ -57,15 +57,21 @@ const setLocale = (locale: 'de' | 'en') =>
   });
 
 describe('shell top bar semantics', () => {
-  it('Q-topbar-structure: Main nav holds one list of 4 links and nothing else', async () => {
+  it('Q-topbar-structure: Main nav holds one list of 5 links and nothing else', async () => {
     await mount('/', 'admin');
     const nav = screen.getByRole('navigation', { name: 'Main' });
     const lists = within(nav).getAllByRole('list');
     expect(lists).toHaveLength(1);
     const items = within(lists[0] as HTMLElement).getAllByRole('listitem');
-    expect(items).toHaveLength(4);
+    expect(items).toHaveLength(5);
     const links = within(nav).getAllByRole('link');
-    expect(links.map((a) => a.textContent)).toEqual(['Home', 'Products', 'Dashboard', 'Inspector']);
+    expect(links.map((a) => a.textContent)).toEqual([
+      'Home',
+      'Products',
+      'Dashboard',
+      'Orders',
+      'Inspector',
+    ]);
     expect(
       items.every(
         (li) => li.children.length === 1 && li.firstElementChild === within(li).getByRole('link'),
@@ -117,7 +123,7 @@ describe('shell top bar semantics', () => {
     await mount('/', 'admin');
     await setLocale('de');
     const nav = screen.getByRole('navigation', { name: 'Hauptnavigation' });
-    expect(within(nav).getAllByRole('link')).toHaveLength(4);
+    expect(within(nav).getAllByRole('link')).toHaveLength(5);
     expect(within(nav).queryAllByRole('button')).toHaveLength(0);
     await setLocale('en');
   });

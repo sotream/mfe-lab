@@ -20,6 +20,7 @@ const packages = [
   '@mfe/shell',
   '@mfe/products',
   '@mfe/dashboard',
+  '@mfe/orders', // added in T35
   '@mfe/api',
   '@mfe/auth-store',
   '@mfe/ui',
@@ -29,7 +30,7 @@ const packages = [
 ];
 
 describe('scaffold', { timeout: 60_000 }, () => {
-  it('T-workspace: workspace has the nine packages and nothing else but the root', () => {
+  it('T-workspace: workspace has the ten packages and nothing else but the root', () => {
     const entries = JSON.parse(run('pnpm', ['-r', 'ls', '--depth', '-1', '--json'])) as {
       name: string;
       path: string;

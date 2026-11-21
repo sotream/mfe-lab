@@ -1,6 +1,6 @@
 // Q-vercel-config: committed vercel.json files match the generator and mirror docker/nginx.conf.template.
 // ASSUMPTIONS (contract leaves open, phase 2 adjusts):
-//  - deploy/urls.json maps shell|products|dashboard|api to a URL string (or an object with `url`);
+//  - deploy/urls.json maps shell|products|dashboard|orders|api to a URL string (or an object with `url`);
 //  - generator CLI: `node scripts/vercel-config.ts <dir>` writes <dir>/apps/<name>/vercel.json.
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
@@ -10,8 +10,8 @@ import { pathToRegexp } from 'path-to-regexp';
 import { afterAll, describe, expect, it } from 'vitest';
 
 const root = resolve(import.meta.dirname, '../..');
-const apps = ['shell', 'products', 'dashboard', 'api'] as const;
-const statics = ['shell', 'products', 'dashboard'] as const;
+const apps = ['shell', 'products', 'dashboard', 'orders', 'api'] as const;
+const statics = ['shell', 'products', 'dashboard', 'orders'] as const;
 
 type Header = { source: string; headers: { key: string; value: string }[] };
 type VercelJson = {
@@ -79,7 +79,7 @@ describe('vercel config', () => {
   });
 
   it('Q-vercel-config: remotes send CORS *, manifest and remoteEntry are no-store', () => {
-    for (const app of ['products', 'dashboard'] as const) {
+    for (const app of ['products', 'dashboard', 'orders'] as const) {
       const c = load(root, app);
       for (const p of ['/mf-manifest.json', '/remoteEntry.js']) {
         expect(headersFor(c, p)['access-control-allow-origin'], `${app} ${p}`).toBe('*');
@@ -145,6 +145,7 @@ describe('vercel config', () => {
     const wf = readFileSync(join(root, '.github/workflows/deploy.yml'), 'utf8');
     expect(wf).toMatch(/MF_PRODUCTS_URL=.*deploy\/urls\.json.*\.products.*\/mf-manifest\.json/);
     expect(wf).toMatch(/MF_DASHBOARD_URL=.*deploy\/urls\.json.*\.dashboard.*\/mf-manifest\.json/);
+    expect(wf).toMatch(/MF_ORDERS_URL=.*deploy\/urls\.json.*\.orders.*\/mf-manifest\.json/);
     expect(wf).toMatch(/grep -rl 'localhost:300'/);
   });
 

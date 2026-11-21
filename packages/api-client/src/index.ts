@@ -112,3 +112,16 @@ export type Flag = { name: string; enabled: boolean; description: string };
 export const listFlags = () => request<Flag[]>('/flags');
 export const setFlag = (name: string, enabled: boolean) =>
   request<Flag>(`/flags/${encodeURIComponent(name)}`, { method: 'PATCH', body: { enabled } });
+
+export type OrderStatus = 'new' | 'paid' | 'shipped';
+export type Order = {
+  id: number;
+  product_id: number;
+  qty: number;
+  status: OrderStatus;
+  created_at: string;
+};
+export type OrderQuery = { page?: number; limit?: number; status?: OrderStatus };
+
+// Newest first; `status` filters on the server.
+export const listOrders = (query: OrderQuery) => request<Page<Order>>('/orders', { query });

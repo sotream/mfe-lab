@@ -1,0 +1,178 @@
+/* Lives inside the shadow root (see OrdersApp.ts): these selectors cannot leak out, and the lab's
+   global CSS cannot reach in. The --ds1-* tokens and inherited font/color cross the boundary. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ds1-focus);
+  outline-offset: 2px;
+}
+
+.orders {
+  min-width: 0;
+  padding: var(--ds1-space-md);
+  color: var(--ds1-ink);
+  font-family: var(--ds1-font-body);
+  font-size: var(--ds1-text-sm);
+}
+
+.orders-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds1-space-xs);
+  align-items: center;
+  margin-bottom: var(--ds1-space-md);
+}
+
+.orders-toolbar label {
+  color: var(--ds1-ink-2);
+  font-weight: 500;
+}
+
+.orders-count {
+  margin-left: auto;
+  color: var(--ds1-muted);
+}
+
+.orders-input {
+  height: 36px;
+  padding: 0 var(--ds1-space-sm);
+  border: 1px solid var(--ds1-control-edge);
+  border-radius: var(--ds1-radius);
+  background-color: var(--ds1-paper-3);
+  color: var(--ds1-ink);
+  font: inherit;
+}
+
+.orders-input:hover {
+  border-color: var(--ds1-muted);
+}
+
+.orders-button {
+  height: 30px;
+  padding: 0 var(--ds1-space-xs);
+  border: 1px solid var(--ds1-control-edge);
+  border-radius: var(--ds1-radius);
+  background-color: var(--ds1-paper-2);
+  color: var(--ds1-ink);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.orders-button:hover:not(:disabled) {
+  border-color: var(--ds1-muted);
+  background-color: var(--ds1-paper-3);
+}
+
+.orders-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.orders-note {
+  margin: 0;
+  color: var(--ds1-ink-2);
+}
+
+.orders-error {
+  color: var(--ds1-bad);
+}
+
+.orders-error p {
+  margin: 0 0 var(--ds1-space-xs);
+}
+
+.orders-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.orders-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.orders-table th,
+.orders-table td {
+  padding: var(--ds1-space-xs) var(--ds1-space-sm);
+  border-bottom: 1px solid var(--ds1-rule);
+  text-align: left;
+  vertical-align: baseline;
+}
+
+.orders-table thead th {
+  color: var(--ds1-muted);
+  font-weight: 500;
+}
+
+/* Row headers look like the td they replaced. */
+.orders-table tbody th {
+  font-weight: inherit;
+}
+
+.orders-table tbody tr:hover {
+  background-color: var(--ds1-paper-3);
+}
+
+.orders-table .orders-num {
+  text-align: right;
+}
+
+.orders-table td.orders-mono,
+.orders-table td.orders-num,
+.orders-table tbody th.orders-mono {
+  font-family: var(--ds1-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.orders-table .orders-mono,
+.orders-table .orders-num {
+  white-space: nowrap;
+}
+
+.orders-chip {
+  display: inline-block;
+  padding: 0 var(--ds1-space-xs);
+  border: 1px solid var(--ds1-rule);
+  border-radius: 4px;
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+.orders-chip--new {
+  background-color: var(--ds1-accent-soft);
+  color: var(--ds1-ink);
+}
+
+.orders-chip--paid {
+  background-color: var(--ds1-cool-soft);
+  color: var(--ds1-cool);
+}
+
+.orders-chip--shipped {
+  background-color: var(--ds1-ok-soft);
+  color: var(--ds1-ok);
+}
+
+.orders-pager {
+  display: flex;
+  gap: var(--ds1-space-sm);
+  align-items: center;
+  margin-top: var(--ds1-space-md);
+  color: var(--ds1-ink-2);
+}
+
+.orders-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

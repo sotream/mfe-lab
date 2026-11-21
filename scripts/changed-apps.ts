@@ -1,9 +1,9 @@
 // Maps changed file paths to the apps to deploy, in deploy order.
 // CLI: git diff --name-only HEAD~1 HEAD | node scripts/changed-apps.ts   (prints one app per line)
-export const APPS = ['api', 'products', 'dashboard', 'shell'] as const;
+export const APPS = ['api', 'products', 'dashboard', 'orders', 'shell'] as const;
 export type App = (typeof APPS)[number];
 
-// Anything the four apps are built from: shared code, the lockfile, deploy config and this workflow.
+// Anything the five apps are built from: shared code, the lockfile, deploy config and this workflow.
 const ALL_PREFIXES = ['packages/', 'deploy/'];
 const ALL_FILES = new Set([
   'federation.shared.ts',

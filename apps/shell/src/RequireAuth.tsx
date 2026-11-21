@@ -1,4 +1,4 @@
-import { useAuth } from '@mfe/auth-store';
+import { useAuth } from '@mfe/auth-store/react';
 import type { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router';
 
