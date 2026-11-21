@@ -176,3 +176,52 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+/* Same look as the React Skeleton in @mfe/ui (this shadow root cannot load its CSS). */
+.orders-skeleton {
+  display: inline-block;
+  max-width: 100%;
+  height: 0.75rem;
+  vertical-align: middle;
+  border-radius: var(--ds1-radius);
+  background-color: color-mix(in oklch, var(--ds1-rule) 45%, transparent);
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in oklch, var(--ds1-rule-2) 40%, transparent) 50%,
+    transparent 100%
+  );
+  background-repeat: no-repeat;
+  background-size: 60% 100%;
+  animation: orders-shimmer 1.4s ease-in-out infinite;
+}
+
+.orders-skeleton--button {
+  width: 4.5rem;
+  height: 30px;
+}
+
+.orders-skeleton-row {
+  /* A real row is as tall as its status chip: line-height 1.6 + 2px border, plus cell padding and rule. */
+  height: calc(1.6em + 19px);
+}
+
+.orders-skeleton-row:hover {
+  background-color: transparent;
+}
+
+@keyframes orders-shimmer {
+  from {
+    background-position: -100% 0;
+  }
+
+  to {
+    background-position: 200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orders-skeleton {
+    animation: none;
+  }
+}

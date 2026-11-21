@@ -54,6 +54,14 @@
   color: var(--ds1-muted);
 }
 
+/* The loaded svg is 660 x 192 units for the seeded 28 days, never wider than that. */
+.dashboard-chart .dashboard-chart-skeleton {
+  display: block;
+  max-width: 660px;
+  height: auto;
+  aspect-ratio: 660 / 192;
+}
+
 .dashboard-chart .grid {
   stroke: var(--ds1-rule);
   stroke-width: 1;

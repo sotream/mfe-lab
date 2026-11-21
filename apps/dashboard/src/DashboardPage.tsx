@@ -1,7 +1,7 @@
 import { getStats, type Stats } from '@mfe/api-client';
 import { useAuth } from '@mfe/auth-store/react';
 import { on } from '@mfe/events';
-import { Button, formatDate, formatMoney, formatNumber, Table, useLocale } from '@mfe/ui';
+import { Button, formatDate, formatMoney, formatNumber, Skeleton, Table, useLocale } from '@mfe/ui';
 import {
   notifyManager,
   QueryClient,
@@ -226,6 +226,59 @@ function DataTable({ days }: { days: Day[] }) {
   );
 }
 
+// Same blocks, classes and sizes as the loaded view, so the data swaps in without moving anything.
+function DashboardSkeleton({ showRevenue }: { showRevenue: boolean }) {
+  const t = useT();
+  const tiles = [t.tiles.products, t.tiles.orders, t.tiles.revenue, t.tiles.paid];
+  return (
+    <div className="dashboard" aria-hidden="true">
+      <dl className="ds1-readings dashboard-tiles">
+        {tiles.map((term, i) => (
+          <div key={term} className="dashboard-tile">
+            <dt>{term}</dt>
+            <dd>
+              <Skeleton width={['35%', '40%', '60%', '55%'][i]} height="0.8em" />
+            </dd>
+          </div>
+        ))}
+      </dl>
+      <figure>
+        <figcaption>{t.ordersPerDay}</figcaption>
+        <div className="dashboard-chart">
+          <Skeleton
+            className="dashboard-chart-skeleton"
+            width="100%"
+            height="auto"
+            radius="var(--ds1-radius)"
+          />
+        </div>
+      </figure>
+      {showRevenue && (
+        <section className="dashboard-revenue">
+          <h3>{t.revenueByStatus}</h3>
+          {[70, 100, 45].map((w, i) => (
+            <div key={i} className="dashboard-revenue-row">
+              <span className="label">
+                <Skeleton width="60%" />
+              </span>
+              <span className="track">
+                <Skeleton width={`${w}%`} height="100%" radius="0 4px 4px 0" />
+              </span>
+              <span className="value">
+                <Skeleton width="70%" />
+              </span>
+            </div>
+          ))}
+        </section>
+      )}
+      {/* The loaded view ends with this toggle: inert, so it takes no focus while loading. */}
+      <details inert>
+        <summary>{t.showTable}</summary>
+      </details>
+    </div>
+  );
+}
+
 declare const __BUILD_VERSION__: string;
 export const buildVersion: string = __BUILD_VERSION__;
 
@@ -243,7 +296,16 @@ function DashboardContent() {
       </div>
     );
   }
-  if (!stats) return <p role="status">{t.loading}</p>;
+  if (!stats) {
+    return (
+      <>
+        <p role="status" className="visually-hidden">
+          {t.loading}
+        </p>
+        <DashboardSkeleton showRevenue={showRevenue} />
+      </>
+    );
+  }
 
   const days = fillDays(stats.orders_per_day);
   return (

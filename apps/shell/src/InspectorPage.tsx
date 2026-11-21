@@ -183,14 +183,15 @@ function Flags({ flags, setFlags }: { flags: Flag[]; setFlags: Dispatch<SetState
   const user = useAuth((s) => s.user);
   const isAdmin = user?.role === 'admin';
   const [failed, setFailed] = useState(false);
+  const [loaded, setLoaded] = useState(false);
   const signedIn = user !== null;
 
   useEffect(() => {
     if (!signedIn) return;
     let active = true;
     listFlags().then(
-      (f) => active && (setFlags(f), setFailed(false)),
-      () => active && setFailed(true),
+      (f) => active && (setFlags(f), setFailed(false), setLoaded(true)),
+      () => active && (setFailed(true), setLoaded(true)),
     );
     return () => {
       active = false;
@@ -220,7 +221,15 @@ function Flags({ flags, setFlags }: { flags: Flag[]; setFlags: Dispatch<SetState
               {t.flagsFailed}
             </p>
           )}
-          <Table label={t.flags}>
+          {!loaded && (
+            <p role="status" className="visually-hidden">
+              {t.loading}
+            </p>
+          )}
+          <Table
+            label={t.flags}
+            loading={loaded ? undefined : { rows: 3, cols: 3, rowHeight: 47.5 }}
+          >
             <thead>
               <tr>
                 <th scope="col">{t.flag}</th>
@@ -228,26 +237,28 @@ function Flags({ flags, setFlags }: { flags: Flag[]; setFlags: Dispatch<SetState
                 <th scope="col">{t.description}</th>
               </tr>
             </thead>
-            <tbody>
-              {flags.map((f) => (
-                <tr key={f.name}>
-                  <th scope="row" className="ds1-mono">
-                    {f.name}
-                  </th>
-                  <td>
-                    <input
-                      type="checkbox"
-                      className="switch"
-                      aria-label={f.name}
-                      checked={f.enabled}
-                      disabled={!isAdmin}
-                      onChange={(e) => void toggle(f.name, e.target.checked)}
-                    />
-                  </td>
-                  <td>{f.description}</td>
-                </tr>
-              ))}
-            </tbody>
+            {loaded && (
+              <tbody>
+                {flags.map((f) => (
+                  <tr key={f.name}>
+                    <th scope="row" className="ds1-mono">
+                      {f.name}
+                    </th>
+                    <td>
+                      <input
+                        type="checkbox"
+                        className="switch"
+                        aria-label={f.name}
+                        checked={f.enabled}
+                        disabled={!isAdmin}
+                        onChange={(e) => void toggle(f.name, e.target.checked)}
+                      />
+                    </td>
+                    <td>{f.description}</td>
+                  </tr>
+                ))}
+              </tbody>
+            )}
           </Table>
         </>
       )}
@@ -263,11 +274,12 @@ function Errors() {
   const [summary, setSummary] = useState<{ remote: string; count: number }[]>([]);
   const [rows, setRows] = useState<ErrorRow[]>([]);
   const [failed, setFailed] = useState(false);
+  const [loaded, setLoaded] = useState(false);
 
   const refresh = () =>
     Promise.all([errorSummary(), listErrors()]).then(
-      ([s, r]) => (setSummary(s), setRows(r.slice(0, 20)), setFailed(false)),
-      () => setFailed(true),
+      ([s, r]) => (setSummary(s), setRows(r.slice(0, 20)), setFailed(false), setLoaded(true)),
+      () => (setFailed(true), setLoaded(true)),
     );
   const clear = () =>
     clearErrors().then(
@@ -305,7 +317,12 @@ function Errors() {
               {t.clear}
             </Button>
           </div>
-          <Table label={t.errors}>
+          {!loaded && (
+            <p role="status" className="visually-hidden">
+              {t.loading}
+            </p>
+          )}
+          <Table label={t.errors} loading={loaded ? undefined : { rows: 1, cols: 5 }}>
             <thead>
               <tr>
                 <th scope="col">{t.time}</th>
@@ -315,28 +332,30 @@ function Errors() {
                 <th scope="col">{t.message}</th>
               </tr>
             </thead>
-            <tbody>
-              {rows.length === 0 && (
-                <tr>
-                  <td colSpan={5}>{t.noErrors}</td>
-                </tr>
-              )}
-              {rows.map((e) => (
-                <tr key={e.id}>
-                  <td className="ds1-mono">
-                    <time dateTime={new Date(e.at).toISOString()}>
-                      {formatTime(new Date(e.at), locale)}
-                    </time>
-                  </td>
-                  <td>{e.remote}</td>
-                  <td className="ds1-mono">{e.build}</td>
-                  <td>
-                    <span className="chip chip--down">{e.kind}</span>
-                  </td>
-                  <td>{e.message}</td>
-                </tr>
-              ))}
-            </tbody>
+            {loaded && (
+              <tbody>
+                {rows.length === 0 && (
+                  <tr>
+                    <td colSpan={5}>{t.noErrors}</td>
+                  </tr>
+                )}
+                {rows.map((e) => (
+                  <tr key={e.id}>
+                    <td className="ds1-mono">
+                      <time dateTime={new Date(e.at).toISOString()}>
+                        {formatTime(new Date(e.at), locale)}
+                      </time>
+                    </td>
+                    <td>{e.remote}</td>
+                    <td className="ds1-mono">{e.build}</td>
+                    <td>
+                      <span className="chip chip--down">{e.kind}</span>
+                    </td>
+                    <td>{e.message}</td>
+                  </tr>
+                ))}
+              </tbody>
+            )}
           </Table>
         </>
       )}
@@ -376,6 +395,8 @@ export default function InspectorPage() {
     };
   }, [entries]);
 
+  // Until the first ping answers, status cells are unknown: show the tables as skeletons.
+  const pending = Object.keys(pings).length === 0;
   const upCount = remotes.filter((n) => pings[n]?.status === 'up').length;
   const allOnce = rows.length > 0 && rows.every((r) => r.loaded.length === 1);
 
@@ -408,7 +429,15 @@ export default function InspectorPage() {
       </dl>
       <section className="panel">
         <h2>{t.remotes}</h2>
-        <Table label={t.remotes}>
+        {pending && (
+          <p role="status" className="visually-hidden">
+            {t.loading}
+          </p>
+        )}
+        <Table
+          label={t.remotes}
+          loading={pending ? { rows: remotes.length, cols: 11, rowHeight: 53.7 } : undefined}
+        >
           <thead>
             <tr>
               <th scope="col">{t.name}</th>
@@ -424,28 +453,30 @@ export default function InspectorPage() {
               <th scope="col">{t.save}</th>
             </tr>
           </thead>
-          <tbody>
-            {remotes.map((name) => (
-              <tr key={name}>
-                <th scope="row">{name}</th>
-                <td className="ds1-mono manifest">{remoteEntry(name)}</td>
-                <td className="ds1-mono">{pings[name]?.version ?? '—'}</td>
-                <td>
-                  <span className={`chip chip--${pings[name]?.status ?? 'idle'}`}>
-                    {pings[name] ? t[pings[name].status] : t.checking}
-                  </span>
-                </td>
-                <td>
-                  <VersionSelect name={name} />
-                </td>
-                <RegistryCells
-                  // A saved or reloaded row remounts the cells, so the inputs show what the server holds.
-                  key={`${registryRow(name)?.canaryUrl}|${registryRow(name)?.canaryPercent}`}
-                  name={name}
-                />
-              </tr>
-            ))}
-          </tbody>
+          {!pending && (
+            <tbody>
+              {remotes.map((name) => (
+                <tr key={name}>
+                  <th scope="row">{name}</th>
+                  <td className="ds1-mono manifest">{remoteEntry(name)}</td>
+                  <td className="ds1-mono">{pings[name]?.version ?? '—'}</td>
+                  <td>
+                    <span className={`chip chip--${pings[name]?.status ?? 'idle'}`}>
+                      {pings[name] ? t[pings[name].status] : t.checking}
+                    </span>
+                  </td>
+                  <td>
+                    <VersionSelect name={name} />
+                  </td>
+                  <RegistryCells
+                    // A saved or reloaded row remounts the cells, so the inputs show what the server holds.
+                    key={`${registryRow(name)?.canaryUrl}|${registryRow(name)?.canaryPercent}`}
+                    name={name}
+                  />
+                </tr>
+              ))}
+            </tbody>
+          )}
         </Table>
         <p className="panel-body">
           {registryAvailable() === false ? t.registryUnavailable : t.registryHint}
@@ -453,7 +484,10 @@ export default function InspectorPage() {
       </section>
       <section className="panel">
         <h2>{t.shared}</h2>
-        <Table label={t.shared}>
+        <Table
+          label={t.shared}
+          loading={pending && rows.length === 0 ? { rows: 3, cols: 5, rowHeight: 41 } : undefined}
+        >
           <thead>
             <tr>
               <th scope="col">{t.pkg}</th>
@@ -463,28 +497,30 @@ export default function InspectorPage() {
               <th scope="col">{t.status}</th>
             </tr>
           </thead>
-          <tbody>
-            {rows.length === 0 && (
-              <tr>
-                <td colSpan={5}>{t.noShared}</td>
-              </tr>
-            )}
-            {rows.map((r) => (
-              <tr key={r.name}>
-                <th scope="row">{r.name}</th>
-                <td className="ds1-mono">{r.required}</td>
-                <td className="ds1-mono">{r.loaded.join(', ') || '—'}</td>
-                <td>
-                  <span className="chip">{r.singleton ? t.yes : t.no}</span>
-                </td>
-                <td>
-                  <span className={`chip ${r.loaded.length === 1 ? 'chip--up' : ''}`}>
-                    {r.loaded.length === 0 ? t.notLoaded : t.loadedN(r.loaded.length)}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
+          {!(pending && rows.length === 0) && (
+            <tbody>
+              {rows.length === 0 && (
+                <tr>
+                  <td colSpan={5}>{t.noShared}</td>
+                </tr>
+              )}
+              {rows.map((r) => (
+                <tr key={r.name}>
+                  <th scope="row">{r.name}</th>
+                  <td className="ds1-mono">{r.required}</td>
+                  <td className="ds1-mono">{r.loaded.join(', ') || '—'}</td>
+                  <td>
+                    <span className="chip">{r.singleton ? t.yes : t.no}</span>
+                  </td>
+                  <td>
+                    <span className={`chip ${r.loaded.length === 1 ? 'chip--up' : ''}`}>
+                      {r.loaded.length === 0 ? t.notLoaded : t.loadedN(r.loaded.length)}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          )}
         </Table>
       </section>
       <Flags flags={flags} setFlags={setFlags} />

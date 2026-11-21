@@ -5,6 +5,7 @@ import { Button, RemoteFrame, useLocale, type Locale, type RemoteModule } from '
 import { useEffect, useLayoutEffect, useRef, useSyncExternalStore } from 'react';
 import { createBrowserRouter, Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import { DatenschutzPage, ImpressumPage } from './LegalPages.tsx';
+import { fallbacks } from './Fallbacks.tsx';
 import { LiveRegion } from './LiveRegion.tsx';
 import InspectorPage from './InspectorPage.tsx';
 import { LoginPage } from './LoginPage.tsx';
@@ -55,6 +56,7 @@ const Frame = ({
         })
       }
       report={report}
+      fallback={fallbacks[name]}
     />
   );
 };
