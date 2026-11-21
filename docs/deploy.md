@@ -24,7 +24,7 @@ The Swagger UI (`/docs`) is not served on Vercel: `@fastify/swagger-ui` pulls in
 - `/mf-manifest.json` and `/remoteEntry.js` are `no-store`.
 - `Cache-Control: public, max-age=31536000, immutable` only on the content-hashed fonts (`<16 hex>.woff2`). JS and CSS chunks use stable names (`main.js`, `172.js`), so they are not immutable.
 - Install and build run from the root-dir project with `pnpm install --frozen-lockfile --filter @mfe/<app>...` and `pnpm build`; output is `dist`. Vercel needs "Include source files outside of the Root Directory" enabled (the default).
-- The shell gets `MF_PRODUCTS_URL` and `MF_DASHBOARD_URL` at build time (`build.env`), pointing at the production remotes' `/mf-manifest.json`.
+- The shell gets `MF_PRODUCTS_URL` and `MF_DASHBOARD_URL` at build time (exported by `deploy.yml` from `urls.json`; `vercel build` ignores `build.env`), pointing at the production remotes' `/mf-manifest.json`; the job fails if the build output contains `localhost:300`.
 
 ## API (Vercel Function)
 

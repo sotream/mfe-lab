@@ -158,7 +158,13 @@ jobs:
           scope=(); [ -z "$slug" ] || scope=(--scope "$slug")
           pnpm dlx "$VERCEL_CLI" link --yes --project "mfe-lab" --token "$VERCEL_TOKEN" "${scope[@]}"
           pnpm dlx "$VERCEL_CLI" pull --yes --environment=production --token "$VERCEL_TOKEN" "${scope[@]}"
+          # `vercel build` ignores vercel.json build.env, so pass the remote manifests from the single source of truth.
+          MF_PRODUCTS_URL="$(node -p "require('./deploy/urls.json').products")/mf-manifest.json"
+          MF_DASHBOARD_URL="$(node -p "require('./deploy/urls.json').dashboard")/mf-manifest.json"
+          export MF_PRODUCTS_URL MF_DASHBOARD_URL
           pnpm dlx "$VERCEL_CLI" build --prod --token "$VERCEL_TOKEN" "${scope[@]}"
+          # Fail instead of shipping a shell that points at localhost remotes.
+          ! grep -rl 'localhost:300' .vercel/output/static || { echo "localhost remote URL in the shell build" >&2; exit 1; }
           pnpm dlx "$VERCEL_CLI" deploy --prebuilt --prod --token "$VERCEL_TOKEN" "${scope[@]}"
 
   smoke:
