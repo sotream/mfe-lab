@@ -2,6 +2,10 @@
 
 Breaking changes need a major bump, a new CSS prefix (`ds2-`) and an entry here (RFC 0008).
 
+## 1.6.1
+
+- `RemoteFrame` header wraps instead of truncating: the build stamp moves to its own line when the label and origin leave no room, and a long origin wraps. No API change.
+
 ## 1.6.0
 
 - `RemoteFrame` takes an optional `origin` shown as the header label as is; `port` is now optional (label `:port` when only it is given, no label with neither). Additive.
