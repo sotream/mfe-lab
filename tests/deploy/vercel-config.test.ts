@@ -1,7 +1,7 @@
 // Q-vercel-config: committed vercel.json files match the generator and mirror docker/nginx.conf.template.
 // ASSUMPTIONS (contract leaves open, phase 2 adjusts):
 //  - deploy/urls.json maps shell|products|dashboard|api to a URL string (or an object with `url`);
-//  - generator CLI: `node scripts/vercel-config.ts --out <dir>` writes <dir>/apps/<name>/vercel.json.
+//  - generator CLI: `node scripts/vercel-config.ts <dir>` writes <dir>/apps/<name>/vercel.json.
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -48,7 +48,7 @@ afterAll(() => rmSync(tmp, { recursive: true, force: true }));
 
 describe('vercel config', () => {
   it('Q-vercel-config: committed files equal the generator output', () => {
-    execFileSync('node', ['scripts/vercel-config.ts', '--out', tmp], { cwd: root });
+    execFileSync('node', ['scripts/vercel-config.ts', tmp], { cwd: root });
     for (const app of apps) {
       expect(load(root, app), app).toEqual(load(tmp, app));
     }
@@ -90,7 +90,7 @@ describe('vercel config', () => {
       for (const p of ['/mf-manifest.json', '/remoteEntry.js']) {
         expect(headersFor(c, p)['cache-control'], `${app} ${p}`).toBe('no-store');
       }
-      expect(headersFor(c, '/index.html')['cache-control'], `${app} index`).not.toMatch(
+      expect(headersFor(c, '/index.html')['cache-control'] ?? '', `${app} index`).not.toMatch(
         /immutable/,
       );
     }

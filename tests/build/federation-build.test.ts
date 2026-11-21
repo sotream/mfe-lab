@@ -92,6 +92,12 @@ describe('federation build', { timeout: BUILD_TIMEOUT }, () => {
     }
   });
 
+  it('Q-api-bundle: pnpm build emits the Vercel function with PGlite only as a dynamic import', () => {
+    const js = readFileSync(join(root, 'apps', 'api', 'api', 'index.js'), 'utf8');
+    expect(js).toContain('import("@electric-sql/pglite")');
+    expect(js).not.toMatch(/(from|import)\s*["']@electric-sql\/pglite["']/);
+  });
+
   it('Q-remotes-env: default remote URLs, then MF_PRODUCTS_URL override', () => {
     const js = shellJs();
     expect(js).toContain('http://localhost:3001/mf-manifest.json');

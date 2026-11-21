@@ -15,6 +15,7 @@ export const entryPath = (): string => {
   const fns = Object.keys(readJson('vercel.json').functions ?? {});
   const pkgMain = readJson('package.json').main as string | undefined;
   const candidates = [
+    'src/vercel.ts', // builder's choice: Node (req, res) handler, bundled to api/index.js
     ...fns,
     ...(pkgMain ? [pkgMain] : []),
     'api/index.ts',
