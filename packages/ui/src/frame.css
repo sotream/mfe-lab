@@ -1,7 +1,7 @@
 [data-remote] {
-  display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr);
-  grid-template-rows: auto 1fr;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
   min-width: 0;
   margin: 0;
   border: 1px solid var(--ds1-rule);
@@ -13,13 +13,11 @@
 .remote-frame-label,
 .remote-frame-port,
 .remote-frame-build {
-  grid-row: 1;
   padding: var(--ds1-space-xs) var(--ds1-space-sm);
   font-size: var(--ds1-text-sm);
 }
 
 .remote-frame-label {
-  grid-column: 1;
   max-width: none;
   margin: 0;
   letter-spacing: normal;
@@ -31,27 +29,24 @@
 }
 
 .remote-frame-port {
-  grid-column: 2;
+  min-width: 0;
+  overflow-wrap: anywhere;
   border-right: 1px solid var(--ds1-rule);
   color: var(--ds1-cool);
   font-family: var(--ds1-font-mono);
 }
 
 .remote-frame-build {
-  grid-column: 3;
-  min-width: 0;
-  overflow: hidden;
+  flex: 1 0 auto;
   color: var(--ds1-cool);
   font-family: var(--ds1-font-mono);
   text-align: right;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 [data-remote] > .remote-frame-body,
 [data-remote] > .remote-frame-error {
-  grid-column: 1 / -1;
-  grid-row: 2;
+  flex: 1 0 100%;
   min-width: 0;
   border-top: 1px solid var(--ds1-rule);
 }
