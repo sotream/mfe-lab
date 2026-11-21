@@ -1,5 +1,4 @@
 import swagger from '@fastify/swagger';
-import swaggerUi from '@fastify/swagger-ui';
 import Fastify, { type FastifyInstance } from 'fastify';
 import {
   jsonSchemaTransform,
@@ -27,6 +26,7 @@ export async function buildApp(opts: {
   logger?: boolean;
   jwtSecret?: string;
   migrate?: boolean;
+  docs?: boolean; // Swagger UI at /docs; default on
 }): Promise<FastifyInstance> {
   const app = Fastify({ logger: opts.logger ?? false });
   app.setValidatorCompiler(validatorCompiler);
@@ -63,7 +63,11 @@ export async function buildApp(opts: {
     },
     transform: jsonSchemaTransform,
   });
-  await app.register(swaggerUi, { routePrefix: '/docs' });
+  if (opts.docs ?? true) {
+    // Dynamic: @fastify/static needs require(esm), which the Vercel function loader lacks.
+    const { default: swaggerUi } = await import('@fastify/swagger-ui');
+    await app.register(swaggerUi, { routePrefix: '/docs' });
+  }
 
   await registerAuth(app, { jwtSecret: opts.jwtSecret });
   await app.register(productRoutes);
