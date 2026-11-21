@@ -21,7 +21,9 @@ test('E-versions: switching the products version changes the mounted build', asy
   await page.getByLabel('Email').fill('viewer@lab.test');
   await page.getByLabel('Password').fill('lab12345');
   await page.getByRole('button', { name: 'Sign in' }).click();
-  await expect(page.getByText('viewer@lab.test', { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('banner').getByText('viewer@lab.test', { exact: true }),
+  ).toBeVisible();
   await expect(page).not.toHaveURL(/\/login/); // login's replace-navigation has landed
 
   for (const version of ['0.0.2-e2e', '0.0.1-e2e']) {

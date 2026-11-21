@@ -12,13 +12,21 @@ async function login(page: Page, email: string): Promise<void> {
 
 const rowOf = (page: Page, name: string) =>
   page.getByRole('row').filter({ has: page.getByRole('rowheader', { name, exact: true }) });
+// T41: the status chip is inside the row header ("productsup"), so match the name plus a status word (flag rows are also "products.…")
+const remoteRow = (page: Page, name: string) =>
+  page.getByRole('row').filter({
+    has: page.getByRole('rowheader', { name: new RegExp(`^${name}\\s*(up|down|checking|off)`) }),
+  });
 const products = (page: Page) => page.locator('section[data-remote="products"]');
 const dashboard = (page: Page) => page.locator('section[data-remote="dashboard"]');
 
 test('E-login: viewer logs in and lands on /', async ({ page }) => {
   await login(page, 'viewer@lab.test');
   await expect(page).toHaveURL(`${BASE}/`);
-  await expect(page.getByText('viewer@lab.test', { exact: true })).toBeVisible();
+  // scoped to the header: the login demo list shows the same email during the transition
+  await expect(
+    page.getByRole('banner').getByText('viewer@lab.test', { exact: true }),
+  ).toBeVisible();
   await expect(page).not.toHaveURL(/\/login/); // login's replace-navigation has landed
   await expect(page.getByText('viewer', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Log out' })).toBeVisible();
@@ -71,9 +79,7 @@ test('E-kill-remote: dead products remote degrades, then recovers', async ({ pag
   await expect(dashboard(page).locator('svg[role="img"] rect[data-date]').first()).toBeVisible();
 
   await page.getByRole('link', { name: 'Inspector' }).click();
-  await expect(
-    rowOf(page, 'products').getByRole('cell', { name: 'down', exact: true }),
-  ).toBeVisible();
+  await expect(remoteRow(page, 'products').getByRole('rowheader')).toContainText('down');
 
   await page.getByRole('link', { name: 'Home' }).click();
   await expect(products(page).getByRole('alert')).toContainText('products is unavailable');
@@ -86,7 +92,7 @@ test('E-kill-remote: dead products remote degrades, then recovers', async ({ pag
 test('E-inspector: remotes up and shared deps loaded once', async ({ page }) => {
   await page.goto(`${BASE}/inspector`);
   for (const name of ['products', 'dashboard']) {
-    await expect(rowOf(page, name).getByRole('cell', { name: 'up', exact: true })).toBeVisible();
+    await expect(remoteRow(page, name).getByRole('rowheader')).toContainText('up');
   }
   for (const dep of ['@mfe/auth-store', 'react', 'react-dom', 'react-router']) {
     await expect(

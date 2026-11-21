@@ -15,6 +15,7 @@ import '@mfe/ui/tooltip.css';
 import {
   BuildStamp,
   Button,
+  Field,
   formatTime,
   MiddleTruncate,
   Select,
@@ -25,9 +26,13 @@ import {
 import { getInstance } from '@module-federation/enhanced/runtime';
 import {
   useEffect,
+  useId,
+  useRef,
   useState,
   useSyncExternalStore,
   type Dispatch,
+  type FormEvent,
+  type ReactNode,
   type SetStateAction,
 } from 'react';
 import { useT } from './messages.ts';
@@ -42,6 +47,7 @@ import {
   releasesUrl,
   remoteEntry,
   remoteManifests,
+  stableUrl,
   setRemoteEntry,
   subscribeRemotes,
   type RemoteName,
@@ -98,99 +104,234 @@ function VersionSelect({ name }: { name: RemoteName }) {
   );
 }
 
-// Variant and, for admins, the editable registry fields of one remote (RFC 0017).
-function RegistryCells({ name }: { name: RemoteName }) {
-  const tt = useT();
-  const t = tt.inspector;
+// Native <dialog>, opened modally on mount (jsdom has no showModal). Closing unmounts it, so focus
+// goes back to the row's Details button by hand, as in the products dialog (T26).
+function Modal({
+  title,
+  onClose,
+  returnTo,
+  children,
+}: {
+  title: string;
+  onClose: () => void;
+  returnTo: () => HTMLElement | null;
+  children: ReactNode;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
+  useEffect(() => {
+    const dialog = ref.current;
+    if (!dialog) return;
+    if (typeof dialog.showModal === 'function') dialog.showModal();
+    else dialog.setAttribute('open', '');
+    return () => returnTo()?.focus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- returnTo is read once, on unmount
+  }, []);
+  return (
+    <dialog ref={ref} className="details-dialog" aria-labelledby={titleId} onClose={onClose}>
+      <h2 id={titleId}>{title}</h2>
+      {children}
+    </dialog>
+  );
+}
+
+// Full values of one remote; for admins also the registry form (RFC 0017).
+function DetailsDialog({
+  name,
+  ping,
+  onClose,
+}: {
+  name: RemoteName;
+  ping?: Ping;
+  onClose: () => void;
+}) {
+  const t = useT().inspector;
   const isAdmin = useAuth((s) => s.user?.role === 'admin');
   useSyncExternalStore(subscribeRemotes, registryVersion);
   const row = registryRow(name);
-  const { shown, bucket } = describeRemote(name);
+  const { shown, entry, bucket } = describeRemote(name);
   const [url, setUrl] = useState(row?.canaryUrl ?? '');
   const [percent, setPercent] = useState(String(row?.canaryPercent ?? 0));
+  const [off, setOff] = useState(row?.disabled ?? false);
   const [failed, setFailed] = useState(false);
-  const loaded = row !== undefined;
+  const urlRow = (label: string, value: string | null | undefined) => (
+    <>
+      <dt>{label}</dt>
+      <dd className="ds1-mono">
+        {value ? (
+          <>
+            {value}{' '}
+            <Button
+              className="ds1-button--sm"
+              aria-label={t.copyOf(label.toLowerCase())}
+              onClick={() =>
+                void navigator.clipboard
+                  .writeText(value)
+                  .then(() => emit('a11y:announce', { message: t.copied }))
+              }
+            >
+              {t.copy}
+            </Button>
+          </>
+        ) : (
+          t.none
+        )}
+      </dd>
+    </>
+  );
 
-  async function save(patch: {
-    canaryUrl?: string | null;
-    canaryPercent?: number;
-    disabled?: boolean;
-  }) {
+  async function save(e: FormEvent) {
+    e.preventDefault();
     try {
-      const updated = await updateRegistry(name, patch);
+      const updated = await updateRegistry(name, {
+        canaryUrl: url.trim() || null,
+        canaryPercent: Number(percent),
+        disabled: off,
+      });
       applyRegistryRow(updated);
-      setFailed(false);
-      emit('a11y:announce', { message: tt.inspector.registrySaved(name) });
+      emit('a11y:announce', { message: t.registrySaved(name) });
+      onClose();
     } catch {
       setFailed(true);
     }
   }
 
   return (
-    <>
-      <td>
-        <span className={`chip ${shown === 'stable' ? '' : 'chip--down'}`}>
-          {t.variantNames[shown]}
-        </span>
-      </td>
-      <td className="ds1-mono">{bucket ?? '—'}</td>
-      {isAdmin && loaded ? (
-        <>
-          <td>
-            <input
-              className="ds1-input ds1-mono"
-              type="url"
-              aria-label={t.canaryUrlOf(name)}
-              placeholder="https://…/mf-manifest.json"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-            />
-          </td>
-          <td>
-            <input
-              className="ds1-input ds1-mono"
-              type="number"
-              min={0}
-              max={100}
-              step={1}
-              aria-label={t.canaryPercentOf(name)}
-              value={percent}
-              onChange={(e) => setPercent(e.target.value)}
-            />
-          </td>
-          <td>
+    <Modal
+      title={t.detailsTitle(name)}
+      onClose={onClose}
+      returnTo={() => document.getElementById(`details-${name}`)}
+    >
+      <dl className="details-list">
+        {urlRow(t.stableManifest, stableUrl(name))}
+        {urlRow(t.canaryUrl, row?.canaryUrl)}
+        <dt>{t.inUse}</dt>
+        <dd className="ds1-mono">{entry}</dd>
+        <dt>{t.buildVersion}</dt>
+        <dd className="ds1-mono">{ping?.version ?? '—'}</dd>
+        <dt>{t.variant}</dt>
+        <dd>{t.variantNames[shown]}</dd>
+        <dt>{t.bucket}</dt>
+        <dd className="ds1-mono">{bucket ?? '—'}</dd>
+        <dt>{t.status}</dt>
+        <dd>{ping ? t[ping.status] : t.checking}</dd>
+      </dl>
+      {isAdmin && row ? (
+        <form onSubmit={(e) => void save(e)} className="details-form">
+          <Field
+            label={t.canaryUrlOf(name)}
+            type="url"
+            placeholder="https://…/mf-manifest.json"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+          />
+          <Field
+            label={t.canaryPercentOf(name)}
+            type="number"
+            min={0}
+            max={100}
+            step={1}
+            value={percent}
+            onChange={(e) => setPercent(e.target.value)}
+          />
+          <label className="details-off">
             <input
               type="checkbox"
               className="switch"
-              aria-label={t.offOf(name)}
-              checked={row.disabled}
-              onChange={(e) => void save({ disabled: e.target.checked })}
+              checked={off}
+              onChange={(e) => setOff(e.target.checked)}
             />
-          </td>
-          <td>
-            <Button
-              className="ds1-button--sm"
-              aria-label={t.saveOf(name)}
-              onClick={() =>
-                void save({ canaryUrl: url.trim() || null, canaryPercent: Number(percent) })
-              }
-            >
+            {t.offOf(name)}
+          </label>
+          <p className="details-hint">{t.registryHint}</p>
+          {failed && <p role="alert">{t.registryFailed}</p>}
+          <div className="details-actions">
+            <Button onClick={onClose}>{t.cancel}</Button>
+            <Button type="submit" variant="primary" aria-label={t.saveOf(name)}>
               {t.save}
             </Button>
-            {failed && <span role="alert">{t.registryFailed}</span>}
-          </td>
-        </>
+          </div>
+        </form>
       ) : (
-        <>
-          <td className="ds1-mono manifest canary">
-            <Manifest url={row?.canaryUrl} />
-          </td>
-          <td className="ds1-mono">{row ? row.canaryPercent : '—'}</td>
-          <td>{row ? (row.disabled ? t.variantNames.disabled : '—') : '—'}</td>
-          <td />
-        </>
+        <div className="details-actions">
+          <Button onClick={onClose}>{t.close}</Button>
+        </div>
       )}
-    </>
+    </Modal>
+  );
+}
+
+// Two lines per cell: the value, then a muted detail (RFC 0017 state lives in the registry row).
+function RemoteRow({ name, ping, onOpen }: { name: RemoteName; ping?: Ping; onOpen: () => void }) {
+  const t = useT().inspector;
+  useSyncExternalStore(subscribeRemotes, registryVersion);
+  const row = registryRow(name);
+  const { shown, bucket } = describeRemote(name);
+  const rollout = !row
+    ? '—'
+    : row.disabled
+      ? t.variantNames.disabled
+      : row.canaryUrl
+        ? t.canaryAt(row.canaryPercent)
+        : '—';
+  return (
+    // A click on the plain part of the row opens Details; controls and tooltip triggers keep their own click.
+    // The Details button is the keyboard and screen-reader way in.
+    <tr
+      className="remote-row"
+      onClick={(e) => {
+        // The table's scroll region is focusable too, so only a match inside this row counts.
+        const control = (e.target as HTMLElement).closest(
+          'button,input,select,a,[tabindex],[role=listbox]',
+        );
+        if (!control || !e.currentTarget.contains(control)) onOpen();
+      }}
+    >
+      <th scope="row">
+        {name}
+        <span className="sub">
+          <span className={`chip chip--${ping?.status ?? 'idle'}`}>
+            {ping ? t[ping.status] : t.checking}
+          </span>
+        </span>
+      </th>
+      <td className="ds1-mono manifest">
+        <Manifest url={stableUrl(name)} />
+        <span className="sub">
+          {row?.canaryUrl && (
+            <>
+              <span className="sub-label">{t.variantNames.canary}</span>
+              <MiddleTruncate text={row.canaryUrl} />
+            </>
+          )}
+        </span>
+      </td>
+      <td className="ds1-mono">
+        {ping?.version ? <BuildStamp v={ping.version} /> : '—'}
+        <span className="sub">
+          <span className={`chip ${shown === 'stable' ? '' : 'chip--down'}`}>
+            {t.variantNames[shown]}
+          </span>
+          {bucket !== null && ` · ${bucket}`}
+        </span>
+      </td>
+      <td>
+        <VersionSelect name={name} />
+      </td>
+      <td>
+        {rollout}
+        <span className="sub">
+          <Button
+            id={`details-${name}`}
+            className="ds1-button--sm"
+            aria-label={t.detailsOf(name)}
+            onClick={onOpen}
+          >
+            {t.details}
+          </Button>
+        </span>
+      </td>
+    </tr>
   );
 }
 
@@ -395,6 +536,7 @@ export default function InspectorPage() {
   const [rows, setRows] = useState(readShared);
   const user = useAuth((s) => s.user);
   const [flags, setFlags] = useState<Flag[]>([]);
+  const [details, setDetails] = useState<RemoteName | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -451,50 +593,36 @@ export default function InspectorPage() {
         <Table className="remotes" label={t.remotes}>
           <thead>
             <tr>
-              <th scope="col">{t.name}</th>
+              <th scope="col">{t.remote}</th>
               <HintTh label={t.manifest} hint={t.manifestHint} />
-              <th scope="col">{t.version}</th>
-              <th scope="col">{t.status}</th>
+              <th scope="col">{t.build}</th>
               <th scope="col">{t.use}</th>
-              <th scope="col">{t.variant}</th>
-              <th scope="col">{t.bucket}</th>
-              <HintTh label={t.canaryUrl} hint={t.canaryUrlHint} />
-              <HintTh label={t.canaryPercent} hint={t.canaryPercentHint} />
-              <th scope="col">{t.off}</th>
-              <th scope="col">{t.save}</th>
+              <HintTh label={t.rollout} hint={t.rolloutHint} />
             </tr>
           </thead>
           <tbody>
             {remotes.map((name) => (
-              <tr key={name}>
-                <th scope="row">{name}</th>
-                <td className="ds1-mono manifest">
-                  <Manifest url={remoteEntry(name)} />
-                </td>
-                <td className="ds1-mono ver">
-                  {pings[name]?.version ? <BuildStamp v={pings[name].version} /> : '—'}
-                </td>
-                <td className="st">
-                  <span className={`chip chip--${pings[name]?.status ?? 'idle'}`}>
-                    {pings[name] ? t[pings[name].status] : t.checking}
-                  </span>
-                </td>
-                <td>
-                  <VersionSelect name={name} />
-                </td>
-                <RegistryCells
-                  // A saved or reloaded row remounts the cells, so the inputs show what the server holds.
-                  key={`${registryRow(name)?.canaryUrl}|${registryRow(name)?.canaryPercent}`}
-                  name={name}
-                />
-              </tr>
+              <RemoteRow
+                key={name}
+                name={name}
+                ping={pings[name]}
+                onOpen={() => setDetails(name)}
+              />
             ))}
           </tbody>
         </Table>
         <p className="panel-body">
-          {registryAvailable() === false ? t.registryUnavailable : t.registryHint}
+          {registryAvailable() === false ? t.registryUnavailable : t.useHint}
         </p>
       </section>
+      {details && (
+        <DetailsDialog
+          key={details}
+          name={details}
+          ping={pings[details]}
+          onClose={() => setDetails(null)}
+        />
+      )}
       <section className="panel">
         <h2>{t.shared}</h2>
         <Table

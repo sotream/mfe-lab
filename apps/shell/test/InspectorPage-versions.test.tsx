@@ -57,6 +57,15 @@ const choose = async (s: HTMLElement, label: string) => {
 // T39: the URL is in the visually-hidden copy (.ds1-trunc-full) of the products row and in the hidden tooltip
 const fullText = (url: string) =>
   Array.from(productsRow().querySelectorAll('.ds1-trunc-full')).find((e) => e.textContent === url);
+const inUse = async () => {
+  await act(
+    async () => void fireEvent.click(screen.getByRole('button', { name: 'Details for products' })),
+  );
+  const d = within(screen.getByRole('dialog', { name: 'products: details' }));
+  const text = d.getByText('In use now').nextElementSibling?.textContent;
+  await act(async () => void fireEvent.click(d.getByRole('button', { name: 'Close' })));
+  return text;
+};
 const productsRow = () => screen.getByText('products').closest('tr') as HTMLElement;
 
 beforeEach(() => {
@@ -100,16 +109,19 @@ describe('InspectorPage versions', () => {
     stubFetch(() => new Response(JSON.stringify({ versions: ['1.0.0'] })));
     await mount();
     expect(fullText(PRODUCTS)).toBeTruthy();
+    expect(await inUse()).toBe(PRODUCTS);
 
     await choose(select('products'), '1.0.0');
-    expect(fullText(P_V1)).toBeTruthy();
+    // T41: the Manifest cell always shows the stable URL; the one in use is in the details dialog
+    expect(fullText(PRODUCTS)).toBeTruthy();
+    expect(await inUse()).toBe(P_V1);
     expect(rt.registerRemotes).toHaveBeenLastCalledWith(
       [expect.objectContaining({ name: 'products', entry: P_V1 })],
       { force: true },
     );
 
     await choose(select('products'), 'dev');
-    expect(fullText(PRODUCTS)).toBeTruthy();
+    expect(await inUse()).toBe(PRODUCTS);
     expect(rt.registerRemotes).toHaveBeenLastCalledWith(
       [expect.objectContaining({ name: 'products', entry: PRODUCTS })],
       { force: true },

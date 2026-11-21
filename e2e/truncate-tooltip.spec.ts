@@ -1,6 +1,8 @@
-// T39: E-manifest-fits, E-tooltip-hints, E-a11y (tooltip open). ASSUMPTIONS: the truncated text is a MiddleTruncate with two
-// aria-hidden pieces (head, tail) inside the cell; the focusable trigger inside the cell is [tabindex="0"]; the tooltip is
-// role=tooltip; the three registry headers carry a focusable hint ([tabindex="0"] or a button) inside the <th>.
+// T39 (moved to the T41 compact table): E-manifest-fits, E-a11y (tooltip open). ASSUMPTIONS: the Remotes table is
+// `table.remotes` with headers Remote, Manifest, Build, Use, Rollout; the Manifest cell holds the stable URL
+// (and, when a canary is set, a second line with the canary URL), each a MiddleTruncate with two aria-hidden
+// pieces (head, tail) and a focusable [tabindex="0"] trigger; the tooltip is role=tooltip. Hints remain on the
+// Manifest and Rollout headers only.
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type APIRequestContext, type Locator, type Page } from '@playwright/test';
 
@@ -30,28 +32,18 @@ async function openInspector(page: Page, who: 'admin' | 'viewer') {
   await page.getByLabel('Email').fill(`${who}@lab.test`);
   await page.getByLabel('Password').fill('lab12345');
   await page.getByRole('button', { name: 'Sign in' }).click();
-  await expect(page.getByText(`${who}@lab.test`, { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('banner').getByText(`${who}@lab.test`, { exact: true }),
+  ).toBeVisible();
   await expect(page).not.toHaveURL(/\/login/);
   await page.getByRole('navigation').getByRole('link', { name: 'Inspector' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Federation inspector' })).toBeVisible();
-  if (who === 'admin') await expect(page.getByLabel('products canary URL')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Details for products' })).toBeVisible();
 }
 
-const table = (page: Page) =>
-  page
-    .locator('table')
-    .filter({ has: page.getByRole('columnheader', { name: /^Stable manifest/ }) });
+const table = (page: Page) => page.locator('table.remotes');
 const header = (page: Page, name: RegExp) => table(page).getByRole('columnheader', { name });
-async function cell(page: Page, name: RegExp): Promise<Locator> {
-  const idx = await table(page)
-    .locator('thead th')
-    .evaluateAll(
-      (ths, src) => ths.findIndex((t) => new RegExp(src).test(t.textContent ?? '')),
-      name.source,
-    );
-  expect(idx).toBeGreaterThanOrEqual(0);
-  return table(page).locator('tbody tr').first().locator('td, th').nth(idx);
-}
+const manifestCell = (page: Page) => table(page).locator('tbody tr').first().locator('td').first();
 const inViewport = async (page: Page, el: Locator) => {
   const box = (await el.boundingBox())!;
   const vp = page.viewportSize()!;
@@ -80,27 +72,27 @@ for (const who of ['admin', 'viewer'] as const) {
     expect(fits.scroller).toBeLessThanOrEqual(fits.parent);
     expect(fits.table).toBeLessThanOrEqual(fits.box);
 
-    // headers on one line: same height as the single-line "Name" header
+    // headers on one line: same height as the single-line "Remote" header
     const h = (re: RegExp) => header(page, re).evaluate((e) => e.getBoundingClientRect().height);
-    const one = await h(/^Name/);
-    for (const re of [/^Stable manifest/, /^Canary manifest/, /^Canary %/]) {
+    const one = await h(/^Remote/);
+    for (const re of [/^Manifest/, /^Build/, /^Use/, /^Rollout/]) {
       expect(await h(re), String(re)).toBeLessThanOrEqual(one + 1);
     }
 
-    // the Stable manifest cell: force a narrow slot (dev URLs are short), then it must truncate in the middle
-    const stable = await cell(page, /^Stable manifest/);
-    const pieces = stable.locator('[aria-hidden="true"]');
+    // the stable URL: force a narrow slot (dev URLs are short), then it must truncate in the middle
+    const cell = manifestCell(page);
+    const pieces = cell.locator('[aria-hidden="true"]');
     await expect(pieces).toHaveCount(2);
     await pieces
       .first()
       .evaluate((e) => ((e.parentElement as HTMLElement).style.maxWidth = '24ch'));
-    const trunc = await pieces.first().evaluate((e) => e.scrollWidth > e.clientWidth);
-    expect(trunc).toBe(true);
+    expect(await pieces.first().evaluate((e) => e.scrollWidth > e.clientWidth)).toBe(true);
     expect(await pieces.nth(1).textContent()).toMatch(/\/mf-manifest\.json$/);
     expect(await pieces.first().evaluate((e) => getComputedStyle(e).textOverflow)).toBe('ellipsis');
 
     // hover shows the full URL, fully inside the viewport
-    await stable.locator('[tabindex="0"]').first().hover();
+    const trigger = cell.locator('[tabindex="0"]').first();
+    await trigger.hover();
     const tip = page.getByRole('tooltip');
     await expect(tip).toHaveText(STABLE);
     await inViewport(page, tip);
@@ -108,7 +100,6 @@ for (const who of ['admin', 'viewer'] as const) {
     await expect(tip).toHaveCount(0);
 
     // keyboard: focus shows it, Escape hides it and keeps focus
-    const trigger = stable.locator('[tabindex="0"]').first();
     await trigger.focus();
     await expect(tip).toHaveText(STABLE);
     await inViewport(page, tip);
@@ -118,37 +109,38 @@ for (const who of ['admin', 'viewer'] as const) {
   });
 }
 
-test('E-manifest-fits: a viewer sees a long Canary manifest truncated in the middle with the full URL in the tooltip', async ({
+test('E-manifest-fits: a viewer sees a long canary line truncated in the middle with the full URL in the tooltip', async ({
   page,
   request,
 }) => {
   await setCanary(request, LONG_CANARY);
   await openInspector(page, 'viewer');
-  const canary = await cell(page, /^Canary manifest/);
-  const pieces = canary.locator('[aria-hidden="true"]');
+  const trigger = manifestCell(page).locator('[tabindex="0"]').nth(1); // stable first, canary second
+  const pieces = trigger.locator('[aria-hidden="true"]');
   await expect(pieces).toHaveCount(2);
   expect(await pieces.first().evaluate((e) => e.scrollWidth > e.clientWidth)).toBe(true);
   expect(await pieces.nth(1).textContent()).toBe('/mf-manifest.json');
   // copy/select-all gives the whole URL
-  expect(await canary.evaluate((e) => (e as HTMLElement).textContent)).toContain(LONG_CANARY);
-  await pieces.first().hover();
+  expect(await manifestCell(page).evaluate((e) => (e as HTMLElement).textContent)).toContain(
+    LONG_CANARY,
+  );
+  await trigger.hover();
   await expect(page.getByRole('tooltip')).toHaveText(LONG_CANARY);
 });
 
-test('E-tooltip-hints: the header hints open on keyboard focus with the sentence', async ({
+test('E-tooltip-hints: the Manifest and Rollout header hints open on keyboard focus', async ({
   page,
 }) => {
   await openInspector(page, 'admin');
   const sentences: Array<[RegExp, string]> = [
     [
-      /^Stable manifest/,
-      'Built into the shell at deploy time; everyone loads this unless a canary or a pick applies.',
+      /^Manifest/,
+      'Stable: built into the shell at deploy time, everyone loads it. Canary: optional alternative from the registry, served to a share of signed-in users.',
     ],
     [
-      /^Canary manifest/,
-      'Optional alternative from the registry; served to Canary % of signed-in users.',
+      /^Rollout/,
+      'Share of signed-in users (sticky by user) who get the canary, or "off" when the remote is switched off.',
     ],
-    [/^Canary %/, 'Share of signed-in users (sticky by user) who get the canary.'],
   ];
   for (const [name, sentence] of sentences) {
     const hint = header(page, name).locator('button, [tabindex="0"]').first();
@@ -173,17 +165,7 @@ test('E-a11y: axe finds no serious or critical violations on /inspector with a t
   };
   expect(await scan()).toEqual([]);
 
-  const stable = await cell(page, /^Stable manifest/);
-  await stable.locator('[tabindex="0"]').first().hover();
-  await expect(page.getByRole('tooltip')).toBeVisible();
-  expect(await scan()).toEqual([]);
-  await page.keyboard.press('Escape');
-  await page.mouse.move(0, 0);
-
-  await header(page, /^Canary %/)
-    .locator('button, [tabindex="0"]')
-    .first()
-    .focus();
+  await manifestCell(page).locator('[tabindex="0"]').first().hover();
   await expect(page.getByRole('tooltip')).toBeVisible();
   expect(await scan()).toEqual([]);
 });

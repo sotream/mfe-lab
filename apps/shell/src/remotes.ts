@@ -33,6 +33,8 @@ export const remoteManifests = Object.entries(entries).map(([name, { entry }]) =
   manifest: entry,
 }));
 
+export const stableUrl = (name: RemoteName): string => urls[name];
+
 export type { ExposedName, RemoteName };
 // Where a remote lives, for the frame label: ":port" on localhost, else the first DNS label (full host in the label title).
 export function remoteOrigin(manifestUrl: string): string {

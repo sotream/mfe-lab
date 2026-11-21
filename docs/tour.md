@@ -30,7 +30,7 @@ Restart or rebuild only one remote and reload the page: only its build stamp cha
 
 ### 5. Shared dependencies are loaded once
 
-`/inspector` (no login needed) lists the remotes with their live manifest version and up/down status, and the shared dependencies (`react`, `react-dom`, `react-router`, `@mfe/auth-store`) with their versions and a "loaded once" status read from the Module Federation share scope. The page also lists a few ways to break the setup on purpose.
+`/inspector` (no login needed) lists the remotes (manifest, build stamp, up/down status, variant and rollout, two lines per cell; `Details` opens the full values), and the shared dependencies (`react`, `react-dom`, `react-router`, `@mfe/auth-store`) with their versions and a "loaded once" status read from the Module Federation share scope. The page also lists a few ways to break the setup on purpose.
 
 ![Federation inspector](screenshots/5-inspector.png)
 
@@ -87,7 +87,7 @@ The selection lives in memory only: a reload goes back to `dev`. To clean up, de
 
 ### Canary, kill switch and fallback
 
-Sign in as `admin@lab.test` and open the Inspector. In the Remotes table, tick `Switch products off`: after a reload, `Home` and `/products` show "products is switched off right now" and the dashboard frame still works; no request goes to the products manifest. Untick it. Then paste a release manifest URL (for example `http://localhost:3001/releases/0.0.1-e2e/mf-manifest.json`) into `products canary URL`, set the percent to 100 and save: after a reload the frame's build stamp is the release and the Variant column says `canary`. Point the canary at `http://localhost:3001/broken/mf-manifest.json` instead: the frame still renders stable, the Variant says `fell back`, and the Errors table has a `canary failed, fell back to stable` row. Details: [RFC 0017](rfc/0017-remote-registry-canary-and-kill-switch.md).
+Sign in as `admin@lab.test` and open the Inspector. In the Remotes table, click `Details` on the products row (or the row itself). The dialog shows the full manifest URLs with Copy, and for admins the registry form. Tick `Switch products off` and Save: after a reload, `Home` and `/products` show "products is switched off right now" and the dashboard frame still works; no request goes to the products manifest. The Rollout cell says `off`; untick it and Save again. Then paste a release manifest URL (for example `http://localhost:3001/releases/0.0.1-e2e/mf-manifest.json`) into `products canary URL`, set the percent to 100 and Save: the Rollout cell says `canary 100%`, and after a reload the frame's build stamp is the release and the variant chip in the Build column says `canary`. Point the canary at `http://localhost:3001/broken/mf-manifest.json` instead: the frame still renders stable, the variant chip says `fell back`, and the Errors table has a `canary failed, fell back to stable` row. Details: [RFC 0017](rfc/0017-remote-registry-canary-and-kill-switch.md).
 
 ### A Vue remote in a Shadow DOM
 

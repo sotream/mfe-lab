@@ -52,15 +52,18 @@ describe('InspectorPage', () => {
     render(<InspectorPage />);
     expect(screen.getByRole('heading', { level: 1, name: 'Federation inspector' })).toBeTruthy();
     expect(screen.getByRole('heading', { level: 2, name: 'Remotes' })).toBeTruthy();
-    // T39: Manifest is now "Stable manifest" (a hint button joins the accessible name, so match the start)
-    for (const h of [/^Name/, /^Stable manifest/, /^Version/, /^Status/]) {
+    // T41: five columns; Status moved into the row header, Version into Build
+    for (const h of [/^Remote/, /^Manifest/, /^Build/, /^Use/, /^Rollout/]) {
       expect(within(remotesTable()).getByRole('columnheader', { name: h })).toBeTruthy();
     }
     const initial = within(remotesTable()).getAllByRole('row').slice(1);
-    expect(initial.map((r) => within(r).getByRole('rowheader').textContent)).toEqual([
-      'products',
-      'dashboard',
-      'orders',
+    // T41: the row header also holds the status chip, so match the start
+    expect(
+      initial.map((r) => (within(r).getByRole('rowheader').textContent ?? '').slice(0, 20)),
+    ).toEqual([
+      expect.stringMatching(/^products/),
+      expect.stringMatching(/^dashboard/),
+      expect.stringMatching(/^orders/),
     ]);
     expect(within(rowFor(PRODUCTS)).getByText('checking…')).toBeTruthy();
     expect(within(rowFor(DASHBOARD)).getByText('checking…')).toBeTruthy();
@@ -182,7 +185,11 @@ describe('InspectorPage', () => {
       within(remotes)
         .getAllByRole('rowheader')
         .map((h) => h.textContent),
-    ).toEqual(['products', 'dashboard', 'orders']);
+    ).toEqual([
+      expect.stringMatching(/^products/),
+      expect.stringMatching(/^dashboard/),
+      expect.stringMatching(/^orders/),
+    ]);
     expect(
       within(shared)
         .getAllByRole('rowheader')
