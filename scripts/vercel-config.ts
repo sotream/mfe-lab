@@ -28,8 +28,12 @@ function staticApp(name: 'shell' | 'products' | 'dashboard') {
     headers: [
       ...(remote ? [header('/(.*)', 'Access-Control-Allow-Origin', '*')] : []),
       header('/(mf-manifest\\.json|remoteEntry\\.js)', 'Cache-Control', 'no-store'),
-      // Only the fonts are content-hashed (16 hex chars); JS and CSS use stable chunk names.
-      header('/([0-9a-f]{16}\\.woff2)', 'Cache-Control', 'public, max-age=31536000, immutable'),
+      // Content-hashed assets (16 hex chars) never change. remoteEntry.js has no hash, so it never matches.
+      header(
+        '/(.+\\.)?[0-9a-f]{16}\\.(js|css|woff2)',
+        'Cache-Control',
+        'public, max-age=31536000, immutable',
+      ),
     ],
   };
 }

@@ -94,6 +94,29 @@ describe('vercel config', () => {
     }
   });
 
+  it('Q-vercel-immutable: hashed js, css and woff2 are immutable; entry files are not', () => {
+    const hashed = [
+      '/main.0123456789abcdef.js',
+      '/static/js/async/src_Page_tsx.0123456789abcdef.js',
+      '/static/css/main.0123456789abcdef.css',
+      '/0123456789abcdef.woff2',
+    ];
+    for (const app of statics) {
+      const c = load(root, app);
+      for (const p of hashed) {
+        expect(headersFor(c, p)['cache-control'], `${app} ${p}`).toBe(
+          'public, max-age=31536000, immutable',
+        );
+      }
+      for (const p of ['/remoteEntry.js', '/mf-manifest.json']) {
+        expect(headersFor(c, p)['cache-control'], `${app} ${p}`).toBe('no-store');
+      }
+      expect(headersFor(c, '/index.html')['cache-control'] ?? '', `${app} index`).not.toMatch(
+        /immutable/,
+      );
+    }
+  });
+
   it('Q-no-build-env: the shell vercel.json has no build key (vercel build ignores it)', () => {
     expect(load(root, 'shell')).not.toHaveProperty('build');
   });

@@ -186,3 +186,24 @@ jobs:
           echo "$m" | grep -i '^cache-control:' | grep -qi 'no-store'
           [ "$(code https://mfe-lab-api.vercel.app/cron/reseed)" = 401 ]
           echo smoke ok
+
+  # Lab Web Vitals on the live site (Fast 4G, 4x CPU), budgets in perf-budget.json.
+  vitals:
+    needs: [plan, smoke]
+    if: ${{ !cancelled() && !failure() && needs.plan.result == 'success' && needs.smoke.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.plan.outputs.sha }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      # Base URL: the shell in deploy/urls.json. Writes the table to the job summary.
+      - run: node scripts/vitals.ts

@@ -45,6 +45,7 @@ Every answer is running code, covered by black-box tests and argued in a short R
 - **Accessibility across remotes.** One owner per concern: the shell owns title, focus and the live region, remotes announce through a typed event, and lint and axe guard it. ([RFC 0011](docs/rfc/0011-accessibility-across-remotes.md))
 - **Locale across remotes.** German by default for German browsers, with an EN switch. The shell owns the language (`<html lang>` plus an event), each remote owns its strings, and `Intl` formats prices, dates and times. ([RFC 0012](docs/rfc/0012-locale-across-remotes.md))
 - **Prefetch on idle.** Measured first: −31.5% median time to the first product row on Fast 4G. ([RFC 0005](docs/rfc/0005-prefetch-remotes.md))
+- **Performance budgets.** Gzipped bundle size is gated in CI (shell initial JS 33.5 KB of 37 KB, products 64 KB of 71 KB, dashboard 51 KB of 56 KB); lab LCP, CLS and time-to-remotes are checked on the live site after each deploy (LCP median 1.6 s on Fast 4G). ([RFC 0015](docs/rfc/0015-performance-budgets.md))
 - **An inspector page.** It shows remotes, versions, shared dependencies, flags, errors and a live event log.
 
 | Two remotes, one page                                   | One remote down                                                               | Live event log                                         |

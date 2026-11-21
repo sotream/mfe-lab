@@ -1,0 +1,23 @@
+{
+  "shell": {
+    "initialJsGzip": 37888,
+    "totalJsGzip": 207872,
+    "cssGzip": 7168
+  },
+  "products": {
+    "initialJsGzip": 72704,
+    "totalJsGzip": 272384,
+    "cssGzip": 9216
+  },
+  "dashboard": {
+    "initialJsGzip": 57344,
+    "totalJsGzip": 254976,
+    "cssGzip": 7168
+  },
+  "vitals": {
+    "lcpMs": 2500,
+    "clsLogin": 0.1,
+    "timeToRemotesMs": 700,
+    "clsHome": 0.1
+  }
+}

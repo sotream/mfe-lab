@@ -191,6 +191,11 @@ Goal: weekly grouped dependency update PRs via `.github/dependabot.yml`, with no
 - **Goal:** a wrong or removed expose fails at typecheck, not in the browser (RFC 0014).
 - **Done when:** `federation.contract.ts` is the only list of exposed modules; both remotes generate `exposes` from it and `src/exposes.check.ts` makes a missing export or `buildVersion` a type error; the shell's `loadPage` and `Remote` accept only module names of the given remote; `apps/shell/src/remotes.d.ts` is gone; built manifests expose the same names as before; RFC 0014, RFC 0001 and `docs/architecture.md` are updated; `pnpm lint && pnpm typecheck && pnpm test` pass.
 
+## T34 Performance budgets
+
+- **Goal:** a slower bundle or a slower first screen fails a check instead of going unnoticed, and unchanged files are cached for good (RFC 0015).
+- **Done when:** JS and CSS of all three apps are named `[name].[contenthash:16]` (`remoteEntry.js`, manifests and `index.html` stay fixed) and releases still switch in e2e; generated `vercel.json` and the nginx template mark hashed js/css/woff2 `immutable`; `perf-budget.json` holds `initialJsGzip`, `totalJsGzip` and `cssGzip` per app and `node scripts/size-budget.ts` (run by CI after `pnpm build`) exits 1 naming any metric over budget; `scripts/vitals.ts` measures LCP, CLS and time-to-remotes on Fast 4G and the `vitals` job in `deploy.yml` fails over budget after `smoke`; RFC 0015, `docs/deploy.md` and the README are updated; `pnpm lint && pnpm typecheck && pnpm test` pass.
+
 ## Later (not now)
 
 Nothing planned.

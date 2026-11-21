@@ -34,6 +34,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+      - run: node scripts/size-budget.ts
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm e2e
 
