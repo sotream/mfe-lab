@@ -12,7 +12,16 @@ import { useAuth } from '@mfe/auth-store/react';
 import { emit } from '@mfe/events';
 import '@mfe/ui/select.css';
 import '@mfe/ui/tooltip.css';
-import { Button, formatTime, MiddleTruncate, Select, Table, Tooltip, useLocale } from '@mfe/ui';
+import {
+  BuildStamp,
+  Button,
+  formatTime,
+  MiddleTruncate,
+  Select,
+  Table,
+  Tooltip,
+  useLocale,
+} from '@mfe/ui';
 import { getInstance } from '@module-federation/enhanced/runtime';
 import {
   useEffect,
@@ -462,7 +471,9 @@ export default function InspectorPage() {
                 <td className="ds1-mono manifest">
                   <Manifest url={remoteEntry(name)} />
                 </td>
-                <td className="ds1-mono ver">{pings[name]?.version ?? '—'}</td>
+                <td className="ds1-mono ver">
+                  {pings[name]?.version ? <BuildStamp v={pings[name].version} /> : '—'}
+                </td>
                 <td className="st">
                   <span className={`chip chip--${pings[name]?.status ?? 'idle'}`}>
                     {pings[name] ? t[pings[name].status] : t.checking}

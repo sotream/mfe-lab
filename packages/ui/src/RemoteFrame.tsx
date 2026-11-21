@@ -42,7 +42,7 @@ function start(load: Props['load']): Promise<RemoteModule> {
 }
 
 // An ISO UTC timestamp reads as "21.11 19:39Z"; releases and other strings stay as they are.
-function BuildStamp({ v }: { v: string }) {
+export function BuildStamp({ v }: { v: string }) {
   const m = /^\d{4}-(\d\d)-(\d\d)T(\d\d:\d\d)(?::\d\d)?Z$/.exec(v);
   if (!m) return v;
   return <time dateTime={v} title={v}>{`${m[2]}.${m[1]} ${m[3]}Z`}</time>;

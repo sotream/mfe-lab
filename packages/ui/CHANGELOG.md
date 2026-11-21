@@ -4,7 +4,7 @@ Breaking changes need a major bump, a new CSS prefix (`ds2-`) and an entry here 
 
 ## 1.10.0
 
-- `Tooltip` (`content`, `tabStop?`, plus span attributes): `role="tooltip"` in the top layer, placed by `placePopup`. Hover after 300 ms, focus at once; hides on leave, blur and Escape (focus stays); hoverable (WCAG 1.4.13). `MiddleTruncate` (`text`, `tail?`): one line with the ellipsis in the middle and the tail (default from the last `/`, else 12 characters, or the last N) always visible; pure CSS, the full text in a visually hidden span and in a tooltip, always a tab stop. Styles in `@mfe/ui/tooltip.css` (consumer imports it). Additive.
+- `Tooltip` (`content`, `tabStop?`, plus span attributes): `role="tooltip"` in the top layer, placed by `placePopup`. Hover after 300 ms, focus at once; hides on leave, blur and Escape (focus stays); hoverable (WCAG 1.4.13). `MiddleTruncate` (`text`, `tail?`): one line with the ellipsis in the middle and the tail (default from the last `/`, else 12 characters, or the last N) always visible; pure CSS, the full text in a visually hidden span and in a tooltip, always a tab stop. Styles in `@mfe/ui/tooltip.css` (consumer imports it). `BuildStamp` (the compact ISO build stamp of the frame header) is now exported. Additive.
 
 ## 1.9.0
 

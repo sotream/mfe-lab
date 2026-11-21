@@ -342,13 +342,13 @@ ol.panel-body {
 }
 
 .manifest .ds1-tip {
-  max-width: 24ch;
+  max-width: 53ch;
 }
 
 /* keep the 11-column Remotes table inside the panel at 1440 (EN and DE, admin inputs included) */
-.remotes th,
-.remotes td {
-  padding-inline: var(--ds1-space-xs);
+.ds1-table.remotes th,
+.ds1-table.remotes td {
+  padding-inline: var(--ds1-space-2xs);
 }
 
 .remotes td.ds1-mono {
@@ -357,19 +357,19 @@ ol.panel-body {
 
 /* reserve the final widths so "checking…" and "—" do not re-flow the columns (CLS) */
 .remotes .ver {
-  min-width: 21ch;
+  min-width: 12ch;
 }
 
 .remotes .st {
-  min-width: 7.5rem;
+  min-width: 6.5rem;
 }
 
 .remotes .ds1-select {
-  min-width: 7.5rem;
+  min-width: 6.5rem;
 }
 
 .remotes input[type='url'] {
-  width: 12ch;
+  width: 8ch;
 }
 
 .remotes input[type='number'] {
