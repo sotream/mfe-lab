@@ -10,7 +10,8 @@ import {
 } from '@mfe/api-client';
 import { useAuth } from '@mfe/auth-store/react';
 import { emit } from '@mfe/events';
-import { Button, formatTime, Table, useLocale } from '@mfe/ui';
+import '@mfe/ui/select.css';
+import { Button, formatTime, Select, Table, useLocale } from '@mfe/ui';
 import { getInstance } from '@module-federation/enhanced/runtime';
 import {
   useEffect,
@@ -63,21 +64,12 @@ function VersionSelect({ name }: { name: RemoteName }) {
   }, [name]);
   const value = versions.find((v) => current === releaseManifestUrl(name, v)) ?? '';
   return (
-    <select
-      className="ds1-input"
+    <Select
       aria-label={t.versionOf(name)}
       value={value}
-      onChange={(e) =>
-        setRemoteEntry(name, e.target.value ? releaseManifestUrl(name, e.target.value) : null)
-      }
-    >
-      <option value="">dev</option>
-      {versions.map((v) => (
-        <option key={v} value={v}>
-          {v}
-        </option>
-      ))}
-    </select>
+      options={[{ value: '', label: 'dev' }, ...versions.map((v) => ({ value: v, label: v }))]}
+      onChange={(v) => setRemoteEntry(name, v ? releaseManifestUrl(name, v) : null)}
+    />
   );
 }
 

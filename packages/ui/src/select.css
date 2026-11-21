@@ -1,0 +1,120 @@
+/* Select, shared by React and Vue (the orders shadow root injects this same file). Tokens only. */
+.ds1-select {
+  position: relative;
+  display: inline-block;
+  min-width: 9rem;
+}
+
+.ds1-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds1-space-xs);
+  height: 36px;
+  padding: 0 var(--ds1-space-sm);
+  border: 1px solid var(--ds1-control-edge);
+  border-radius: var(--ds1-radius);
+  background: var(--ds1-paper-3);
+  font-size: var(--ds1-text-sm);
+  cursor: pointer;
+}
+
+.ds1-select-trigger:hover {
+  border-color: var(--ds1-muted);
+}
+
+.ds1-select-trigger[aria-expanded='true'] {
+  border-color: var(--ds1-accent);
+}
+
+.ds1-select-trigger[aria-disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ds1-select-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* chevron and check mark: borders of a rotated box */
+.ds1-select-trigger::after {
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  border: solid var(--ds1-muted);
+  border-width: 0 1.5px 1.5px 0;
+  content: '';
+  transform: rotate(45deg);
+}
+
+.ds1-select-trigger[aria-expanded='true']::after {
+  margin-top: 3px;
+  transform: rotate(-135deg);
+}
+
+.ds1-select-list {
+  inset: auto;
+  margin: 0;
+  padding: var(--ds1-space-2xs);
+  overflow-y: auto;
+  border: 1px solid var(--ds1-rule-2);
+  border-radius: var(--ds1-radius-card);
+  background: var(--ds1-paper-3);
+  color: var(--ds1-ink);
+  font-size: var(--ds1-text-sm);
+  box-shadow: 0 12px 32px oklch(5% 0.01 250 / 0.55);
+}
+
+.ds1-select-list[hidden] {
+  display: none;
+}
+
+.ds1-select-list:popover-open {
+  animation: ds1-select-in var(--ds1-dur-micro) var(--ds1-ease-out);
+}
+
+@keyframes ds1-select-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+
+.ds1-select-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds1-space-sm);
+  min-height: 32px;
+  padding: 0 var(--ds1-space-xs);
+  border-radius: var(--ds1-radius);
+  cursor: pointer;
+}
+
+@media (pointer: coarse) {
+  .ds1-select-option {
+    min-height: 44px;
+  }
+}
+
+.ds1-select-option[data-active='true'],
+.ds1-select-option:hover {
+  background: var(--ds1-accent-soft);
+}
+
+.ds1-select-option[aria-selected='true']::after {
+  width: 4px;
+  height: 9px;
+  margin-bottom: 3px;
+  border: solid var(--ds1-accent);
+  border-width: 0 2px 2px 0;
+  content: '';
+  transform: rotate(45deg);
+}
+
+.ds1-select-option[aria-disabled] {
+  color: var(--ds1-muted);
+  cursor: not-allowed;
+}

@@ -10,6 +10,7 @@ import { getState, subscribe } from '@mfe/auth-store';
 import { on } from '@mfe/events';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { formatDate, formatMoney, type Locale } from './format.ts';
+import DsSelect from './DsSelect.vue';
 import { messages } from './messages.ts';
 
 const props = defineProps<{ locale: Locale; report: (error: unknown) => void }>();
@@ -86,11 +87,16 @@ onUnmounted(() => stops.forEach((stop) => stop()));
 
 <template>
   <div class="orders-toolbar">
-    <label for="orders-status">{{ t.filter }}</label>
-    <select id="orders-status" v-model="status" class="orders-input">
-      <option value="">{{ t.all }}</option>
-      <option v-for="s in STATUSES" :key="s" :value="s">{{ t.status[s] }}</option>
-    </select>
+    <label id="orders-status-label">{{ t.filter }}</label>
+    <DsSelect
+      id="orders-status"
+      v-model="status"
+      label-id="orders-status-label"
+      :options="[
+        { value: '', label: t.all },
+        ...STATUSES.map((s) => ({ value: s, label: t.status[s] })),
+      ]"
+    />
     <span class="orders-count">{{ t.total(total) }}</span>
   </div>
 
