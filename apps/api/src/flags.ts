@@ -4,9 +4,6 @@ import { errors } from './common.ts';
 
 const flag = z.object({ name: z.string(), enabled: z.boolean(), description: z.string() });
 
-type Row = { name: string; enabled: number; description: string };
-const toFlag = (r: Row) => ({ ...r, enabled: r.enabled === 1 });
-
 export const flagRoutes: FastifyPluginAsyncZod = async (app) => {
   app.get(
     '/flags',
@@ -15,9 +12,9 @@ export const flagRoutes: FastifyPluginAsyncZod = async (app) => {
       schema: { tags: ['flags'], response: { 200: z.array(flag), ...errors(401) } },
     },
     async () =>
-      (
-        app.db.prepare('select name, enabled, description from flags order by name').all() as Row[]
-      ).map(toFlag),
+      app.db.query<z.infer<typeof flag>>(
+        'select name, enabled, description from flags order by name',
+      ),
   );
 
   app.patch(
@@ -33,15 +30,11 @@ export const flagRoutes: FastifyPluginAsyncZod = async (app) => {
     },
     async (request, reply) => {
       const { name } = request.params;
-      const info = app.db
-        .prepare('update flags set enabled = ? where name = ?')
-        .run(request.body.enabled ? 1 : 0, name);
-      if (info.changes === 0) return reply.code(404).send({ error: 'not_found' });
-      return toFlag(
-        app.db
-          .prepare('select name, enabled, description from flags where name = ?')
-          .get(name) as Row,
+      const [row] = await app.db.query<z.infer<typeof flag>>(
+        'update flags set enabled = $1 where name = $2 returning name, enabled, description',
+        [request.body.enabled, name],
       );
+      return row ?? reply.code(404).send({ error: 'not_found' });
     },
   );
 };

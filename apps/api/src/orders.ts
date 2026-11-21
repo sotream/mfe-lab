@@ -16,9 +16,10 @@ const COLUMNS = 'id, product_id, qty, status, created_at';
 // ponytail: no stock decrement on order creation and no status transition rules (spec is
 // silent); add both when orders need to mean something.
 export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
-  const get = (id: number) =>
-    app.db.prepare(`select ${COLUMNS} from orders where id = ?`).get(id) as
-      z.infer<typeof order> | undefined;
+  const get = async (id: number) =>
+    (
+      await app.db.query<z.infer<typeof order>>(`select ${COLUMNS} from orders where id = $1`, [id])
+    )[0];
   const writer = { onRequest: app.requireRole('admin') };
 
   app.get(
@@ -33,17 +34,17 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
     },
     async (request) => {
       const { page, limit, status } = request.query;
-      const where = status ? 'where status = @status' : '';
-      const params = status ? { status } : {};
-      const { n } = app.db.prepare(`select count(*) as n from orders ${where}`).get(params) as {
-        n: number;
-      };
-      const items = app.db
-        .prepare(
-          `select ${COLUMNS} from orders ${where} order by created_at desc, id desc limit @limit offset @offset`,
-        )
-        .all({ ...params, limit, offset: (page - 1) * limit }) as z.infer<typeof order>[];
-      return { items, total: n, page, limit };
+      const where = status ? 'where status = $1' : '';
+      const params: unknown[] = status ? [status] : [];
+      const [count] = await app.db.query<{ n: number }>(
+        `select count(*)::int as n from orders ${where}`,
+        params,
+      );
+      const items = await app.db.query<z.infer<typeof order>>(
+        `select ${COLUMNS} from orders ${where} order by created_at desc, id desc limit $${params.length + 1} offset $${params.length + 2}`,
+        [...params, limit, (page - 1) * limit],
+      );
+      return { items, total: count!.n, page, limit };
     },
   );
 
@@ -62,10 +63,11 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
     },
     async (request, reply) => {
       const { product_id, qty } = request.body;
-      const info = app.db
-        .prepare('insert into orders (product_id, qty, status, created_at) values (?, ?, ?, ?)')
-        .run(product_id, qty, 'new', new Date().toISOString());
-      return reply.code(201).send(get(Number(info.lastInsertRowid))!);
+      const [row] = await app.db.query<{ id: number }>(
+        'insert into orders (product_id, qty, status, created_at) values ($1, $2, $3, $4) returning id',
+        [product_id, qty, 'new', new Date().toISOString()],
+      );
+      return reply.code(201).send((await get(row!.id))!);
     },
   );
 
@@ -81,11 +83,12 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
       },
     },
     async (request, reply) => {
-      const info = app.db
-        .prepare('update orders set status = ? where id = ?')
-        .run(request.body.status, request.params.id);
-      if (info.changes === 0) return reply.code(404).send({ error: 'not_found' });
-      return get(request.params.id)!;
+      const hit = await app.db.query('update orders set status = $1 where id = $2 returning id', [
+        request.body.status,
+        request.params.id,
+      ]);
+      if (hit.length === 0) return reply.code(404).send({ error: 'not_found' });
+      return (await get(request.params.id))!;
     },
   );
 };

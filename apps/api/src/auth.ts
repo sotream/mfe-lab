@@ -50,15 +50,20 @@ export async function registerAuth(app: FastifyInstance, opts: { jwtSecret?: str
     verify: { algorithms: ['HS256'] },
   });
 
-  const findUser = (id: number) =>
-    app.db.prepare('select id, email, role from users where id = ?').get(id) as
-      Omit<UserRow, 'password_hash'> | undefined;
+  const findUser = async (id: number) =>
+    (
+      await app.db.query<Omit<UserRow, 'password_hash'>>(
+        'select id, email, role from users where id = $1',
+        [id],
+      )
+    )[0];
 
   // Every failure (missing/malformed/forged/expired token, deleted user) is the same 401.
   const authenticate = async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       await request.jwtVerify();
-      const user = typeof request.user.sub === 'number' ? findUser(request.user.sub) : undefined;
+      const user =
+        typeof request.user.sub === 'number' ? await findUser(request.user.sub) : undefined;
       if (!user) throw new Error('unknown user');
       // The DB is the source of truth for role and email, not the token.
       request.user = { sub: user.id, role: user.role, email: user.email };
@@ -84,9 +89,10 @@ export async function registerAuth(app: FastifyInstance, opts: { jwtSecret?: str
       '/auth/login',
       { schema: { tags: ['auth'], body: loginBody, security: [] } },
       async (request, reply) => {
-        const user = app.db
-          .prepare('select id, email, password_hash, role from users where email = ?')
-          .get(request.body.email) as UserRow | undefined;
+        const [user] = await app.db.query<UserRow>(
+          'select id, email, password_hash, role from users where email = $1',
+          [request.body.email],
+        );
         if (!user || !(await verifyPassword(request.body.password, user.password_hash))) {
           return reply.code(401).send({ error: 'invalid_credentials' });
         }

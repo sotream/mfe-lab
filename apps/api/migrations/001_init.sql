@@ -1,23 +1,25 @@
 CREATE TABLE users (
-  id INTEGER PRIMARY KEY,
-  email TEXT NOT NULL UNIQUE,
-  password_hash TEXT NOT NULL,
-  role TEXT NOT NULL CHECK (role IN ('admin', 'editor', 'viewer'))
+  id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  email text NOT NULL UNIQUE,
+  password_hash text NOT NULL,
+  role text NOT NULL CHECK (role IN ('admin', 'editor', 'viewer'))
 );
 
 CREATE TABLE products (
-  id INTEGER PRIMARY KEY,
-  sku TEXT NOT NULL UNIQUE,
-  name TEXT NOT NULL,
-  price_cents INTEGER NOT NULL CHECK (price_cents >= 0),
-  stock INTEGER NOT NULL CHECK (stock >= 0),
-  created_at TEXT NOT NULL
+  id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  sku text NOT NULL UNIQUE,
+  name text NOT NULL,
+  price_cents integer NOT NULL CHECK (price_cents >= 0),
+  stock integer NOT NULL CHECK (stock >= 0),
+  created_at timestamptz NOT NULL
 );
 
 CREATE TABLE orders (
-  id INTEGER PRIMARY KEY,
-  product_id INTEGER NOT NULL REFERENCES products(id),
-  qty INTEGER NOT NULL CHECK (qty > 0),
-  status TEXT NOT NULL CHECK (status IN ('new', 'paid', 'shipped')),
-  created_at TEXT NOT NULL
+  id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  product_id integer NOT NULL REFERENCES products(id),
+  qty integer NOT NULL CHECK (qty > 0),
+  status text NOT NULL CHECK (status IN ('new', 'paid', 'shipped')),
+  created_at timestamptz NOT NULL
 );
+
+CREATE INDEX orders_created_at_idx ON orders (created_at);

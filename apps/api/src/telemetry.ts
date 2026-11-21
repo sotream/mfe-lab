@@ -28,11 +28,9 @@ export const errorRoutes: FastifyPluginAsyncZod = async (app) => {
     },
     async (request, reply) => {
       const b = request.body;
-      const { lastInsertRowid } = app.db
-        .prepare(
-          'insert into errors (remote, build, kind, message, stack, url, at) values (?, ?, ?, ?, ?, ?, ?)',
-        )
-        .run(
+      const [row] = await app.db.query<{ id: number }>(
+        'insert into errors (remote, build, kind, message, stack, url, at) values ($1, $2, $3, $4, $5, $6, $7) returning id',
+        [
           b.remote,
           b.build,
           b.kind,
@@ -40,13 +38,13 @@ export const errorRoutes: FastifyPluginAsyncZod = async (app) => {
           b.stack?.slice(0, 4000) ?? null,
           b.url,
           new Date().toISOString(),
-        );
-      app.db
-        .prepare(
-          'delete from errors where id not in (select id from errors order by id desc limit ?)',
-        )
-        .run(KEEP);
-      return reply.code(201).send({ id: Number(lastInsertRowid) });
+        ],
+      );
+      await app.db.query(
+        'delete from errors where id not in (select id from errors order by id desc limit $1)',
+        [KEEP],
+      );
+      return reply.code(201).send({ id: row!.id });
     },
   );
 
@@ -63,11 +61,9 @@ export const errorRoutes: FastifyPluginAsyncZod = async (app) => {
     async (request) => {
       const { remote } = request.query;
       const sql = `select id, remote, build, kind, message, stack, url, at from errors ${
-        remote === undefined ? '' : 'where remote = ?'
+        remote === undefined ? '' : 'where remote = $1'
       } order by id desc limit 50`;
-      return app.db.prepare(sql).all(...(remote === undefined ? [] : [remote])) as z.infer<
-        typeof row
-      >[];
+      return app.db.query<z.infer<typeof row>>(sql, remote === undefined ? [] : [remote]);
     },
   );
 
@@ -84,9 +80,9 @@ export const errorRoutes: FastifyPluginAsyncZod = async (app) => {
       },
     },
     async () =>
-      app.db
-        .prepare('select remote, count(*) as count from errors group by remote order by remote')
-        .all() as { remote: string; count: number }[],
+      app.db.query<{ remote: string; count: number }>(
+        'select remote, count(*)::int as count from errors group by remote order by remote',
+      ),
   );
 
   app.delete(
@@ -96,7 +92,7 @@ export const errorRoutes: FastifyPluginAsyncZod = async (app) => {
       schema: { tags: ['errors'], response: { 204: z.null(), ...errors(401, 403) } },
     },
     async (_request, reply) => {
-      app.db.prepare('delete from errors').run();
+      await app.db.query('delete from errors');
       return reply.code(204).send(null);
     },
   );
