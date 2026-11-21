@@ -71,8 +71,14 @@ test.describe('canary', () => {
     await page.getByRole('link', { name: 'Inspector' }).click();
     await expect(page.getByRole('heading', { level: 2, name: 'Errors' })).toBeVisible();
   }
+  // T41: the variant chip is line 2 of the Build cell (second cell; the first is Manifest, whose canary label is
+  // also the word "canary"), so match the chip text inside that cell, not the cell name
   const variantCell = (page: Page, text: string) =>
-    page.getByRole('row', { name: /products/ }).getByRole('cell', { name: text, exact: true });
+    page
+      .getByRole('row', { name: /^products/ })
+      .getByRole('cell')
+      .nth(1)
+      .getByText(text, { exact: true });
 
   test('E-canary: 100% serves the release, 0% goes back to the default build', async ({
     page,
@@ -131,12 +137,18 @@ test('E-a11y: axe on /inspector as admin finds no serious or critical violations
   await login(page);
   await page.getByRole('link', { name: 'Inspector' }).click();
   await expect(page.getByRole('heading', { level: 2, name: 'Errors' })).toBeVisible();
-  // the admin controls are in the page before axe runs
+  // T41: the admin controls moved into the details dialog, one button per remote
   for (const name of REMOTES) {
-    await expect(page.getByLabel(`${name} canary URL`)).toBeVisible();
-    await expect(page.getByLabel(`${name} canary percent`)).toBeVisible();
-    await expect(page.getByRole('checkbox', { name: `Switch ${name} off` })).toBeVisible();
+    await expect(page.getByRole('button', { name: `Details for ${name}` })).toBeVisible();
+    await expect(page.getByLabel(`${name} canary URL`)).toHaveCount(0); // not inline any more
   }
+  await page.getByRole('button', { name: 'Details for products' }).click();
+  const dialog = page.getByRole('dialog', { name: 'products: details' });
+  await expect(dialog.getByLabel('products canary URL')).toBeVisible();
+  await expect(dialog.getByLabel('products canary percent')).toBeVisible();
+  await expect(dialog.getByRole('checkbox', { name: 'Switch products off' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
   const scan = async () => {
     const { violations } = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
