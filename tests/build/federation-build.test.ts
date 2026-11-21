@@ -13,6 +13,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
+import { pathToRegexp } from 'path-to-regexp';
 import { exposes } from '../../federation.contract.ts';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -84,7 +85,7 @@ describe('federation build', { timeout: BUILD_TIMEOUT }, () => {
   });
 
   it('Q-cache-hashed: the immutable header only matches content-hashed files in each dist', () => {
-    // Pattern comes from each app's vercel.json (Vercel `source`, regex-compatible); built in
+    // Pattern comes from each app's vercel.json (Vercel `source`, compiled with path-to-regexp 6.1.0 like Vercel does); built in
     // the shared beforeAll build so dist/ is never built twice.
     for (const app of ['shell', 'products', 'dashboard']) {
       const cfg = JSON.parse(readFileSync(join(root, 'apps', app, 'vercel.json'), 'utf8')) as {
@@ -92,7 +93,7 @@ describe('federation build', { timeout: BUILD_TIMEOUT }, () => {
       };
       const immutable = cfg.headers
         .filter((h) => h.headers.some((x) => /immutable/.test(x.value)))
-        .map((h) => new RegExp(`^${h.source}$`));
+        .map((h) => pathToRegexp(h.source));
       expect(immutable.length, `${app} has an immutable rule`).toBeGreaterThan(0);
       const dist = join(root, 'apps', app, 'dist');
       const files = readdirSync(dist, { recursive: true, encoding: 'utf8' }).filter((f) =>
