@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const rt = vi.hoisted(() => ({ instance: null as unknown }));
 vi.mock('@module-federation/enhanced/runtime', () => ({
   getInstance: () => rt.instance,
+  registerPlugins: vi.fn(),
   registerRemotes: vi.fn(),
   loadRemote: vi.fn(),
 }));

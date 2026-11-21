@@ -85,6 +85,10 @@ A remote can be frozen into a release and the shell can switch to it at runtime,
 
 The selection lives in memory only: a reload goes back to `dev`. To clean up, delete `apps/products/releases`.
 
+### Canary, kill switch and fallback
+
+Sign in as `admin@lab.test` and open the Inspector. In the Remotes table, tick `Switch products off`: after a reload, `Home` and `/products` show "products is switched off right now" and the dashboard frame still works; no request goes to the products manifest. Untick it. Then paste a release manifest URL (for example `http://localhost:3001/releases/0.0.1-e2e/mf-manifest.json`) into `products canary URL`, set the percent to 100 and save: after a reload the frame's build stamp is the release and the Variant column says `canary`. Point the canary at `http://localhost:3001/broken/mf-manifest.json` instead: the frame still renders stable, the Variant says `fell back`, and the Errors table has a `canary failed, fell back to stable` row. Details: [RFC 0017](rfc/0017-remote-registry-canary-and-kill-switch.md).
+
 ### A Vue remote in a Shadow DOM
 
 Sign in and open `Orders` (`/orders`). The `orders` frame is a Vue 3.5 app mounted through `mount(el, ctx)`; its frame label reads `:3003`. In the browser devtools the frame body holds a `#shadow-root (open)` with the table inside, and `document.head` has no orders style. Switch DE/EN: the labels, money and dates change in place and the host element is the same one (no remount). Change a product in the products frame on Home, come back: `products:changed` makes orders refetch. The a11y e2e scans it with axe through the shadow root. Details: [RFC 0016](rfc/0016-framework-agnostic-remotes-and-css-isolation.md).

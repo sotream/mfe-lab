@@ -27,16 +27,17 @@ RFC 0001 stamps builds but always loads the one live manifest. The point of fede
 
 ## Alternatives considered
 
-| Option                            | Why not                                                          |
-| --------------------------------- | ---------------------------------------------------------------- |
-| Rebuild the shell with a new URL  | Defeats independent deployment.                                  |
-| Persist the choice (localStorage) | Hidden state; a reload to the default is easier to reason about. |
-| Registry service                  | Right for production, too much for a lab.                        |
+| Option                            | Why not                                                                                                                    |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Rebuild the shell with a new URL  | Defeats independent deployment.                                                                                            |
+| Persist the choice (localStorage) | Hidden state; a reload to the default is easier to reason about.                                                           |
+| Registry service                  | Right for production; added later as a small API registry, see [RFC 0017](0017-remote-registry-canary-and-kill-switch.md). |
 
 ## Trade-offs and risks
 
 - A real setup would use CDN paths per version, a remote registry service that returns the manifest URL per environment, and a semver range in the host (for example "products ^1") resolved against it.
 - Shared singletons: an old release was built against older `react` or `@mfe/auth-store` ranges. The host provides its own copy, so a release may run against a newer singleton than it was built with; the inspector shows the resulting versions and warnings.
+- A manual pick wins over the registry's canary and kill switch for the session ([RFC 0017](0017-remote-registry-canary-and-kill-switch.md)).
 - The selection is in memory only, like the token: a reload resets to `dev`.
 
 ## Rollout

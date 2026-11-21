@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const Stub = () => <h3>remote heading</h3>;
 vi.mock('@module-federation/enhanced/runtime', () => ({
   getInstance: () => null,
+  registerPlugins: vi.fn(),
   init: vi.fn(),
   registerRemotes: vi.fn(),
   loadRemote: vi.fn(() => Promise.resolve({ default: Stub, buildVersion: 'test' })),

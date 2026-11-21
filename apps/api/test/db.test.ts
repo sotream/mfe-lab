@@ -143,15 +143,15 @@ describe('db', () => {
     await db.close();
   });
 
-  it('Q-migrate: twice is idempotent, returns 3, schema_migrations has 3 rows', async () => {
+  it('Q-migrate: twice is idempotent, returns 4, schema_migrations has 4 rows', async () => {
     const db = await freshDb(); // freshDb already ran migrate once
-    expect(await migrate(db)).toBe(3);
-    expect(await migrate(db)).toBe(3);
-    expect(await schemaVersions(db)).toEqual([1, 2, 3]);
+    expect(await migrate(db)).toBe(4);
+    expect(await migrate(db)).toBe(4);
+    expect(await schemaVersions(db)).toEqual([1, 2, 3, 4]);
     const rows = await db.query<{ n: number; applied: number }>(
       'SELECT count(*)::int AS n, count(applied_at)::int AS applied FROM schema_migrations',
     );
-    expect(rows).toEqual([{ n: 3, applied: 3 }]);
+    expect(rows).toEqual([{ n: 4, applied: 4 }]);
     // seeded flags from 002 are not duplicated by re-running
     expect(await db.query('SELECT count(*)::int AS n FROM flags')).toEqual([{ n: 3 }]);
     await db.close();
@@ -207,7 +207,7 @@ describe('db url', () => {
     await migrate(a);
     await a.close();
     const b = await openDb(url);
-    expect(await schemaVersions(b)).toEqual([1, 2, 3]);
+    expect(await schemaVersions(b)).toEqual([1, 2, 3, 4]);
     await b.close();
 
     for (const bad of ['mysql://u@h/db', 'sqlite:./x.db', './app.db', '']) {

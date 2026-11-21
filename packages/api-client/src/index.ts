@@ -113,6 +113,19 @@ export const listFlags = () => request<Flag[]>('/flags');
 export const setFlag = (name: string, enabled: boolean) =>
   request<Flag>(`/flags/${encodeURIComponent(name)}`, { method: 'PATCH', body: { enabled } });
 
+// Remote registry (RFC 0017): public GET, admin-only PATCH.
+export type RegistryRow = {
+  name: string;
+  canaryUrl: string | null;
+  canaryPercent: number;
+  disabled: boolean;
+};
+export type RegistryPatch = Partial<Omit<RegistryRow, 'name'>>;
+
+export const getRegistry = () => request<RegistryRow[]>('/registry');
+export const updateRegistry = (name: string, patch: RegistryPatch) =>
+  request<RegistryRow>(`/registry/${encodeURIComponent(name)}`, { method: 'PATCH', body: patch });
+
 export type OrderStatus = 'new' | 'paid' | 'shipped';
 export type Order = {
   id: number;

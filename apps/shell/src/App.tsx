@@ -16,6 +16,7 @@ import { useT } from './messages.ts';
 import {
   loadMount,
   loadPage,
+  RemoteDisabledError,
   remoteEntry,
   remoteOrigin,
   subscribeRemotes,
@@ -25,6 +26,9 @@ import {
 import type { RemoteOfKind } from '../../../federation.contract.ts';
 
 declare const __BUILD_VERSION__: string;
+
+// Shown in the frame of a switched-off remote (RFC 0017): not an error, so no Retry and no report.
+const Off = ({ name }: { name: string }) => <p role="status">{useT().remoteOff(name)}</p>;
 
 const Frame = ({
   name,
@@ -43,7 +47,12 @@ const Frame = ({
       key={frameKey}
       name={name}
       origin={remoteOrigin(entry)}
-      load={load}
+      load={() =>
+        load().catch((err: unknown) => {
+          if (err instanceof RemoteDisabledError) return { default: () => <Off name={name} /> };
+          throw err;
+        })
+      }
       report={report}
     />
   );

@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const Stub = () => <p>remote stub</p>;
 vi.mock('@module-federation/enhanced/runtime', () => ({
   getInstance: () => null,
+  registerPlugins: vi.fn(),
   init: vi.fn(),
   registerRemotes: vi.fn(),
   loadRemote: vi.fn(() => Promise.resolve({ default: Stub, buildVersion: 'test' })),

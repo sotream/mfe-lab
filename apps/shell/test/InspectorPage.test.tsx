@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const rt = vi.hoisted(() => ({ instance: null as unknown }));
 vi.mock('@module-federation/enhanced/runtime', () => ({
   getInstance: () => rt.instance,
+  registerPlugins: vi.fn(),
   registerRemotes: vi.fn(),
   loadRemote: vi.fn(),
 }));
@@ -64,7 +65,7 @@ describe('InspectorPage', () => {
     expect(p.getByText('p-1')).toBeTruthy();
     const d = within(rowFor(DASHBOARD));
     expect(d.getByText('down')).toBeTruthy();
-    expect(d.getByText('—')).toBeTruthy();
+    expect(d.getAllByText('—').length).toBeGreaterThan(0); // version, plus the registry columns
     expect(screen.queryByText('checking…')).toBeNull();
   });
 
