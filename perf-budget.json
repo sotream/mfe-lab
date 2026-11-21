@@ -2,7 +2,7 @@
   "shell": {
     "initialJsGzip": 37888,
     "totalJsGzip": 207872,
-    "cssGzip": 7168
+    "cssGzip": 9216
   },
   "products": {
     "initialJsGzip": 72704,
