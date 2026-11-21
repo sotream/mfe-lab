@@ -54,6 +54,9 @@ const choose = async (s: HTMLElement, label: string) => {
     .find((o) => o.textContent?.trim() === label);
   await act(async () => void fireEvent.click(opt!));
 };
+// T39: the URL is in the visually-hidden copy (.ds1-trunc-full) of the products row and in the hidden tooltip
+const fullText = (url: string) =>
+  Array.from(productsRow().querySelectorAll('.ds1-trunc-full')).find((e) => e.textContent === url);
 const productsRow = () => screen.getByText('products').closest('tr') as HTMLElement;
 
 beforeEach(() => {
@@ -96,17 +99,17 @@ describe('InspectorPage versions', () => {
   it('Q-inspector-versions: choosing a version updates Manifest and registers; dev resets', async () => {
     stubFetch(() => new Response(JSON.stringify({ versions: ['1.0.0'] })));
     await mount();
-    expect(within(productsRow()).getByText(PRODUCTS)).toBeTruthy();
+    expect(fullText(PRODUCTS)).toBeTruthy();
 
     await choose(select('products'), '1.0.0');
-    expect(within(productsRow()).getByText(P_V1)).toBeTruthy();
+    expect(fullText(P_V1)).toBeTruthy();
     expect(rt.registerRemotes).toHaveBeenLastCalledWith(
       [expect.objectContaining({ name: 'products', entry: P_V1 })],
       { force: true },
     );
 
     await choose(select('products'), 'dev');
-    expect(within(productsRow()).getByText(PRODUCTS)).toBeTruthy();
+    expect(fullText(PRODUCTS)).toBeTruthy();
     expect(rt.registerRemotes).toHaveBeenLastCalledWith(
       [expect.objectContaining({ name: 'products', entry: PRODUCTS })],
       { force: true },
