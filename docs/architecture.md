@@ -17,7 +17,7 @@ flowchart TB
   FD -- "loadRemote()<br/>mf-manifest.json → remoteEntry.js" --> D["dashboard :3002<br/>exposes ./DashboardPage"]
   P -. "reuses" .-> SH
   D -. "reuses" .-> SH
-  P & D -. "REST + JWT" .-> A[("api :4000 · SQLite")]
+  P & D -. "REST + JWT" .-> A[("api :4000 · Postgres")]
 ```
 
 Loading one remote, including the "remote down" path:

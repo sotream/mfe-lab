@@ -14,8 +14,7 @@ export type Db = {
 const apiDir = resolve(import.meta.dirname, '..');
 
 // DATABASE_URL wins; empty or unset means local file-backed PGlite under apps/api/data/pg.
-export const dbUrlFromEnv = (): string =>
-  process.env.DATABASE_URL || `pglite:${join(apiDir, 'data/pg')}`;
+export const dbUrlFromEnv = (): string => process.env.DATABASE_URL || 'pglite:./data/pg';
 
 // OIDs: 20 int8 (count, sum), 1700 numeric, 1184 timestamptz. Keeps JSON shapes plain:
 // numbers stay numbers, timestamps are ISO strings with milliseconds and Z.

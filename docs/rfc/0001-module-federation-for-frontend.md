@@ -27,7 +27,7 @@ flowchart LR
   B[Browser] --> S[shell :3000]
   S -- runtime import --> P[products :3001<br/>remoteEntry.js]
   S -- runtime import --> D[dashboard :3002<br/>remoteEntry.js]
-  S & P & D -- REST + JWT --> A[api :4000<br/>SQLite]
+  S & P & D -- REST + JWT --> A[api :4000<br/>Postgres]
 ```
 
 - **Host:** `apps/shell`. The plugin has no `remotes` option; remotes are registered at runtime with `registerRemotes` in `apps/shell/src/remotes.ts`, which holds the one list of manifest URLs. The URLs default to `http://localhost:3001|3002/mf-manifest.json` and are baked in at build time; `MF_PRODUCTS_URL` / `MF_DASHBOARD_URL` override them.

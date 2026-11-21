@@ -166,6 +166,11 @@ Goal: weekly grouped dependency update PRs via `.github/dependabot.yml`, with no
 - **Goal:** the rendered DOM says what things are: a labelled `nav` that holds only the four links, named tables, dates as `<time>`, row headers, and a `search` landmark. `@mfe/ui` 1.5.0 renders the `Table` `label` as a visually hidden `<caption>` (RFC 0011).
 - **Done when:** `header` holds the wordmark, `nav` (`Hauptnavigation` / `Main`, one list of four links), the language group and the user block; every table has an accessible name; products and detail dates, dashboard table dates and inspector times are `time` elements with a machine `dateTime`; the SKU, dashboard date and inspector Remotes, Shared and Flags name cells are `th scope="row"` and header-row `th` have `scope="col"`; the products search sits in `search`; `@mfe/ui` is 1.5.0 with a changelog entry and `requiredVersion` stays `^1.0.0`; `E-a11y` stays green; `pnpm lint && pnpm typecheck && pnpm test` pass.
 
+## T29 Postgres for the API
+
+- **Goal:** the API runs on Postgres, ready for Neon in production. Dev and tests use PGlite (Postgres in WASM, in-process, no Docker), compose runs `postgres:17`. One SQL dialect everywhere (RFC 0013). `DATABASE_URL` replaces `DB_PATH`.
+- **Done when:** `openDb` takes `postgres://`, `pglite:memory` or `pglite:<dir>`; migrations 001-003 are Postgres SQL tracked in `schema_migrations`, and `pnpm --filter @mfe/api migrate` applies them; every response keeps its shape (numbers are numbers, timestamps are ISO with `Z`, `enabled` is boolean); search is case-insensitive for non-ASCII (`wägezelle` finds `Wägezelle`); unique and foreign-key violations are 409 with no DB detail; `seed:reset` restarts ids at 1; `better-sqlite3` is gone; compose has a `db` service and the API waits for it; `pnpm lint && pnpm typecheck && pnpm test` pass, and `E-smoke` stays green.
+
 ## Later (not now)
 
 Nothing planned.

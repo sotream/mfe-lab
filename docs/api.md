@@ -1,8 +1,9 @@
 # API
 
-SQLite file `apps/api/data/app.db` (gitignored; override with `DB_PATH`, relative paths resolve against `apps/api/`). Migrations in `apps/api/migrations/*.sql` run on start, tracked by `PRAGMA user_version`.
+Postgres, chosen by `DATABASE_URL` ([RFC 0013](rfc/0013-postgres-for-the-api.md)): `postgres://...` (Neon needs `sslmode=require`), `pglite:memory`, or `pglite:<dir>`. Empty means local PGlite in `apps/api/data/pg` (gitignored; relative dirs resolve against `apps/api/`). Migrations in `apps/api/migrations/*.sql` run on start (not when `NODE_ENV=production`), each in one transaction, tracked in `schema_migrations`. Run them by hand with `pnpm --filter @mfe/api migrate`.
 
 ```bash
+pnpm --filter @mfe/api migrate   # apply pending migrations, print the version
 pnpm seed         # seed if empty, otherwise prints "already seeded"
 pnpm seed:reset   # wipe and reseed (3 users, 30 products, 60 orders)
 pnpm --filter @mfe/api dev   # http://127.0.0.1:4000/health

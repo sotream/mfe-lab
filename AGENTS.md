@@ -21,7 +21,7 @@ Project: `mfe-lab`, a private learning monorepo for Federated Micro Frontends. R
 - TypeScript strict everywhere. ESM. Node 26 (latest LTS). pnpm only.
 - Frontend: React 19, Rspack, `@module-federation/enhanced`. No UI library, plain CSS (CSS variables), no Tailwind.
 - Fonts, if any, self-hosted in the repo. No CDN, no external requests at runtime.
-- API: Fastify, `better-sqlite3`, zod, `@fastify/jwt`. Prefer stdlib and what is installed; add a dependency only with a one-line reason in the PR.
+- API: Fastify, Postgres (`pg`; PGlite in dev and tests), zod, `@fastify/jwt`. Prefer stdlib and what is installed; add a dependency only with a one-line reason in the PR.
 - Shared singletons: `react`, `react-dom`, `react-router`, `@mfe/auth-store`. Everything shared is declared once in the root `federation.shared.ts`; versions are pinned in the pnpm catalog (`pnpm-workspace.yaml`).
 - API runs TS natively on Node 26: `.ts` import extensions, erasable syntax only (no enums, namespaces, parameter properties), no build step.
 - Keep it small. This is a lab: no speculative abstractions, no config for values that never change.
@@ -29,7 +29,7 @@ Project: `mfe-lab`, a private learning monorepo for Federated Micro Frontends. R
 ## Secrets and data
 
 - Demo passwords only for seed users, documented as demo-only.
-- `.env` never committed; `.env.example` is. SQLite files gitignored.
+- `.env` never committed; `.env.example` is. Local PGlite data (`apps/api/data/`) gitignored.
 
 ## Ports
 

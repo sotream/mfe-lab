@@ -2,7 +2,7 @@
 
 ## Goal
 
-Small private learning repo that **shows Federated Micro Frontends visually**. One shell app loads two independently built and served remote apps at runtime via Module Federation. A tiny API with SQLite gives real auth and CRUD, so the remotes do real work.
+Small private learning repo that **shows Federated Micro Frontends visually**. One shell app loads two independently built and served remote apps at runtime via Module Federation. A tiny API with Postgres gives real auth and CRUD, so the remotes do real work.
 
 Not a product. A teaching lab: every design choice must make the federation boundaries visible and easy to explain in an interview.
 
@@ -17,16 +17,16 @@ Not a product. A teaching lab: every design choice must make the federation boun
 
 ## Scope
 
-| Piece                     | Tech                                                                                       | Port |
-| ------------------------- | ------------------------------------------------------------------------------------------ | ---- |
-| `apps/shell` (host)       | React 19, TS, Rspack + Module Federation 2 (`@module-federation/enhanced`), react-router 8 | 3000 |
-| `apps/products` (remote)  | same stack; exposes `./ProductsPage`                                                       | 3001 |
-| `apps/dashboard` (remote) | same stack; exposes `./DashboardPage` (stats cards + small chart)                          | 3002 |
-| `packages/auth-store`     | tiny store (zustand or own 30 lines), singleton shared via federation                      | n/a  |
-| `packages/ui`             | minimal shared components: `RemoteFrame`, `Button`, `Table`; plain CSS, no UI lib          | n/a  |
-| `apps/api`                | Fastify, TS, `better-sqlite3`, JWT (`@fastify/jwt`), zod validation                        | 4000 |
+| Piece                     | Tech                                                                                        | Port |
+| ------------------------- | ------------------------------------------------------------------------------------------- | ---- |
+| `apps/shell` (host)       | React 19, TS, Rspack + Module Federation 2 (`@module-federation/enhanced`), react-router 8  | 3000 |
+| `apps/products` (remote)  | same stack; exposes `./ProductsPage`                                                        | 3001 |
+| `apps/dashboard` (remote) | same stack; exposes `./DashboardPage` (stats cards + small chart)                           | 3002 |
+| `packages/auth-store`     | tiny store (zustand or own 30 lines), singleton shared via federation                       | n/a  |
+| `packages/ui`             | minimal shared components: `RemoteFrame`, `Button`, `Table`; plain CSS, no UI lib           | n/a  |
+| `apps/api`                | Fastify, TS, Postgres (`pg`; PGlite in dev and tests), JWT (`@fastify/jwt`), zod validation | 4000 |
 
-Data: SQLite file `apps/api/data/app.db` (gitignored), created by migration, filled by `pnpm seed`.
+Data: Postgres via `DATABASE_URL` (local PGlite in `apps/api/data/pg`, gitignored, when unset), created by migration, filled by `pnpm seed`.
 
 - `users` (id, email, password_hash, role: admin|editor|viewer)
 - `products` (id, sku, name, price_cents, stock, created_at)
@@ -51,7 +51,7 @@ No SSR, no Next.js, no real deploy/CDN, no Docker (maybe later), no i18n, no des
 ## Quality bar (product-company style)
 
 - Feature by feature, tests in the same change.
-- API: Vitest + Fastify `inject`, in-memory SQLite for tests.
+- API: Vitest + Fastify `inject`, in-memory PGlite (real Postgres in WASM) for tests.
 - Frontend: Vitest + Testing Library for components with logic; one Playwright smoke test (login, see both remotes, kill-remote fallback).
 - ESLint + Prettier + `tsc --noEmit` in CI; GitHub Actions workflow file included.
 - One PR per task in `PLAN.md`, squash merge, conventional commit titles.

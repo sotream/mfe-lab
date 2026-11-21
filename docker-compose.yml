@@ -1,13 +1,28 @@
 services:
+  db:
+    image: postgres:17
+    environment:
+      # Demo-only credentials. Never reuse outside the lab.
+      POSTGRES_USER: lab
+      POSTGRES_PASSWORD: lab-demo-only
+      POSTGRES_DB: lab
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U lab -d lab']
+      interval: 2s
+      timeout: 3s
+      retries: 30
   api:
     init: true
     build: { context: ., target: api }
+    depends_on:
+      db: { condition: service_healthy }
     environment:
       HOST: 0.0.0.0
+      DATABASE_URL: postgres://lab:lab-demo-only@db:5432/lab
       # Demo-only secret. Never reuse outside the lab.
       JWT_SECRET: demo-only-secret-do-not-use-in-production-0123456789
-    volumes:
-      - api-data:/data
   shell:
     build: { context: ., target: web, args: { APP: shell } }
     environment: { PORT: '3000' }
@@ -24,4 +39,4 @@ services:
     ports: ['3002:3002']
     depends_on: [api]
 volumes:
-  api-data:
+  db-data:

@@ -18,7 +18,7 @@
   <a href="#quick-start"><b>Quick start</b></a>
 </p>
 
-One shell loads two independently built and deployed React remotes **at runtime** with Module Federation 2, on top of a small Fastify + SQLite API.
+One shell loads two independently built and deployed React remotes **at runtime** with Module Federation 2, on top of a small Fastify + Postgres API.
 
 It answers the questions a real micro frontend platform runs into:
 
@@ -79,13 +79,13 @@ docker compose down -v         # stop and drop the DB volume
 
 ## Stack
 
-React 19, Rspack 2, `@module-federation/enhanced` 2, React Router, TanStack Query, Redux Toolkit, plain CSS. Fastify, better-sqlite3, zod, JWT. Vitest, Testing Library, Playwright. TypeScript in strict mode and ESM throughout, as a pnpm workspace.
+React 19, Rspack 2, `@module-federation/enhanced` 2, React Router, TanStack Query, Redux Toolkit, plain CSS. Fastify, Postgres (Neon-ready; PGlite for dev and tests), zod, JWT. Vitest, Testing Library, Playwright. TypeScript in strict mode and ESM throughout, as a pnpm workspace.
 
 ```
 apps/shell       host: routing, login, inspector
 apps/products    remote: product list, detail, CRUD
 apps/dashboard   remote: stats and charts
-apps/api         Fastify + SQLite
+apps/api         Fastify + Postgres
 packages/        auth-store, api-client, events, ui, telemetry
 ```
 
