@@ -1,0 +1,41 @@
+{
+  "installCommand": "pnpm install --frozen-lockfile --filter @mfe/shell...",
+  "buildCommand": "pnpm build",
+  "outputDirectory": "dist",
+  "build": {
+    "env": {
+      "MF_PRODUCTS_URL": "https://mfe-lab-products.vercel.app/mf-manifest.json",
+      "MF_DASHBOARD_URL": "https://mfe-lab-dashboard.vercel.app/mf-manifest.json"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://mfe-lab-api.vercel.app/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(mf-manifest\\.json|remoteEntry\\.js)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    },
+    {
+      "source": "/([0-9a-f]{16}\\.woff2)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
+  ]
+}

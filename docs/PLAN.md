@@ -171,6 +171,11 @@ Goal: weekly grouped dependency update PRs via `.github/dependabot.yml`, with no
 - **Goal:** the API runs on Postgres, ready for Neon in production. Dev and tests use PGlite (Postgres in WASM, in-process, no Docker), compose runs `postgres:17`. One SQL dialect everywhere (RFC 0013). `DATABASE_URL` replaces `DB_PATH`.
 - **Done when:** `openDb` takes `postgres://`, `pglite:memory` or `pglite:<dir>`; migrations 001-003 are Postgres SQL tracked in `schema_migrations`, and `pnpm --filter @mfe/api migrate` applies them; every response keeps its shape (numbers are numbers, timestamps are ISO with `Z`, `enabled` is boolean); search is case-insensitive for non-ASCII (`wägezelle` finds `Wägezelle`); unique and foreign-key violations are 409 with no DB detail; `seed:reset` restarts ids at 1; `better-sqlite3` is gone; compose has a `db` service and the API waits for it; `pnpm lint && pnpm typecheck && pnpm test` pass, and `E-smoke` stays green.
 
+## T30 Vercel hosting prep
+
+- **Goal:** every app can be deployed to Vercel as its own project and the API runs as a Vercel Function against Neon. Nothing is deployed here; T31 adds the accounts, `deploy.yml` and the first deploy (`docs/deploy.md`).
+- **Done when:** `deploy/urls.json` and `node scripts/vercel-config.ts` generate the four committed `apps/*/vercel.json`; the static apps rewrite `/api/:path*` to the API, fall back to `/index.html`, send CORS (remotes), `no-store` on `mf-manifest.json` and `remoteEntry.js`, and `immutable` only on content-hashed files; the shell `build.env` has both production manifest URLs; the API has a Vercel entry that never listens or migrates and never loads PGlite; `GET /cron/reseed` is 404 without `CRON_SECRET`, 401 without the bearer token, and reseeds (3/30/60) with it; `docs/deploy.md` and the RFC 0013 hosting note exist; `pnpm lint && pnpm typecheck && pnpm test` pass.
+
 ## Later (not now)
 
 Nothing planned.

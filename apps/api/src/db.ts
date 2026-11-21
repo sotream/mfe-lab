@@ -1,6 +1,6 @@
 import { mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { PGlite } from '@electric-sql/pglite';
+import type { PGlite } from '@electric-sql/pglite';
 import pg from 'pg';
 
 // The only DB API the rest of the code uses. Placeholders are $1..$n.
@@ -60,9 +60,12 @@ function wrapPg(c: pg.Pool | pg.PoolClient, pool: pg.Pool): Db {
 
 export async function openDb(url: string): Promise<Db> {
   if (/^postgres(ql)?:\/\//.test(url)) {
-    const pool = new pg.Pool({ connectionString: url });
+    // Small pool: on Vercel every warm instance holds its own, and Neon pools on its side.
+    const pool = new pg.Pool({ connectionString: url, max: 3, idleTimeoutMillis: 10_000 });
     return wrapPg(pool, pool);
   }
+  // Dynamic import: the production (Vercel) path must never load PGlite.
+  const { PGlite } = await import('@electric-sql/pglite');
   if (url === 'pglite:memory') {
     const c = new PGlite({ parsers });
     await c.waitReady;
