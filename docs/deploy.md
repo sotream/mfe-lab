@@ -22,7 +22,7 @@ The Swagger UI (`/docs`) is not served on Vercel: `@fastify/swagger-ui` pulls in
 - `/api/:path*` is rewritten to the API project (prefix stripped), so the browser stays same-origin and needs no CORS for the API; then everything else falls back to `/index.html`.
 - products and dashboard send `Access-Control-Allow-Origin: *` (the shell loads their manifests and chunks).
 - `/mf-manifest.json` and `/remoteEntry.js` are `no-store`.
-- `Cache-Control: public, max-age=31536000, immutable` only on the content-hashed fonts (`<16 hex>.woff2`). JS and CSS chunks use stable names (`main.js`, `172.js`), so they are not immutable.
+- `Cache-Control: public, max-age=31536000, immutable` only on content-hashed files (`<name>.<16 hex>.js`, `.css`, `<16 hex>.woff2`). `remoteEntry.js`, `mf-manifest.json` and `index.html` keep fixed names and are never immutable (RFC 0015).
 - Install and build run from the root-dir project with `pnpm install --frozen-lockfile --filter @mfe/<app>...` and `pnpm build`; output is `dist`. Vercel needs "Include source files outside of the Root Directory" enabled (the default).
 - The shell gets `MF_PRODUCTS_URL` and `MF_DASHBOARD_URL` at build time (exported by `deploy.yml` from `urls.json`; `vercel build` ignores `build.env`), pointing at the production remotes' `/mf-manifest.json`; the job fails if the build output contains `localhost:300`.
 
@@ -76,6 +76,7 @@ The script logs only names, ids and created / exists / updated. Re-run it any ti
 3. `products` and `dashboard` in parallel.
 4. `shell` last.
 5. `smoke` checks the live URLs: shell `<title>`, `/api/health` 200, the products manifest (200, CORS `*`, `no-store`), and `/cron/reseed` 401 without auth.
+6. `vitals` runs `node scripts/vitals.ts` against the shell URL from `deploy/urls.json`: Chromium on Fast 4G and 4x CPU, 5 cold runs, median LCP, CLS and time-to-remotes against `perf-budget.json`. The table goes to the job summary; a median over budget fails the job. It runs only after a green `smoke`, and a failure does not roll the deploy back. Locally: `VITALS_URL=<base> pnpm vitals`.
 
 Per app: `vercel link --yes --project <name>` (so no project id is stored), `vercel pull --yes --environment=production`, `vercel build --prod`, `vercel deploy --prebuilt --prod`. The CLI is pinned in `deploy.yml` (`VERCEL_CLI`) and runs with `pnpm dlx`. Jobs run under `concurrency: deploy` without cancelling.
 
