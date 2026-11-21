@@ -429,15 +429,7 @@ export default function InspectorPage() {
       </dl>
       <section className="panel">
         <h2>{t.remotes}</h2>
-        {pending && (
-          <p role="status" className="visually-hidden">
-            {t.loading}
-          </p>
-        )}
-        <Table
-          label={t.remotes}
-          loading={pending ? { rows: remotes.length, cols: 11, rowHeight: 53.7 } : undefined}
-        >
+        <Table label={t.remotes}>
           <thead>
             <tr>
               <th scope="col">{t.name}</th>
@@ -453,30 +445,28 @@ export default function InspectorPage() {
               <th scope="col">{t.save}</th>
             </tr>
           </thead>
-          {!pending && (
-            <tbody>
-              {remotes.map((name) => (
-                <tr key={name}>
-                  <th scope="row">{name}</th>
-                  <td className="ds1-mono manifest">{remoteEntry(name)}</td>
-                  <td className="ds1-mono">{pings[name]?.version ?? '—'}</td>
-                  <td>
-                    <span className={`chip chip--${pings[name]?.status ?? 'idle'}`}>
-                      {pings[name] ? t[pings[name].status] : t.checking}
-                    </span>
-                  </td>
-                  <td>
-                    <VersionSelect name={name} />
-                  </td>
-                  <RegistryCells
-                    // A saved or reloaded row remounts the cells, so the inputs show what the server holds.
-                    key={`${registryRow(name)?.canaryUrl}|${registryRow(name)?.canaryPercent}`}
-                    name={name}
-                  />
-                </tr>
-              ))}
-            </tbody>
-          )}
+          <tbody>
+            {remotes.map((name) => (
+              <tr key={name}>
+                <th scope="row">{name}</th>
+                <td className="ds1-mono manifest">{remoteEntry(name)}</td>
+                <td className="ds1-mono">{pings[name]?.version ?? '—'}</td>
+                <td>
+                  <span className={`chip chip--${pings[name]?.status ?? 'idle'}`}>
+                    {pings[name] ? t[pings[name].status] : t.checking}
+                  </span>
+                </td>
+                <td>
+                  <VersionSelect name={name} />
+                </td>
+                <RegistryCells
+                  // A saved or reloaded row remounts the cells, so the inputs show what the server holds.
+                  key={`${registryRow(name)?.canaryUrl}|${registryRow(name)?.canaryPercent}`}
+                  name={name}
+                />
+              </tr>
+            ))}
+          </tbody>
         </Table>
         <p className="panel-body">
           {registryAvailable() === false ? t.registryUnavailable : t.registryHint}
