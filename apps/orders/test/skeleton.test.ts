@@ -41,7 +41,7 @@ describe('orders loading state', () => {
     expect(table.querySelectorAll('tbody tr')).toHaveLength(rows.length);
     expect(table.querySelector('.orders-skeleton')).not.toBeNull();
     expect(table.querySelector('caption')).not.toBeNull();
-    expect(root.querySelector('select')).not.toBeNull();
+    expect(root.querySelector('[role="combobox"]')).not.toBeNull();
     expect(root.querySelector('[role="status"]')?.textContent).toContain('Loading orders');
   });
 });

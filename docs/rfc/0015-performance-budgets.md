@@ -40,6 +40,10 @@ Budgets: LCP 2500 ms (the Google "good" threshold), CLS 0.1, time-to-remotes the
 
 **Raising a budget.** Edit `perf-budget.json` in the same PR as the change that needs it, with the reason and the new measurement in the PR text. A budget is never raised to make a red check pass without a reason.
 
+Budget log:
+
+- 2026-11-21, shell `cssGzip`: 7168 to 9216 (measured 7466). Reason: custom select + skeleton components in the design system.
+
 ## Alternatives considered
 
 | Option                 | Why not                                                                                                          |

@@ -3,6 +3,7 @@ import { createApp, h, reactive } from 'vue';
 import type { MountContext } from '../../../federation.contract.ts';
 import Orders from './Orders.vue';
 import css from './orders.css?raw';
+import selectCss from '@mfe/ui/select.css?raw';
 import './telemetry.ts';
 
 declare const __BUILD_VERSION__: string;
@@ -14,7 +15,7 @@ export const buildVersion: string = __BUILD_VERSION__;
 export function mount(el: HTMLElement, ctx: MountContext): () => void {
   const root = el.shadowRoot ?? el.attachShadow({ mode: 'open' });
   const style = document.createElement('style');
-  style.textContent = css;
+  style.textContent = selectCss + css;
   const container = document.createElement('div');
   container.className = 'orders';
   root.append(style, container);

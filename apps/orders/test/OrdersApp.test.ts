@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 // Q-orders-unit (Vue). ASSUMPTIONS (phase 2 adapts): apps/orders/src/OrdersApp.ts exports `mount` and `buildVersion`;
 // the vitest config gets the Vue plugin; listOrders (and listProducts for product names) come from @mfe/api-client and
-// are mocked here; the status filter is a labelled <select>; the empty and error states use role=status / role=alert.
+// are mocked here; the status filter is the custom DsSelect (T38: role=combobox trigger, role=option items); the empty and error states use role=status / role=alert.
 // The mocked rows carry both the plain API fields and product_name / total_cents, so a join in the API or a second
 // listProducts call both give the same table.
 import { emit } from '@mfe/events';
@@ -54,6 +54,11 @@ const onError = vi.fn();
 const root = () => host.shadowRoot!;
 // skeleton rows are aria-hidden and sit in the same tbody while loading: only real rows count
 const rows = () => root().querySelectorAll('table tbody tr:not([aria-hidden="true"])');
+// jsdom has no Popover API (T38 select): stub it
+Object.assign(HTMLElement.prototype, {
+  showPopover: HTMLElement.prototype.showPopover ?? (() => {}),
+  hidePopover: HTMLElement.prototype.hidePopover ?? (() => {}),
+});
 const start = (locale: 'de' | 'en' = 'en') => {
   unmount = mount(host, { locale, onError });
 };
@@ -102,27 +107,29 @@ describe('orders remote (Vue)', () => {
     expect(root().querySelectorAll('thead th[scope="col"]').length).toBeGreaterThanOrEqual(5);
     expect(rows()[0]!.querySelector('th[scope="row"]')?.textContent).toContain('11');
     expect(rows()[0]!.querySelector('time')?.getAttribute('datetime')).toMatch(/^2026-10-05/);
-    const select = root().querySelector('select')!;
-    const label = root().querySelector(`label[for="${select.id}"]`) ?? select.closest('label');
-    expect(select.getAttribute('aria-label') ?? label?.textContent).toBeTruthy();
-    expect(
-      [...select.options]
-        .map((o) => o.value)
-        .filter(Boolean)
-        .sort(),
-    ).toEqual(['new', 'paid', 'shipped']);
+    const select = root().querySelector('[role="combobox"]')!;
+    expect(root().querySelector('select')).toBeNull();
+    const labelledby = select.getAttribute('aria-labelledby');
+    const label = labelledby ? root().getElementById(labelledby) : null;
+    expect((select.getAttribute('aria-label') ?? label?.textContent)?.trim()).toBeTruthy();
+    select.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await vi.waitFor(() => expect(root().querySelectorAll('[role="option"]').length).toBe(4));
+    expect(root().querySelectorAll('[role="option"]')).toHaveLength(4); // all + new, paid, shipped
   });
 
   it('Q-orders-unit: the status filter changes the listOrders query', async () => {
     start();
     await ready();
     expect(lastQuery().status).toBeUndefined();
-    const select = root().querySelector('select')!;
-    select.value = 'shipped';
-    select.dispatchEvent(new Event('change', { bubbles: true }));
+    const pick = async (index: number) => {
+      root().querySelector<HTMLElement>('[role="combobox"]')!.click();
+      await vi.waitFor(() => expect(root().querySelectorAll('[role="option"]').length).toBe(4));
+      root().querySelectorAll<HTMLElement>('[role="option"]')[index]!.click();
+    };
+    // option order: all, new, paid, shipped (STATUSES order from the API contract)
+    await pick(3);
     await vi.waitFor(() => expect(lastQuery().status).toBe('shipped'));
-    select.value = '';
-    select.dispatchEvent(new Event('change', { bubbles: true }));
+    await pick(0);
     await vi.waitFor(() => expect(lastQuery().status).toBeUndefined());
   });
 

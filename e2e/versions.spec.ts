@@ -8,7 +8,9 @@ const dashboard = (page: Page) => page.locator('section[data-remote="dashboard"]
 // Token and version selection live in memory: after login, move only via nav links.
 async function pickVersion(page: Page, version: string): Promise<void> {
   await page.getByRole('link', { name: 'Inspector' }).click();
-  await page.getByLabel('products version').selectOption(version);
+  // T38: custom select (role=combobox / role=option); '' is the "dev" entry
+  await page.getByRole('combobox', { name: 'products version' }).click();
+  await page.getByRole('option', { name: version || 'dev', exact: true }).click();
   await page.getByRole('link', { name: 'Home' }).click();
 }
 

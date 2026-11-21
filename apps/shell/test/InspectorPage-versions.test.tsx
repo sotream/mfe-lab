@@ -28,10 +28,32 @@ const stubFetch = (index: () => Response | Promise<Response>) => {
   return fetch;
 };
 const mount = () => act(async () => void render(<InspectorPage />));
-const select = (name: string) => screen.getByLabelText(`${name} version`) as HTMLSelectElement;
-const optionLabels = (s: HTMLSelectElement) => Array.from(s.options).map((o) => o.textContent);
-const choose = (s: HTMLSelectElement, value: string) =>
-  act(async () => void fireEvent.change(s, { target: { value } }));
+// T38: the version control is the custom select (role=combobox / role=option), not a native <select>.
+// jsdom has no Popover API, so showPopover/hidePopover are stubbed.
+const proto = HTMLElement.prototype as unknown as Record<string, unknown>;
+proto.showPopover ??= vi.fn();
+proto.hidePopover ??= vi.fn();
+const select = (name: string) => screen.getByRole('combobox', { name: `${name} version` });
+// every select's listbox is always in the DOM (hidden when closed): scope to this trigger's own one
+const optionsOf = (s: HTMLElement) =>
+  Array.from(
+    document
+      .getElementById(s.getAttribute('aria-controls')!)!
+      .querySelectorAll<HTMLElement>('[role="option"]'),
+  );
+const optionLabels = async (s: HTMLElement) => {
+  await act(async () => void fireEvent.click(s));
+  const labels = optionsOf(s).map((o) => o.textContent?.trim());
+  await act(async () => void fireEvent.keyDown(s, { key: 'Escape' }));
+  return labels;
+};
+const choose = async (s: HTMLElement, label: string) => {
+  await act(async () => void fireEvent.click(s));
+  const opt = screen
+    .getAllByRole('option', { hidden: true })
+    .find((o) => o.textContent?.trim() === label);
+  await act(async () => void fireEvent.click(opt!));
+};
 const productsRow = () => screen.getByText('products').closest('tr') as HTMLElement;
 
 beforeEach(() => {
@@ -54,8 +76,7 @@ describe('InspectorPage versions', () => {
       }),
     ).toBeTruthy();
     const s = select('products');
-    expect(optionLabels(s)).toEqual(['dev', '1.0.0', '1.1.0']);
-    expect(s.options[0]?.value).toBe('');
+    expect(await optionLabels(s)).toEqual(['dev', '1.0.0', '1.1.0']);
     expect(
       fetch.mock.calls.some(([u, init]) => String(u) === P_INDEX && init?.cache === 'no-store'),
     ).toBe(true);
@@ -64,12 +85,12 @@ describe('InspectorPage versions', () => {
   it('Q-inspector-versions: failing or non-OK fetch gives dev only', async () => {
     stubFetch(() => Promise.reject(new Error('boom')) as unknown as Response);
     await mount();
-    expect(optionLabels(select('products'))).toEqual(['dev']);
+    expect(await optionLabels(select('products'))).toEqual(['dev']);
     cleanup();
     stubFetch(() => new Response('nope', { status: 404 }));
     await mount();
-    expect(optionLabels(select('products'))).toEqual(['dev']);
-    expect(optionLabels(select('dashboard'))).toEqual(['dev']);
+    expect(await optionLabels(select('products'))).toEqual(['dev']);
+    expect(await optionLabels(select('dashboard'))).toEqual(['dev']);
   });
 
   it('Q-inspector-versions: choosing a version updates Manifest and registers; dev resets', async () => {
@@ -84,7 +105,7 @@ describe('InspectorPage versions', () => {
       { force: true },
     );
 
-    await choose(select('products'), '');
+    await choose(select('products'), 'dev');
     expect(within(productsRow()).getByText(PRODUCTS)).toBeTruthy();
     expect(rt.registerRemotes).toHaveBeenLastCalledWith(
       [expect.objectContaining({ name: 'products', entry: PRODUCTS })],

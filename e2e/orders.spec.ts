@@ -47,15 +47,20 @@ test('E-orders: rows render inside the frame shadow root, the frame says :3003',
 test('E-orders: the status filter narrows the rows', async ({ page }) => {
   await login(page);
   await openOrders(page);
+  // T38: custom select inside the shadow root (role=combobox / role=option)
   const statuses = orders(page).getByRole('combobox');
-  await statuses.selectOption('shipped');
+  const choose = async (name: RegExp) => {
+    await statuses.click();
+    await orders(page).getByRole('option', { name }).click();
+  };
+  await choose(/^(shipped|versendet)$/i);
   await expect
     .poll(async () => {
       const cells = await orders(page).locator('tbody tr').allInnerTexts();
       return cells.length > 0 && cells.every((c) => /shipped|versendet/i.test(c));
     })
     .toBe(true);
-  await statuses.selectOption('new');
+  await choose(/^(new|neu)$/i);
   await expect
     .poll(async () => {
       const cells = await orders(page).locator('tbody tr').allInnerTexts();

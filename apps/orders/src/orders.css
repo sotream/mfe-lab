@@ -37,20 +37,6 @@
   color: var(--ds1-muted);
 }
 
-.orders-input {
-  height: 36px;
-  padding: 0 var(--ds1-space-sm);
-  border: 1px solid var(--ds1-control-edge);
-  border-radius: var(--ds1-radius);
-  background-color: var(--ds1-paper-3);
-  color: var(--ds1-ink);
-  font: inherit;
-}
-
-.orders-input:hover {
-  border-color: var(--ds1-muted);
-}
-
 .orders-button {
   height: 30px;
   padding: 0 var(--ds1-space-xs);

@@ -137,12 +137,21 @@ test('E-a11y: axe on /inspector as admin finds no serious or critical violations
     await expect(page.getByLabel(`${name} canary percent`)).toBeVisible();
     await expect(page.getByRole('checkbox', { name: `Switch ${name} off` })).toBeVisible();
   }
-  const { violations } = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
-    .analyze();
-  expect(
-    violations
+  const scan = async () => {
+    const { violations } = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+      .analyze();
+    return violations
       .filter((v) => v.impact === 'serious' || v.impact === 'critical')
-      .map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`),
-  ).toEqual([]);
+      .map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`);
+  };
+  expect(await scan()).toEqual([]);
+  // T38 E-a11y: the same with a custom select open (the popup is in the top layer)
+  const use = page.getByRole('combobox', { name: 'products version' });
+  await use.click();
+  await expect(use).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.getByRole('listbox')).toBeVisible();
+  expect(await scan()).toEqual([]);
+  await page.keyboard.press('Escape');
+  await expect(use).toHaveAttribute('aria-expanded', 'false');
 });

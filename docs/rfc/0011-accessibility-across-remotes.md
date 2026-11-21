@@ -54,6 +54,15 @@ A page built from independently deployed apps has no single author, so page-leve
 
 **Versions.** `@mfe/ui` 1.3.0 (additive): `Table` `label`, and the `h2` in the frame bar. `requiredVersion` stays `^1.0.0`. `@mfe/events` gets one event.
 
+### Select
+
+`@mfe/ui` has a `Select` (React) and orders has `DsSelect.vue`; both follow the WAI-ARIA APG select-only combobox: a `role=combobox` trigger, a `role=listbox` popup, focus kept on the trigger and `aria-activedescendant` pointing at the active option.
+
+- **Top layer.** The popup is `popover="manual"` and shown with `showPopover()`, positioned with fixed coordinates. In the top layer no `overflow: clip` panel or table scroll region can cut it off, and it works inside the orders shadow root. Where `showPopover` is missing (jsdom) the call is skipped and the popup keeps its fixed coordinates.
+- **One core.** Keyboard, type-ahead and placement live in `@mfe/ui/select-core`, with no framework import. React and Vue are thin layers on it, so they behave the same and orders still has no React.
+- **Why not Radix.** It is React-only, so orders would need a second library (Reka UI); products and dashboard sit near their size budgets; AGENTS.md says no UI library.
+- **CSS.** Consumers import `@mfe/ui/select.css` themselves (shell does; orders injects it into its shadow root). `@mfe/ui` is a shared chunk, so a CSS import inside `Select.tsx` would put the styles into every app and break the `cssGzip` budgets of apps that never use it.
+
 ## Alternatives considered
 
 | Option                                             | Why not                                                                       |
