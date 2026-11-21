@@ -9,7 +9,8 @@
     "seed": "node src/seed.ts",
     "seed:reset": "node src/seed.ts --reset",
     "typecheck": "tsc --noEmit -p .",
-    "migrate": "node src/db.ts"
+    "migrate": "node src/db.ts",
+    "build": "rolldown -c"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.17",
@@ -22,6 +23,10 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@types/pg": "^8.23.1"
+    "@types/pg": "^8.23.1",
+    "rolldown": "^1.2.19"
+  },
+  "engines": {
+    "node": "26.x"
   }
 }

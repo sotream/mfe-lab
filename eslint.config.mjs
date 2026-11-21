@@ -15,7 +15,7 @@ const frontend = [
 // One root flat config for the whole monorepo.
 export default defineConfig(
   {
-    ignores: ['**/dist/**', '**/coverage/**', '**/node_modules/**'],
+    ignores: ['apps/api/api/**', '**/dist/**', '**/coverage/**', '**/node_modules/**'],
   },
   js.configs.recommended,
   tseslint.configs.recommended,

@@ -44,6 +44,10 @@ Hosting the API on Vercel functions needs an external database, because function
 
 T29 in `docs/PLAN.md`, one PR. Neon and Vercel wiring follow in T30 and T31.
 
+## Hosting
+
+The API runs on Vercel as one Function against Neon (T30, `docs/deploy.md`). The entry is `apps/api/src/vercel.ts`, bundled by rolldown because Vercel does not run `.ts` import specifiers; PGlite stays a dynamic import so production never loads it. The `pg` pool is small (`max: 3`) since Neon pools on its side, and production never migrates at startup.
+
 ## Open questions
 
 - None.
