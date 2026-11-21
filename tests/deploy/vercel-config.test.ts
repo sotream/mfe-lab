@@ -6,6 +6,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { pathToRegexp } from 'path-to-regexp';
 import { afterAll, describe, expect, it } from 'vitest';
 
 const root = resolve(import.meta.dirname, '../..');
@@ -32,8 +33,9 @@ const url = (app: string): string => {
   return (typeof v === 'string' ? v : v!.url).replace(/\/$/, '');
 };
 
-// Vercel `source` is path-to-regexp; the patterns here are plain regex-compatible.
-export const matches = (source: string, path: string) => new RegExp(`^${source}$`).test(path);
+// Vercel compiles `source` with path-to-regexp 6.1.0 (pinned by @vercel/routing-utils); do the same.
+// A plain RegExp accepted a bare {16} that Vercel reads as a literal group.
+export const matches = (source: string, path: string) => pathToRegexp(source).test(path);
 const headersFor = (cfg: VercelJson, path: string) =>
   Object.fromEntries(
     (cfg.headers ?? [])
@@ -114,6 +116,24 @@ describe('vercel config', () => {
       expect(headersFor(c, '/index.html')['cache-control'] ?? '', `${app} index`).not.toMatch(
         /immutable/,
       );
+    }
+  });
+
+  it('Q-vercel-immutable: entry files never match the immutable rule; /api rewrite matches as in Vercel', () => {
+    for (const app of statics) {
+      const c = load(root, app);
+      const rules = (c.headers ?? []).filter((h) =>
+        h.headers.some((x) => /immutable/.test(x.value)),
+      );
+      expect(rules.length, app).toBeGreaterThan(0);
+      for (const p of ['/remoteEntry.js', '/mf-manifest.json', '/index.html']) {
+        expect(
+          rules.some((h) => matches(h.source, p)),
+          `${app} ${p}`,
+        ).toBe(false);
+      }
+      const api = (c.rewrites ?? []).find((r) => r.source === '/api/:path*')!;
+      expect(matches(api.source, '/api/products/1'), app).toBe(true);
     }
   });
 
