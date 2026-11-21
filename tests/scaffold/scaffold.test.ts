@@ -135,7 +135,7 @@ describe('scaffold', { timeout: 60_000 }, () => {
   });
 
   it('T-gitignore: secrets, db, deps and build output are ignored', () => {
-    for (const f of ['.env', 'apps/api/data/app.db', 'node_modules/x', 'dist/x']) {
+    for (const f of ['.env', 'apps/api/data/pg/PG_VERSION', 'node_modules/x', 'dist/x']) {
       expect(() => run('git', ['check-ignore', '-q', f]), f).not.toThrow();
     }
   });

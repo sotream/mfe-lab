@@ -50,7 +50,7 @@ describe('errors api', () => {
       { remote: 'products' },
     ])
       expect((await post(ctx, bad)).statusCode).toBe(400);
-    expect(count(ctx.app.db, 'errors')).toBe(0);
+    expect(await count(ctx.app.db, 'errors')).toBe(0);
   });
 
   it('Q-errors-api: text/plain bodies are rejected with 400 (clients send application/json)', async () => {
@@ -59,7 +59,7 @@ describe('errors api', () => {
       'content-type': 'text/plain;charset=UTF-8',
     });
     expect(res.statusCode).toBe(400);
-    expect(count(ctx.app.db, 'errors')).toBe(0);
+    expect(await count(ctx.app.db, 'errors')).toBe(0);
   });
 
   it('Q-errors-api: truncates message to 500 and stack to 4000', async () => {
@@ -123,16 +123,14 @@ describe('errors api', () => {
     expect((await call(ctx, { url: '/errors', as: null })).statusCode).toBe(401);
     expect((await call(ctx, { url: '/errors/summary', as: null })).statusCode).toBe(401);
     expect((await call(ctx, { method: 'DELETE', url: '/errors', as: null })).statusCode).toBe(401);
-    expect(count(ctx.app.db, 'errors')).toBe(1);
+    expect(await count(ctx.app.db, 'errors')).toBe(1);
   });
 
   it('Q-errors-api: retention keeps the newest 1000', async () => {
     const ctx = await freshApp();
     for (let i = 0; i < 1005; i++) await post(ctx, body({ message: `m${i}` }));
-    expect(count(ctx.app.db, 'errors')).toBe(1000);
-    const messages = ctx.app.db.prepare('SELECT message FROM errors').all() as {
-      message: string;
-    }[];
+    expect(await count(ctx.app.db, 'errors')).toBe(1000);
+    const messages = await ctx.app.db.query<{ message: string }>('SELECT message FROM errors');
     expect(messages.some((r) => r.message === 'm0')).toBe(false);
     expect(messages.some((r) => r.message === 'm1004')).toBe(true);
   }, 30_000);

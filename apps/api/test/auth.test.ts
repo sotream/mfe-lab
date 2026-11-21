@@ -38,7 +38,7 @@ const get = (url: string, authorization?: string) =>
 const bearer = (token: string) => `Bearer ${token}`;
 
 beforeEach(async () => {
-  app = await buildApp({ dbPath: ':memory:', jwtSecret: secret });
+  app = await buildApp({ dbUrl: 'pglite:memory', jwtSecret: secret });
   await seed(app.db);
   app.get('/t/admin-or-editor', { preHandler: app.requireRole('admin', 'editor') }, () => ({
     ok: true,
@@ -146,8 +146,8 @@ describe('auth', () => {
 
   it('Q-deleted-user: a token for a deleted user is unauthorized on /auth/me', async () => {
     const { token, user } = await tokenFor('viewer@lab.test');
-    app.db.prepare('DELETE FROM orders').run();
-    app.db.prepare('DELETE FROM users WHERE id = ?').run(user.id);
+    await app.db.query('DELETE FROM orders');
+    await app.db.query('DELETE FROM users WHERE id = $1', [user.id]);
     const res = await get('/auth/me', bearer(token));
     expect(res.statusCode).toBe(401);
     expect(res.json()).toEqual({ error: 'unauthorized' });

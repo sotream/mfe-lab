@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { call, freshApp, isIso, keysOf, orderKeys, setup, type Ctx } from './helpers.ts';
+import { call, freshApp, isIso, isoCol, keysOf, orderKeys, setup, type Ctx } from './helpers.ts';
 
 type Order = { id: number; product_id: number; qty: number; status: string; created_at: string };
 type Page = { items: Order[]; total: number; page: number; limit: number };
@@ -25,16 +25,16 @@ describe('orders', () => {
     expect(res.statusCode, res.body).toBe(200);
     const body = res.json<Page>();
     expect(body).toMatchObject({ total: 60, page: 1, limit: 20 });
-    const want = ctx.app.db
-      .prepare('SELECT * FROM orders ORDER BY created_at DESC, id DESC LIMIT 20')
-      .all() as Order[];
+    const want = await ctx.app.db.query<Order>(
+      `SELECT id, product_id, qty, status, ${isoCol()} FROM orders ORDER BY orders.created_at DESC, id DESC LIMIT 20`,
+    );
     expect(body.items).toEqual(want);
     for (const o of body.items) expect(keysOf(o)).toEqual(orderKeys);
 
     const paid = await call(ctx, { url: '/orders', as: 'viewer', query: { status: 'paid' } });
-    const { n } = ctx.app.db
-      .prepare("SELECT count(*) AS n FROM orders WHERE status = 'paid'")
-      .get() as { n: number };
+    const [{ n }] = (await ctx.app.db.query<{ n: number }>(
+      "SELECT count(*)::int AS n FROM orders WHERE status = 'paid'",
+    )) as [{ n: number }];
     expect(paid.json<Page>().total).toBe(n);
     expect(paid.json<Page>().items.every((o) => o.status === 'paid')).toBe(true);
 

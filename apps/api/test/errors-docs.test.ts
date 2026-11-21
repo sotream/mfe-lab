@@ -45,7 +45,7 @@ const routes: Call[] = [
   { url: '/stats' },
 ];
 
-const leaks = (body: string) => /sqlite|\bselect\b| at /i.test(body);
+const leaks = (body: string) => /sqlite|postgres|pglite|\bselect\b| at /i.test(body);
 
 describe('roles, errors and docs', () => {
   it('Q-roles: write matrix, 401 everywhere without token, 401 before 400', async () => {
@@ -85,9 +85,9 @@ describe('roles, errors and docs', () => {
       expect(keysOf(o)).toEqual(orderKeys);
     }
     const sku = product.json<{ sku: string }>().sku;
-    const { product_id: used } = ctx.app.db
-      .prepare('SELECT product_id FROM orders LIMIT 1')
-      .get() as { product_id: number };
+    const [{ product_id: used }] = (await ctx.app.db.query<{ product_id: number }>(
+      'SELECT product_id FROM orders LIMIT 1',
+    )) as [{ product_id: number }];
     const errors = [
       await call(ctx, { url: '/products/9999' }),
       await call(ctx, { url: '/products/abc' }),

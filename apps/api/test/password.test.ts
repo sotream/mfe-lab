@@ -7,12 +7,11 @@ const demo = 'lab12345'; // demo-only seed password, see README
 
 describe('password', () => {
   it('Q-pw: seeded hashes verify, use scrypt format, and are salted', async () => {
-    const db = freshDb();
+    const db = await freshDb();
     await seed(db);
-    const users = db.prepare('SELECT email, password_hash FROM users').all() as {
-      email: string;
-      password_hash: string;
-    }[];
+    const users = await db.query<{ email: string; password_hash: string }>(
+      'SELECT email, password_hash FROM users',
+    );
     expect(users).toHaveLength(3);
     for (const { email, password_hash: hash } of users) {
       expect(hash, email).toMatch(/^scrypt\$/);
