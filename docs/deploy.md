@@ -62,6 +62,7 @@ All three are type `sensitive` on the production and preview targets. The API fu
 - Neon: finds or creates the project `mfe-lab` (Postgres 17, `aws-eu-central-1`).
 - Vercel: finds or creates the four projects (`framework: null`, root dir `apps/<name>`, Node 26.x), then checks that each production domain is the `*.vercel.app` URL in `deploy/urls.json` and fails naming the actual domain if not.
 - API env vars as above. `DATABASE_URL` is a sensitive value that cannot be read back, so its comment holds a short hash of the URI; the script rewrites it only when the hash differs.
+- The Neon URI is stored with `sslmode=verify-full` (not `require`, which pg warns about); the first run after this change rewrites `DATABASE_URL` once.
 - The workflow then migrates and seeds Neon and checks that the database has 3 users. The pooled URI is fetched inside the job and masked with `::add-mask::`.
 
 The script logs only names, ids and created / exists / updated. Re-run it any time; a second run changes nothing.
