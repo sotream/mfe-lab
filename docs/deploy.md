@@ -43,7 +43,7 @@ The Swagger UI (`/docs`) is not served on Vercel: `@fastify/swagger-ui` pulls in
 | api     | `DATABASE_URL` | Neon pooled connection string (updated if it changes)          |
 | api     | `JWT_SECRET`   | random, 32 bytes, created once and never rotated by the script |
 | api     | `CRON_SECRET`  | random, 32 bytes, created once and never rotated by the script |
-| static  | none           | shell URLs are in `vercel.json` `build.env`                    |
+| static  | none           | shell URLs come from `deploy.yml` at build time                |
 
 All three are type `sensitive` on the production and preview targets. The API function runs in `fra1`, next to the database (`aws-eu-central-1`).
 

@@ -19,7 +19,7 @@ const de = {
   footer: { imprint: 'Impressum', privacy: 'Datenschutz' },
   home: {
     h1: 'Eine Seite, drei unabhängige Apps',
-    lead: 'Die Shell auf :3000 lädt Produkte und Dashboard zur Laufzeit. Jede App wird einzeln gebaut und ausgeliefert.',
+    lead: 'Die Shell lädt Produkte und Dashboard zur Laufzeit. Jede App wird einzeln gebaut und ausgeliefert.',
   },
   loginPage: {
     h1: 'Bei der Shell anmelden',
@@ -130,7 +130,7 @@ const en: typeof de = {
   footer: { imprint: 'Legal notice', privacy: 'Privacy' },
   home: {
     h1: 'One page, three independent apps',
-    lead: 'The shell on :3000 loads products and dashboard at runtime. Each is built and deployed on its own.',
+    lead: 'The shell loads products and dashboard at runtime. Each is built and deployed on its own.',
   },
   loginPage: {
     h1: 'Sign in to the shell',

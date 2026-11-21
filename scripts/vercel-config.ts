@@ -21,14 +21,6 @@ function staticApp(name: 'shell' | 'products' | 'dashboard') {
     installCommand: `pnpm install --frozen-lockfile --filter @mfe/${name}...`,
     buildCommand: 'pnpm build',
     outputDirectory: 'dist',
-    ...(name === 'shell' && {
-      build: {
-        env: {
-          MF_PRODUCTS_URL: `${urls.products}/mf-manifest.json`,
-          MF_DASHBOARD_URL: `${urls.dashboard}/mf-manifest.json`,
-        },
-      },
-    }),
     rewrites: [
       { source: '/api/:path*', destination: `${urls.api}/:path*` },
       { source: '/(.*)', destination: '/index.html' },
