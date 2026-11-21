@@ -93,6 +93,7 @@
   font-size: var(--ds1-text-sm);
   font-weight: 500;
   line-height: 1.6;
+  white-space: nowrap;
 }
 
 .chip--role {
