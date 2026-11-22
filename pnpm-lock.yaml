@@ -207,8 +207,8 @@ catalogs:
       specifier: ^9.3.1
       version: 9.3.1
     react-router:
-      specifier: ^8.5.1
-      version: 8.5.1
+      specifier: ^8.5.2
+      version: 8.5.2
     vue:
       specifier: 3.5.46
       version: 3.5.46
@@ -255,7 +255,7 @@ importers:
         version: 26.6.6
       '@vitejs/plugin-vue':
         specifier: 'catalog:'
-        version: 6.0.11(vite@8.3.8(@types/node@26.6.6)(jiti@2.4.2)(terser@5.51.4)(yaml@2.9.1))(vue@3.5.46(typescript@6.0.3))
+        version: 6.0.11(vite@8.3.8(@types/node@26.6.6)(jiti@2.4.2)(terser@5.51.2)(yaml@2.9.1))(vue@3.5.46(typescript@6.0.3))
       eslint:
         specifier: ^10.15
         version: 10.15.0(jiti@2.4.2)(supports-color@8.1.1)
@@ -291,10 +291,10 @@ importers:
         version: 8.73.0(eslint@10.15.0(jiti@2.4.2)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
       vite:
         specifier: ^8.3
-        version: 8.3.8(@types/node@26.6.6)(jiti@2.4.2)(terser@5.51.4)(yaml@2.9.1)
+        version: 8.3.8(@types/node@26.6.6)(jiti@2.4.2)(terser@5.51.2)(yaml@2.9.1)
       vitest:
         specifier: ^5.1
-        version: 5.1.0(@types/node@26.6.6)(jsdom@31.0.1)(vite@8.3.8(@types/node@26.6.6)(jiti@2.4.2)(terser@5.51.4)(yaml@2.9.1))
+        version: 5.1.0(@types/node@26.6.6)(jsdom@31.0.1)(vite@8.3.8(@types/node@26.6.6)(jiti@2.4.2)(terser@5.51.2)(yaml@2.9.1))
 
   apps/api:
     dependencies:
@@ -361,7 +361,7 @@ importers:
         version: 19.3.1(react@19.3.1)
       react-router:
         specifier: 'catalog:'
-        version: 8.5.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        version: 8.5.2(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
     devDependencies:
       '@types/react':
         specifier: 'catalog:'
@@ -432,7 +432,7 @@ importers:
         version: 9.3.1(@types/react@19.3.0)(react@19.3.1)(redux@5.0.1)
       react-router:
         specifier: 'catalog:'
-        version: 8.5.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        version: 8.5.2(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
     devDependencies:
       '@types/react':
         specifier: 'catalog:'
@@ -466,7 +466,7 @@ importers:
         version: 19.3.1(react@19.3.1)
       react-router:
         specifier: 'catalog:'
-        version: 8.5.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        version: 8.5.2(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
     devDependencies:
       '@types/react':
         specifier: 'catalog:'
@@ -2348,8 +2348,8 @@ packages:
   minimatch@3.1.5:
     resolution: {integrity: sha512-VgjWUsnnT6n+NUk6eZq77zeFdpW2LWDzP6zFGrCbHXiYNul5Dzqk2HHQ5uFH2DNW5Xbp8+jVzaeNt94ssEEl4w==}
 
-  minimizer-webpack-plugin@5.14.1:
-    resolution: {integrity: sha512-qsfTb5Ao4nre9krFweqj8k5bVU7KxgsP4WkLO/ITTuiJkbitCzYBY+Aum5KTKRhY0wDr8VJ1RILsTCSUtPd1kQ==}
+  minimizer-webpack-plugin@5.14.0:
+    resolution: {integrity: sha512-PnvQXCJxhgH2ZVVO7Lj0sM6q8L1XGxnUvd8wVQIRwi8khMCLq5wg0Ngxe44bcuZL2FSN81RdVE7YHEVzTKsQDQ==}
     engines: {node: '>= 10.13.0'}
     peerDependencies:
       '@minify-html/node': '*'
@@ -2634,8 +2634,8 @@ packages:
       redux:
         optional: true
 
-  react-router@8.5.1:
-    resolution: {integrity: sha512-5u1eQ46QjuXjNfEnLwzrnou1Bm5dquO3xjVYkkMYCudtkicD2AQHtx+fvXzPATtPJx8TW6DR1x1TDRqsfHyZBw==}
+  react-router@8.5.2:
+    resolution: {integrity: sha512-luPXqNUAIZAmCHbeBysc2KO7VJjckIMZk4ByEetS7Jotit8R6lLSVVeC76UE//AYK6QD6tAnVAPGkvmqMd+b1w==}
     engines: {node: '>=22.22.0'}
     peerDependencies:
       '@types/react': '>=19.2.0'
@@ -2877,8 +2877,8 @@ packages:
     resolution: {integrity: sha512-NHFiWnAbMJxNNpBwiO7jJVGDuqMxT9/oV8v57RR+fgBQShkJil5inGD8/xWy0hjLyHQyX1tu27QANhlz3KBqCg==}
     engines: {node: '>=6'}
 
-  terser@5.51.4:
-    resolution: {integrity: sha512-VPi1CkDvCWLGUVIToctNBG+NdHbSXwOPjHJnQ3pdB0XknaldnI76wSkAFOGxV2ZdkzOP5d6gpQ5c58XvDghRvw==}
+  terser@5.51.2:
+    resolution: {integrity: sha512-bWnjSNscmuI+GJze6ZupnHP8G/cTcsJF+bXCeQknk2SHQsgbNJnLrqiH9jZ2W4STPVXH2mDKKRX3iwPhc9Cn/Q==}
     engines: {node: '>=10'}
     hasBin: true
 
@@ -4008,20 +4008,20 @@ snapshots:
       '@typescript-eslint/types': 8.73.0
       eslint-visitor-keys: 5.0.1
 
-  '@vitejs/plugin-vue@6.0.11(vite@8.3.8(@types/node@26.6.6)(jiti@2.4.2)(terser@5.51.4)(yaml@2.9.1))(vue@3.5.46(typescript@6.0.3))':
+  '@vitejs/plugin-vue@6.0.11(vite@8.3.8(@types/node@26.6.6)(jiti@2.4.2)(terser@5.51.2)(yaml@2.9.1))(vue@3.5.46(typescript@6.0.3))':
     dependencies:
       '@rolldown/pluginutils': 1.1.1
-      vite: 8.3.8(@types/node@26.6.6)(jiti@2.4.2)(terser@5.51.4)(yaml@2.9.1)
+      vite: 8.3.8(@types/node@26.6.6)(jiti@2.4.2)(terser@5.51.2)(yaml@2.9.1)
       vue: 3.5.46(typescript@6.0.3)
 
-  '@vitest/mocker@5.1.0(vite@8.3.8(@types/node@26.6.6)(jiti@2.4.2)(terser@5.51.4)(yaml@2.9.1))':
+  '@vitest/mocker@5.1.0(vite@8.3.8(@types/node@26.6.6)(jiti@2.4.2)(terser@5.51.2)(yaml@2.9.1))':
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       '@vitest/spy': 5.1.0
       estree-walker: 3.0.3
       magic-string: 1.4.5
     optionalDependencies:
-      vite: 8.3.8(@types/node@26.6.6)(jiti@2.4.2)(terser@5.51.4)(yaml@2.9.1)
+      vite: 8.3.8(@types/node@26.6.6)(jiti@2.4.2)(terser@5.51.2)(yaml@2.9.1)
 
   '@vitest/spy@5.1.0': {}
 
@@ -5278,11 +5278,11 @@ snapshots:
     dependencies:
       brace-expansion: 1.1.22
 
-  minimizer-webpack-plugin@5.14.1(lightningcss@1.33.0)(postcss@8.5.33)(webpack@5.113.0(lightningcss@1.33.0)(postcss@8.5.33)):
+  minimizer-webpack-plugin@5.14.0(lightningcss@1.33.0)(postcss@8.5.33)(webpack@5.113.0(lightningcss@1.33.0)(postcss@8.5.33)):
     dependencies:
       jest-worker: 27.5.1
       schema-utils: 4.8.5(webpack@5.113.0(lightningcss@1.33.0)(postcss@8.5.33))
-      terser: 5.51.4
+      terser: 5.51.2
       webpack: 5.113.0(lightningcss@1.33.0)(postcss@8.5.33)
     optionalDependencies:
       lightningcss: 1.33.0
@@ -5503,7 +5503,7 @@ snapshots:
       '@types/react': 19.3.0
       redux: 5.0.1
 
-  react-router@8.5.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
+  react-router@8.5.2(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
     dependencies:
       '@remix-run/route-pattern': 0.22.1
       cookie-es: 3.1.1
@@ -5783,7 +5783,7 @@ snapshots:
 
   tapable@2.3.4: {}
 
-  terser@5.51.4:
+  terser@5.51.2:
     dependencies:
       '@jridgewell/source-map': 0.3.11
       acorn: 8.19.0
@@ -5905,7 +5905,7 @@ snapshots:
     dependencies:
       react: 19.3.1
 
-  vite@8.3.8(@types/node@26.6.6)(jiti@2.4.2)(terser@5.51.4)(yaml@2.9.1):
+  vite@8.3.8(@types/node@26.6.6)(jiti@2.4.2)(terser@5.51.2)(yaml@2.9.1):
     dependencies:
       lightningcss: 1.33.0
       picomatch: 4.0.7
@@ -5916,13 +5916,13 @@ snapshots:
       '@types/node': 26.6.6
       fsevents: 2.3.3
       jiti: 2.4.2
-      terser: 5.51.4
+      terser: 5.51.2
       yaml: 2.9.1
 
-  vitest@5.1.0(@types/node@26.6.6)(jsdom@31.0.1)(vite@8.3.8(@types/node@26.6.6)(jiti@2.4.2)(terser@5.51.4)(yaml@2.9.1)):
+  vitest@5.1.0(@types/node@26.6.6)(jsdom@31.0.1)(vite@8.3.8(@types/node@26.6.6)(jiti@2.4.2)(terser@5.51.2)(yaml@2.9.1)):
     dependencies:
       '@types/chai': 5.2.3
-      '@vitest/mocker': 5.1.0(vite@8.3.8(@types/node@26.6.6)(jiti@2.4.2)(terser@5.51.4)(yaml@2.9.1))
+      '@vitest/mocker': 5.1.0(vite@8.3.8(@types/node@26.6.6)(jiti@2.4.2)(terser@5.51.2)(yaml@2.9.1))
       chai: 6.3.0
       es-module-lexer: 2.3.2
       expect-type: 1.4.0
@@ -5933,7 +5933,7 @@ snapshots:
       tinybench: 6.2.3
       tinyexec: 1.3.1
       tinyglobby: 0.2.17
-      vite: 8.3.8(@types/node@26.6.6)(jiti@2.4.2)(terser@5.51.4)(yaml@2.9.1)
+      vite: 8.3.8(@types/node@26.6.6)(jiti@2.4.2)(terser@5.51.2)(yaml@2.9.1)
       why-is-node-running: 3.2.1
     optionalDependencies:
       '@types/node': 26.6.6
@@ -6005,7 +6005,7 @@ snapshots:
       events: 3.3.0
       graceful-fs: 4.2.12
       mime-db: 1.54.0
-      minimizer-webpack-plugin: 5.14.1(lightningcss@1.33.0)(postcss@8.5.33)(webpack@5.113.0(lightningcss@1.33.0)(postcss@8.5.33))
+      minimizer-webpack-plugin: 5.14.0(lightningcss@1.33.0)(postcss@8.5.33)(webpack@5.113.0(lightningcss@1.33.0)(postcss@8.5.33))
       schema-utils: 4.8.5(webpack@5.113.0(lightningcss@1.33.0)(postcss@8.5.33))
       tapable: 2.3.4
       watchpack: 2.6.4
