@@ -181,7 +181,7 @@ export async function registerAuth(app: FastifyInstance, opts: { jwtSecret?: str
   app.withTypeProvider<ZodTypeProvider>().post(
     '/auth/login',
     {
-      // Per IP, in memory per serverless instance (see guards.ts).
+      // Per IP, counted in Postgres across instances (see guards.ts).
       config: { rateLimit: { max: 10, timeWindow: '1 minute' } },
       schema: { tags: ['auth'], body: loginBody, security: [] },
     },

@@ -279,3 +279,8 @@ Nothing planned.
 
 - **Goal:** README, `docs/` and the RFCs say what the code does after the review fixes (T46 to T49).
 - **Done when:** the daily reset, `/orders` guard, three-remote prefetch, `buildVersion` exports, orders locale, `onRequest` auth, the 404 shape, login timing and the write upper bounds, `MF_ORDERS_URL`, the per-path CORS and CSP headers on Vercel against nginx, and an expand/contract rule for migrations are in `docs/`; RFCs 0005, 0009, 0010, 0015, 0016 and 0017 are corrected in place with dated update notes where a decision changed (vitals failing the deploy run, canary timeout); `AGENTS.md` and `docs/BRIEF.md` say the repo is public and has three remotes; Dependabot ignores `path-to-regexp` majors (pinned to 6.1.0 to match Vercel's `headers[].source` parser, see #56); the docs link test covers `docs/api.md`, `docs/deploy.md` and `docs/testing.md`; no code change.
+
+## T51 Shared rate-limit store
+
+- **Goal:** the rate limits hold across serverless instances instead of per warm instance.
+- **Done when:** `@fastify/rate-limit` uses a Postgres store (`rate_limits`, migration 006; one atomic upsert per request) with the same limits (login 10/min per IP, writes 60/min per user, `POST /errors` 30/min per IP); keys are hashed, never raw IPs; a failing store allows the request and logs a warning; expired rows are pruned on about 1% of calls; `RATE_LIMIT=off` is unchanged (ignored in production); no new dependency; `pnpm lint && pnpm typecheck && pnpm test` pass.

@@ -1,6 +1,8 @@
-import rateLimit from '@fastify/rate-limit';
+import rateLimit, { normalizeIP } from '@fastify/rate-limit';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { Role } from './auth.ts';
+import type { Db } from './db.ts';
+import { pgRateLimitStore } from './rate-limit-store.ts';
 
 // The public demo admin is read-only on the live site only. Previews, dev and tests stay unlocked
 // (VERCEL_ENV is "preview" there, unset locally). DEMO_LOCK=1 forces it on for local checks.
@@ -29,9 +31,8 @@ const demoGuard = async (request: FastifyRequest, reply: FastifyReply) => {
 const WRITE_METHODS = ['POST', 'PATCH', 'PUT', 'DELETE'];
 
 // Must be registered before the routes: onRoute only sees routes defined after it.
-// Limitation: rate-limit state is in memory per serverless instance, so the effective limit is
-// per warm instance, not global. Upgrade path: a shared store (Redis/Postgres) if that matters.
-export async function registerGuards(app: FastifyInstance) {
+// Rate-limit counters live in Postgres (rate-limit-store.ts), shared by every serverless instance.
+export async function registerGuards(app: FastifyInstance, db: Db, salt: string) {
   app.addHook('onRoute', (route) => {
     for (const method of [route.method].flat()) {
       const key = `${method} ${route.url}`;
@@ -42,11 +43,7 @@ export async function registerGuards(app: FastifyInstance) {
       if (WRITE_METHODS.includes(method) && !route.config?.rateLimit) {
         route.config = {
           ...route.config,
-          rateLimit: {
-            max: 60,
-            timeWindow: '1 minute',
-            keyGenerator: (r: FastifyRequest) => `u${r.user?.sub ?? r.ip}`,
-          },
+          rateLimit: { max: 60, timeWindow: '1 minute' },
         };
       }
     }
@@ -58,5 +55,14 @@ export async function registerGuards(app: FastifyInstance) {
     app.log.warn('RATE_LIMIT=off ignored in production');
   }
   // preHandler: runs after the route's authentication, so the key can be the user id.
-  await app.register(rateLimit, { global: false, hook: 'preHandler' });
+  await app.register(rateLimit, {
+    global: false,
+    hook: 'preHandler',
+    store: pgRateLimitStore(db, salt, app.log),
+    skipOnError: true, // DB hiccup: allow the request (the store logs a warning)
+    // One counter per route and caller, as the old per-route in-memory stores had. The user id
+    // when signed in (writes), else the IP (login, POST /errors).
+    keyGenerator: (r: FastifyRequest) =>
+      `${r.routeOptions.method} ${r.routeOptions.url} ${r.user?.sub ? `u${r.user.sub}` : normalizeIP(r.ip)}`,
+  });
 }
