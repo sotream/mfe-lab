@@ -46,6 +46,22 @@ describe('vitals helpers', () => {
   });
 });
 
+describe('T42 budget', () => {
+  it('Q-budget: perf-budget.json has vitals.clsHome and clsLogin are 0.02', () => {
+    const b = JSON.parse(read('perf-budget.json')) as { vitals: Record<string, number> };
+    expect(b.vitals.clsHome).toBe(0.02);
+    expect(b.vitals.clsLogin).toBe(0.02);
+  });
+
+  it('Q-budget: compare flags a clsHome median above 0.02 and passes one at or below it', () => {
+    const budgets = { lcpMs: 2500, clsLogin: 0.1, timeToRemotesMs: 700, clsHome: 0.02 };
+    const run = (clsHome: number) => ({ lcpMs: 1, clsLogin: 0, timeToRemotesMs: 1, clsHome });
+    const over = compare([run(0.03), run(0.03), run(0.03)], budgets);
+    expect(over.filter((r) => r.over).map((r) => r.metric)).toEqual(['clsHome']);
+    expect(compare([run(0), run(0.02), run(0.02)], budgets).some((r) => r.over)).toBe(false);
+  });
+});
+
 describe('workflows (perf)', () => {
   // Job block: from `  <name>:` to the next 2-space-indented key.
   const job = (t: string, name: string) =>

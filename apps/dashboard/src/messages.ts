@@ -2,6 +2,7 @@ import { useLocale } from '@mfe/ui';
 
 const de = {
   standalone: {
+    heading: 'Dashboard',
     title: 'Standalone-Entwicklung. Anmelden als',
     signedIn: (email: string, role: string) => `angemeldet als ${email} (${role})`,
     signedOut: 'nicht angemeldet',
@@ -29,6 +30,7 @@ const de = {
 
 const en: typeof de = {
   standalone: {
+    heading: 'Dashboard',
     title: 'Standalone dev. Sign in as',
     signedIn: (email, role) => `signed in as ${email} (${role})`,
     signedOut: 'not signed in',

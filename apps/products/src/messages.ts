@@ -35,6 +35,7 @@ const de = {
   detailTitle: (name: string) => `${name} – Produkte – mfe-lab`,
   vat: 'inkl. 19 % MwSt.',
   standalone: {
+    heading: 'Produkte',
     title: 'Standalone-Entwicklung. Anmelden als',
     signedIn: (email: string, role: string) => `angemeldet als ${email} (${role})`,
     signedOut: 'nicht angemeldet',
@@ -81,6 +82,7 @@ const en: typeof de = {
   detailTitle: (name) => `${name} – Products – mfe-lab`,
   vat: 'incl. 19% VAT',
   standalone: {
+    heading: 'Products',
     title: 'Standalone dev. Sign in as',
     signedIn: (email, role) => `signed in as ${email} (${role})`,
     signedOut: 'not signed in',

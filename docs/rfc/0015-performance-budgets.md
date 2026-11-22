@@ -43,6 +43,7 @@ Budgets: LCP 2500 ms (the Google "good" threshold), CLS 0.1, time-to-remotes the
 Budget log:
 
 - 2026-11-21, shell `cssGzip`: 7168 to 9216 (measured 7466). Reason: custom select + skeleton components in the design system.
+- 2026-11-22, `clsLogin` and `clsHome`: 0.1 to 0.02 (measured 0.000, p90 0.000, in the last three live vitals runs). Reason: CLS has been 0 since T37, so 0.1 hid regressions; 0.02 leaves headroom and still fails on a real shift.
 
 ## Alternatives considered
 
