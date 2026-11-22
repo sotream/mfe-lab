@@ -128,9 +128,17 @@
   transition: border-color var(--ds1-dur-micro) var(--ds1-ease-out);
 }
 
-.ds1-field input:hover,
-.ds1-input:hover {
+.ds1-field input:hover:not(:disabled),
+.ds1-input:hover:not(:disabled) {
   border-color: var(--ds1-muted);
+}
+
+.ds1-field input:disabled,
+.ds1-input:disabled {
+  border-color: var(--ds1-rule);
+  background-color: var(--ds1-paper-2);
+  color: var(--ds1-muted);
+  cursor: not-allowed;
 }
 
 .ds1-field input[aria-invalid='true'] {

@@ -1,7 +1,14 @@
 import { logout, type Role } from '@mfe/auth-store';
 import { useAuth } from '@mfe/auth-store/react';
 import { report } from '@mfe/telemetry';
-import { Button, RemoteFrame, useLocale, type Locale, type RemoteModule } from '@mfe/ui';
+import {
+  BuildStamp,
+  Button,
+  RemoteFrame,
+  useLocale,
+  type Locale,
+  type RemoteModule,
+} from '@mfe/ui';
 import { useEffect, useLayoutEffect, useRef, useSyncExternalStore } from 'react';
 import { createBrowserRouter, Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import { DatenschutzPage, ImpressumPage } from './LegalPages.tsx';
@@ -198,7 +205,10 @@ function Layout() {
       <LiveRegion />
       <footer className="container">
         <span>shell</span>
-        <span className="mono build">{`build ${__BUILD_VERSION__}`}</span>
+        <span className="mono build">
+          {`${t.build} `}
+          <BuildStamp v={__BUILD_VERSION__} />
+        </span>
         <span className="footer-links">
           <Link to="/impressum">{t.footer.imprint}</Link>
           <Link to="/datenschutz">{t.footer.privacy}</Link>

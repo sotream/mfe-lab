@@ -60,7 +60,8 @@ function HintTh({ label, hint }: { label: string; hint: string }) {
   return (
     <th scope="col" className="hint-th">
       {label}{' '}
-      <Tooltip tabStop role="img" aria-label={hint} className="hint" content={hint}>
+      {/* The name is the column; the hint reaches assistive tech once, through the tooltip's aria-describedby. */}
+      <Tooltip tabStop role="img" aria-label={label} className="hint" content={hint}>
         i
       </Tooltip>
     </th>
@@ -99,7 +100,10 @@ function VersionSelect({ name }: { name: RemoteName }) {
     <Select
       aria-label={t.versionOf(name)}
       value={value}
-      options={[{ value: '', label: 'dev' }, ...versions.map((v) => ({ value: v, label: v }))]}
+      options={[
+        { value: '', label: t.devOption },
+        ...versions.map((v) => ({ value: v, label: v })),
+      ]}
       onChange={(v) => setRemoteEntry(name, v ? releaseManifestUrl(name, v) : null)}
     />
   );
@@ -166,7 +170,7 @@ function DetailsDialog({
             {value}{' '}
             <Button
               className="ds1-button--sm"
-              aria-label={t.copyOf(label.toLowerCase())}
+              aria-label={t.copyOf(label)}
               onClick={() =>
                 void navigator.clipboard
                   .writeText(value)
@@ -433,7 +437,7 @@ function Flags({ flags, setFlags }: { flags: Flag[]; setFlags: Dispatch<SetState
                         onChange={(e) => void toggle(f.name, e.target.checked)}
                       />
                     </td>
-                    <td>{f.description}</td>
+                    <td>{t.flagDescriptions[f.name] ?? f.description}</td>
                   </tr>
                 ))}
               </tbody>
@@ -535,7 +539,9 @@ function Errors() {
                     <td>{e.remote}</td>
                     <td className="ds1-mono">{e.build}</td>
                     <td>
-                      <span className="chip chip--down">{e.kind}</span>
+                      <span className="chip chip--down">
+                        {(t.kinds as Record<string, string>)[e.kind] ?? e.kind}
+                      </span>
                     </td>
                     <td>{e.message}</td>
                   </tr>
@@ -558,7 +564,7 @@ export default function InspectorPage() {
   const entries = useSyncExternalStore(subscribeRemotes, () =>
     remotes.map((n) => remoteEntry(n)).join('|'),
   );
-  useSyncExternalStore(subscribeRemotes, registryVersion);
+  const registryState = useSyncExternalStore(subscribeRemotes, registryVersion);
   const [rows, setRows] = useState(readShared);
   const user = useAuth((s) => s.user);
   const [flags, setFlags] = useState<Flag[]>([]);
@@ -569,6 +575,11 @@ export default function InspectorPage() {
     const tick = () => {
       setRows(readShared());
       for (const name of remotes) {
+        // A remote the registry switched off is not fetched; it just reads "off".
+        if (describeRemote(name).shown === 'disabled') {
+          setPings((s) => ({ ...s, [name]: { status: 'off', version: null } }));
+          continue;
+        }
         void pingRemote(remoteEntry(name)).then(
           (p) => active && setPings((s) => ({ ...s, [name]: p })),
         );
@@ -580,7 +591,7 @@ export default function InspectorPage() {
       active = false;
       clearInterval(id);
     };
-  }, [entries]);
+  }, [entries, registryState]);
 
   // Until the first ping answers, status cells are unknown: show the tables as skeletons.
   const pending = Object.keys(pings).length === 0;

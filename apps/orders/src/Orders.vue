@@ -24,8 +24,8 @@ const status = ref<OrderStatus | ''>('');
 const page = ref(1);
 const orders = ref<Order[]>([]);
 const total = ref(0);
-// ponytail: GET /orders carries only product_id, so names and prices come from the first 100
-// products; an order for a later product shows "Product <id>" and no total. Join in the API if it matters.
+// Limitation: GET /orders carries only product_id, so names and prices come from the first 100
+// products; an order for a later product shows "Product <id>" and no total. Upgrade path: join in the API if it matters.
 const products = ref(new Map<number, Product>());
 const state = ref<'loading' | 'ready' | 'error'>('loading');
 const pages = computed(() => Math.max(1, Math.ceil(total.value / PAGE_SIZE)));
@@ -52,9 +52,10 @@ async function load() {
   }
 }
 
+// A filter change goes back to page 1: that is one fetch, by the page watcher, or by us if already on 1.
 watch(status, () => {
-  page.value = 1;
-  void load();
+  if (page.value !== 1) page.value = 1;
+  else void load();
 });
 watch(page, () => void load());
 

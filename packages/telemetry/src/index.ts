@@ -51,7 +51,8 @@ type Options = {
   remote: string;
   build: string;
   // A string: report only errors from that origin. null: catch-all for errors matching none of
-  // ignoreOrigins.
+  // ignoreOrigins. With a string, ignoreOrigins are other owners that win: a stack that also names
+  // one of them (a remote's error passing through shared shell frames) is theirs, not reported here.
   origin: string | null;
   ignoreOrigins?: string[];
 };
@@ -64,7 +65,8 @@ export function installGlobalHandlers(opts: Options): () => void {
 
   const handle = (message: string, filename: string, stack: string) => {
     const from = (o: string) => filename.startsWith(o) || stack.includes(o);
-    const mine = opts.origin === null ? !(opts.ignoreOrigins ?? []).some(from) : from(opts.origin);
+    const others = (opts.ignoreOrigins ?? []).some(from);
+    const mine = opts.origin === null ? !others : from(opts.origin) && !others;
     if (mine)
       report({
         remote: opts.remote,

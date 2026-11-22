@@ -453,11 +453,12 @@ export function ProductsContent({ base }: { base: string }) {
   const user = useAuth((s) => s.user);
   const canWrite = canWriteUser(user);
   const canDelete = canDestroy(user);
-  const [text, setText] = useState('');
   const dispatch = useAppDispatch();
   const editing = useAppSelector((s) => s.productsUi.editing);
   const deleting = useAppSelector((s) => s.productsUi.deleting);
   const { query, data, failed, reload } = useProductList();
+  // Seeded from the store so list -> detail -> Back keeps the search text (RFC 0007).
+  const [text, setText] = useState(query.q);
   const { create, update, remove } = useProductMutations();
   const toolbar = useRef<HTMLDivElement>(null);
   const deleted = useRef(false);

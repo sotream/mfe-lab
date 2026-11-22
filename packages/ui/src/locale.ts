@@ -16,10 +16,13 @@ export function detectLocale(): Locale {
   return navigator.languages.find((l) => l.toLowerCase().startsWith('de')) ? 'de' : 'en';
 }
 
-const fromLang = (): Locale => (document.documentElement.lang.startsWith('de') ? 'de' : 'en');
+export const currentLocale = (): Locale =>
+  document.documentElement.lang.startsWith('de') ? 'de' : 'en';
+
+const subscribeLocale = (cb: () => void) => on('locale:changed', cb);
 
 export function useLocale(): Locale {
-  return useSyncExternalStore((cb) => on('locale:changed', cb), fromLang);
+  return useSyncExternalStore(subscribeLocale, currentLocale);
 }
 
 const tag = (locale: Locale) => (locale === 'de' ? 'de-DE' : 'en-GB');

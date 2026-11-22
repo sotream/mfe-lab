@@ -52,7 +52,6 @@ const slice = createSlice({
 
 export const { setPage, setSort, setQuery, openNew, openEdit, openDelete, closeDialogs } =
   slice.actions;
-export const productsUiReducer = slice.reducer;
 
 export const makeStore = () => configureStore({ reducer: { productsUi: slice.reducer } });
 export type AppStore = ReturnType<typeof makeStore>;

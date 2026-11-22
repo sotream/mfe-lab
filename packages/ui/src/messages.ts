@@ -3,6 +3,7 @@ import { useLocale } from './locale.ts';
 const de = {
   unavailable: (name: string) => `${name} ist nicht verfügbar`,
   retry: 'Erneut versuchen',
+  build: 'Build',
   loading: (name: string) => `${name} wird geladen…`,
   remote: (name: string) => `${name}-Remote`,
 };
@@ -10,6 +11,7 @@ const de = {
 const en: typeof de = {
   unavailable: (name) => `${name} is unavailable`,
   retry: 'Retry',
+  build: 'build',
   loading: (name) => `Loading ${name}…`,
   remote: (name) => `${name} remote`,
 };

@@ -29,8 +29,8 @@ const demoGuard = async (request: FastifyRequest, reply: FastifyReply) => {
 const WRITE_METHODS = ['POST', 'PATCH', 'PUT', 'DELETE'];
 
 // Must be registered before the routes: onRoute only sees routes defined after it.
-// ponytail: rate-limit state is in memory per serverless instance, so the effective limit is
-// per warm instance, not global. Move to a shared store (Redis/Postgres) if that matters.
+// Limitation: rate-limit state is in memory per serverless instance, so the effective limit is
+// per warm instance, not global. Upgrade path: a shared store (Redis/Postgres) if that matters.
 export async function registerGuards(app: FastifyInstance) {
   app.addHook('onRoute', (route) => {
     for (const method of [route.method].flat()) {

@@ -49,12 +49,13 @@ export function BuildStamp({ v }: { v: string }) {
 }
 
 function Remote({ promise }: { promise: Promise<RemoteModule> }) {
+  const t = useT();
   const { default: Page, buildVersion } = use(promise);
   return (
     <>
       {buildVersion && (
         <span className="remote-frame-build">
-          {'build '}
+          {`${t.build} `}
           <BuildStamp v={buildVersion} />
         </span>
       )}
@@ -81,6 +82,8 @@ class Boundary extends Component<
     return this.state.failed ? this.props.fallback : this.props.children;
   }
 }
+
+const focusRetry = (el: HTMLElement | null) => el?.querySelector('button')?.focus();
 
 // Not React.lazy: it caches a rejection forever. Here Retry calls load() again.
 export function RemoteFrame({ name, origin, originTitle, port, load, report, fallback }: Props) {
@@ -121,9 +124,8 @@ export function RemoteFrame({ name, origin, originTitle, port, load, report, fal
             role="alert"
             className="remote-frame-error"
             // After a failed Retry the boundary remounts this fallback: put focus back on Retry, not body.
-            ref={(el) => {
-              if (attempt > 0) el?.querySelector('button')?.focus();
-            }}
+            // Only when the error first appears: a stable ref callback does not run again on re-renders.
+            ref={focusRetry}
           >
             <p>{t.unavailable(name)}</p>
             <Button onClick={retry}>{t.retry}</Button>

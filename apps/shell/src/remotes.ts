@@ -1,5 +1,6 @@
 import { getRegistry, type RegistryRow } from '@mfe/api-client';
-import { getState } from '@mfe/auth-store';
+import { getState, subscribe } from '@mfe/auth-store';
+import { report } from '@mfe/telemetry';
 import {
   loadRemote,
   preloadRemote,
@@ -63,13 +64,18 @@ const registered = new Map<RemoteName, string>(
 );
 
 const REGISTRY_TIMEOUT_MS = 2000;
+// A canary that has not loaded by then counts as failed (stable has a skeleton and Retry instead).
+const CANARY_TIMEOUT_MS = 5000;
+// load() waits for the idle prefetch at most this long.
+const PREFETCH_WAIT_MS = 1000;
+
+const timeout = (ms: number, what: string) =>
+  new Promise<never>((_, reject) => setTimeout(() => reject(new Error(what)), ms));
 
 export function ensureRegistry(): Promise<void> {
   registryRequest ??= Promise.race([
     getRegistry(),
-    new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('registry timeout')), REGISTRY_TIMEOUT_MS),
-    ),
+    timeout(REGISTRY_TIMEOUT_MS, 'registry timeout'),
   ]).then(
     (rows) => {
       registry.clear();
@@ -166,20 +172,39 @@ export class RemoteDisabledError extends Error {}
 async function load<M>(name: RemoteName, module: string): Promise<M> {
   await ensureRegistry();
   const { shown, entry } = describeRemote(name);
-  if (shown === 'disabled' && !selected.has(name)) throw new RemoteDisabledError(name);
+  if (shown === 'disabled') throw new RemoteDisabledError(name);
   // The runtime caches a failed manifest/entry fetch, so after a failure re-register the
   // remote with force: that drops the cached state and the next loadRemote refetches.
   if (failed.has(name) || registered.get(name) !== entry) {
     // A preload still in flight would write the old manifest back over the new registration.
-    await prefetching;
+    await Promise.race([prefetching, timeout(PREFETCH_WAIT_MS, 'prefetch wait')]).catch(() => {});
     register(name, entry);
   }
+  const canary = shown === 'canary';
   try {
-    const mod = await loadRemote<M>(`${name}/${module}`);
+    const request = loadRemote<M>(`${name}/${module}`);
+    const mod = await (canary
+      ? Promise.race([request, timeout(CANARY_TIMEOUT_MS, 'canary timeout')])
+      : request);
     if (!mod) throw new Error(`${name} returned no module`);
     failed.delete(name);
     return mod;
   } catch (err) {
+    // A canary that hangs never reaches the plugin, so fall back here, with the same report.
+    if (
+      canary &&
+      err instanceof Error &&
+      err.message === 'canary timeout' &&
+      fallBackToStable(name)
+    ) {
+      report({
+        remote: name,
+        build: 'canary',
+        kind: 'load',
+        message: 'canary failed, fell back to stable: timed out after 5 s',
+      });
+      return load<M>(name, module);
+    }
     failed.add(name);
     throw err;
   }
@@ -198,30 +223,49 @@ export const loadMount = <R extends RemoteOfKind<'mount'>>(
 ): Promise<MountModule> => load<MountModule>(name, module);
 
 let prefetching: Promise<void> | undefined;
+// The entry each remote was last warmed from.
+const warmed = new Map<RemoteName, string>();
 
-// Warm the browser cache with every enabled remote (manifest, entry, expose chunks incl. async) once per
-// page load, from the entry it resolves to now. Disabled remotes are skipped (RFC 0017).
-export function prefetchRemotes(): Promise<void> {
-  prefetching ??= (async () => {
-    await ensureRegistry();
-    const names = (Object.keys(entries) as RemoteName[]).filter(
-      (n) => describeRemote(n).shown !== 'disabled',
+// Warm the browser cache (manifest, entry, expose chunks incl. async) of every enabled remote from the
+// entry it resolves to now: canary or stable per the registry and the user's bucket. Disabled remotes
+// are skipped (RFC 0017); a remote already warmed from the same entry is skipped too.
+async function warm(): Promise<void> {
+  await ensureRegistry();
+  const todo = (Object.keys(entries) as RemoteName[]).filter((n) => {
+    const { shown, entry } = describeRemote(n);
+    return shown !== 'disabled' && warmed.get(n) !== entry;
+  });
+  if (todo.length === 0) return;
+  for (const n of todo) {
+    const { entry } = describeRemote(n);
+    warmed.set(n, entry);
+    if (registered.get(n) !== entry) register(n, entry);
+  }
+  try {
+    await preloadRemote(
+      todo.map((name) => ({
+        nameOrAlias: name,
+        exposes: [`./${entries[name].module}`],
+        resourceCategory: 'all' as const,
+      })),
     );
-    for (const n of names) {
-      const { entry } = describeRemote(n);
-      if (registered.get(n) !== entry) register(n, entry);
-    }
-    try {
-      await preloadRemote(
-        names.map((name) => ({
-          nameOrAlias: name,
-          exposes: [`./${entries[name].module}`],
-          resourceCategory: 'all' as const,
-        })),
-      );
-    } catch (err) {
-      console.warn('prefetchRemotes failed', err);
-    }
-  })();
+  } catch (err) {
+    console.warn('prefetchRemotes failed', err);
+  }
+}
+
+// Once per page load, at idle. The user is usually anonymous then, so it warms stable; a later sign-in
+// warms the canary entries that user resolves to.
+export function prefetchRemotes(): Promise<void> {
+  prefetching ??= warm();
   return prefetching;
 }
+
+let warmedFor: number | undefined;
+subscribe(() => {
+  const id = getState().user?.id;
+  if (prefetching && id !== undefined && id !== warmedFor) {
+    warmedFor = id;
+    prefetching = prefetching.then(warm);
+  }
+});

@@ -14,8 +14,8 @@ const product = z.object({
 const fields = z.object({
   sku: z.string().min(1).max(32),
   name: z.string().min(1).max(120),
-  price_cents: z.number().int().min(0),
-  stock: z.number().int().min(0),
+  price_cents: z.number().int().min(0).max(100_000_000),
+  stock: z.number().int().min(0).max(1_000_000),
 });
 
 const SORTS = ['id', 'sku', 'name', 'price_cents', 'stock', 'created_at'] as const;
@@ -115,12 +115,11 @@ export const productRoutes: FastifyPluginAsyncZod = async (app) => {
       const data = request.body;
       const keys = Object.keys(data);
       const set = keys.map((k, i) => `${k} = $${i + 1}`).join(', ');
-      const hit = await app.db.query(
-        `update products set ${set} where id = $${keys.length + 1} returning id`,
+      const [row] = await app.db.query<z.infer<typeof product>>(
+        `update products set ${set} where id = $${keys.length + 1} returning ${COLUMNS}`,
         [...Object.values(data), request.params.id],
       );
-      if (hit.length === 0) return reply.code(404).send({ error: 'not_found' });
-      return (await get(request.params.id))!;
+      return row ?? reply.code(404).send({ error: 'not_found' });
     },
   );
 

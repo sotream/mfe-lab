@@ -18,7 +18,7 @@ export const statsRoutes: FastifyPluginAsyncZod = async (app) => {
     async () => {
       const one = async (sql: string) => (await app.db.query<{ n: number }>(sql))[0]!.n;
       const revenue = await app.db.query<{ status: 'new' | 'paid' | 'shipped'; revenue: number }>(
-        `select o.status, coalesce(sum(o.qty * p.price_cents), 0) as revenue
+        `select o.status, coalesce(sum(o.qty::bigint * p.price_cents), 0) as revenue
          from orders o join products p on p.id = o.product_id group by o.status`,
       );
       const revenue_by_status = { new: 0, paid: 0, shipped: 0 };
