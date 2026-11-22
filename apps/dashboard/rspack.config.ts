@@ -24,6 +24,20 @@ export default defineConfig({
   },
   resolve: { extensions: ['.ts', '.tsx', '.js'] },
   experiments: { css: true },
+  // @mfe/ui's CSS (tokens, ds1, frame) came out twice, once per chunk group (provided shared module and
+  // consumer): one named chunk. base.css stays out; the standalone bootstrap keeps it.
+  optimization: {
+    splitChunks: {
+      cacheGroups: {
+        uiCss: {
+          test: /packages\/ui\/src\/(?!base\.css).*\.css$/,
+          name: 'ui-css',
+          chunks: 'all',
+          enforce: true,
+        },
+      },
+    },
+  },
   module: {
     rules: [
       {

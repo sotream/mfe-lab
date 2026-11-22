@@ -284,3 +284,8 @@ Nothing planned.
 
 - **Goal:** the rate limits hold across serverless instances instead of per warm instance.
 - **Done when:** `@fastify/rate-limit` uses a Postgres store (`rate_limits`, migration 006; one atomic upsert per request) with the same limits (login 10/min per IP, writes 60/min per user, `POST /errors` 30/min per IP); keys are hashed, never raw IPs; a failing store allows the request and logs a warning; expired rows are pruned on about 1% of calls; `RATE_LIMIT=off` is unchanged (ignored in production); no new dependency; `pnpm lint && pnpm typecheck && pnpm test` pass.
+
+## T52 Dashboard CSS headroom
+
+- **Goal:** `dashboard.cssGzip` back under 90% of its budget without raising it and without a visual change.
+- **Done when:** the dashboard build emits the `@mfe/ui` styles (tokens, ds1, frame) once, not once per chunk group, so `dashboard.cssGzip` is at most 6451 bytes (budget 7168 unchanged); before and after screenshots of the dashboard standalone and inside the shell at `/dashboard` (EN and DE, 1440 and 390) are pixel-identical apart from the build stamp text; `pnpm lint && pnpm typecheck && pnpm test` pass; no new dependency.
