@@ -47,7 +47,7 @@ Checked by building: `apps/orders/dist` has no `react-dom`, no `react/jsx-runtim
 
 ### Shadow DOM inside `mount`
 
-`OrdersApp.mount` attaches an open shadow root to `el`, appends a `<style>` with the component CSS (imported as text with `?raw`) and a container, and mounts the Vue app into the container. Nothing is added to `document.head`.
+`OrdersApp.mount` attaches an open shadow root to `el`, appends a `<style>` with the component CSS (`orders.css` and `@mfe/ui/select.css`, both imported as text with `?raw`) and a container, and mounts the Vue app into the container. Nothing is added to `document.head`.
 
 | Crosses the boundary                                    | Does not                                           |
 | ------------------------------------------------------- | -------------------------------------------------- |
@@ -87,3 +87,7 @@ T35 in `docs/PLAN.md`: auth-store split, the `orders` remote with its wiring (de
 ## Open questions
 
 - Should `mount` get a `update(ctx)` for props other than locale? Not until a second field changes at runtime.
+
+## Update (2026-11-22)
+
+The global CSS does not reach `orders` at all (Shadow DOM), so it ships its own styles and nothing in the shell's or `@mfe/ui`'s global rules applies to it. The React remotes are the other way round: they sit in the page's light DOM and are protected only by the prefix rule above, so a bare global rule leaks into them. One did: the shell had a bare `[role='alert']` rule that styled every alert on the page, remotes' included. T49 scoped it to the shell's own containers (`.login`, `.panel-body`, `.remote-frame-error`, `.details-dialog`).

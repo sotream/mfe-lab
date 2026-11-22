@@ -56,3 +56,7 @@ Ship B. `prefetchRemotes()` in `apps/shell/src/remotes.ts` runs once per page lo
 - The gain is measured on localhost with emulated throttling, and the Fast 4G margin over the 30% threshold is thin (31.5%).
 - Click within the first moments after load, before idle, gets no benefit; it behaves like A.
 - A version chosen in the inspector after the prefetch is not prefetched; that load behaves like A.
+
+## Update (2026-11-22)
+
+This RFC was written for two remotes. Today the idle prefetch covers every enabled remote (`orders` too), skips switched-off ones and warms the entry the signed-in user resolves to (canary or stable), and a sign-in re-warms it. See [RFC 0017](0017-remote-registry-canary-and-kill-switch.md).

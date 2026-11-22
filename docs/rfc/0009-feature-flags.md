@@ -21,7 +21,7 @@ Turning a feature on or off should not need a rebuild or a new remote release. T
 
 ## Proposal
 
-**API.** Migration `002_flags.sql` creates `flags(name, enabled, description)` and seeds three flags with `INSERT OR IGNORE`: `dashboard.revenue` (on), `products.detailPage` (on), `products.crash` (off). `GET /flags` (any signed-in user) returns `{ name, enabled, description }[]` sorted by name. `PATCH /flags/:name` with `{ enabled: boolean }` is admin only: `403 forbidden`, `404 not_found` for an unknown name, `400 invalid_body` for a bad body.
+**API.** Migration `002_flags.sql` creates `flags(name, enabled, description)` and seeds three flags with `ON CONFLICT DO NOTHING`: `dashboard.revenue` (on), `products.detailPage` (on), `products.crash` (off). `GET /flags` (any signed-in user) returns `{ name, enabled, description }[]` sorted by name. `PATCH /flags/:name` with `{ enabled: boolean }` is admin only: `403 forbidden`, `404 not_found` for an unknown name, `400 invalid_body` for a bad body.
 
 **Client.** `@mfe/api-client` has `listFlags()` and `setFlag(name, enabled)`.
 

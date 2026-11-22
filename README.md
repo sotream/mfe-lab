@@ -26,7 +26,7 @@
   <a href="#quick-start"><b>Quick start</b></a>
 </p>
 
-**Live demo: <https://mfe-lab.vercel.app>**. Log in with the demo accounts from [Quick start](#quick-start). Data resets daily at 03:00 UTC. The database is on a free tier, so the first request may take a second to wake it.
+**Live demo: <https://mfe-lab.vercel.app>**. Log in with the demo accounts from [Quick start](#quick-start). A daily reset at 03:00 UTC puts back the products, orders and demo users, the remote registry (no canary, all remotes on), the feature flags and the error log. The database is on a free tier, so the first request may take a second to wake it.
 
 One shell loads three independently built and deployed remotes (two React, one Vue 3.5) **at runtime** with Module Federation 2, on top of a small Fastify + Postgres API.
 
@@ -135,7 +135,7 @@ packages/        auth-store, api-client, events, ui, telemetry
 | 0002 | [Sharing auth state](docs/rfc/0002-sharing-auth-state.md)                                                     | The shell owns login; remotes read user and token from the `@mfe/auth-store` singleton; the token stays in memory.                                   |
 | 0003 | [Native Federation comparison](docs/rfc/0003-native-federation-comparison.md)                                 | Stay on Module Federation 2; Native Federation would replace working code for little gain.                                                           |
 | 0004 | [Versioned remotes](docs/rfc/0004-versioned-remotes.md)                                                       | Freeze a remote into a static release; the shell switches versions by changing only the manifest URL.                                                |
-| 0005 | [Prefetch remotes on idle](docs/rfc/0005-prefetch-remotes.md)                                                 | After first render the shell preloads both remotes on idle; measured 1201 to 823 ms on Fast 4G.                                                      |
+| 0005 | [Prefetch remotes on idle](docs/rfc/0005-prefetch-remotes.md)                                                 | After first render the shell preloads the remotes on idle; measured 1201 to 823 ms on Fast 4G.                                                       |
 | 0006 | [Data between remotes](docs/rfc/0006-data-between-remotes.md)                                                 | One TanStack Query client per remote, Redux Toolkit local to products, typed `window` events between remotes; nothing shared.                        |
 | 0007 | [Routing inside remotes](docs/rfc/0007-routing-inside-remotes.md)                                             | The shell mounts a remote at `<name>/*`; the remote owns the subtree with relative links, on the shared router.                                      |
 | 0008 | [Design system versioning](docs/rfc/0008-design-system-versioning.md)                                         | `@mfe/ui` is a non-singleton semver share; CSS carries a major prefix (`ds1-`), so two versions can coexist.                                         |
