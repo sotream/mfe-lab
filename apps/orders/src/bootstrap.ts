@@ -22,10 +22,12 @@ const t = messages[locale].standalone;
 
 const bar = document.createElement('div');
 bar.className = 'orders-standalone-bar';
+const h1 = document.createElement('h1');
+h1.textContent = t.heading;
 const title = document.createElement('span');
 title.className = 'orders-standalone-title';
 title.textContent = t.title;
-bar.append(title);
+bar.append(h1, title);
 for (const role of ['admin', 'editor', 'viewer']) {
   const button = document.createElement('button');
   button.type = 'button';

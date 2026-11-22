@@ -23,6 +23,7 @@ const de = {
   total: (n: number) => `${n} Bestellungen`,
   unknownProduct: (id: number) => `Produkt ${id}`,
   standalone: {
+    heading: 'Bestellungen',
     title: 'Standalone-Entwicklung. Anmelden als',
     signedIn: (email: string, role: string) => `angemeldet als ${email} (${role})`,
     signedOut: 'nicht angemeldet',
@@ -52,6 +53,7 @@ const en: typeof de = {
   total: (n) => `${n} orders`,
   unknownProduct: (id) => `Product ${id}`,
   standalone: {
+    heading: 'Orders',
     title: 'Standalone dev. Sign in as',
     signedIn: (email, role) => `signed in as ${email} (${role})`,
     signedOut: 'not signed in',

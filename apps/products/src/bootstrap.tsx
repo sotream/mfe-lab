@@ -17,6 +17,7 @@ function StandaloneBar() {
   const t = useT().standalone;
   return (
     <div className="products-standalone-bar">
+      <h1>{t.heading}</h1>
       <span className="products-standalone-title">{t.title}</span>
       {ROLES.map((role) => (
         <Button

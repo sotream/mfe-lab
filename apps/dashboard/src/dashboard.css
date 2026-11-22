@@ -153,6 +153,13 @@
   font-size: var(--ds1-text-sm);
 }
 
+.dashboard-standalone-bar h1 {
+  margin: 0;
+  color: var(--ds1-ink);
+  font: inherit;
+  font-weight: 600;
+}
+
 .dashboard-standalone-title {
   color: var(--ds1-ink);
   font-weight: 500;
