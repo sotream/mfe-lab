@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { BlockList, isIP } from 'node:net';
 import { isDemo } from './guards.ts';
 import { hashPassword, verifyPassword } from './password.ts';
+import { upsertEnvAccount } from './seed.ts';
 import { verifyTotp } from './totp.ts';
 
 // 'superadmin' is the owner account: seeded from env only, needs a TOTP code, passes every
@@ -187,6 +188,8 @@ export async function registerAuth(app: FastifyInstance, opts: { jwtSecret?: str
     },
     async (request, reply) => {
       const invalid = () => reply.code(401).send({ error: 'invalid_credentials' });
+      // Env-provisioned account: make sure its row exists and matches env, only for its own email.
+      await upsertEnvAccount(app.db, request.body.email);
       const [user] = await app.db.query<UserRow>(
         'select id, email, password_hash, role, locked_until from users where lower(email) = lower($1)',
         [request.body.email],

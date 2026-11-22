@@ -72,6 +72,20 @@ export async function buildApp(opts: {
     const given = Buffer.from(request.headers.authorization ?? '');
     const want = Buffer.from(`Bearer ${secret}`);
     if (given.length !== want.length || !timingSafeEqual(given, want)) {
+      // Lengths and presence only, never any part of either secret.
+      const ua = request.headers['user-agent'];
+      app.log.warn(
+        {
+          hasHeader: Boolean(request.headers.authorization),
+          startsWithBearer: (request.headers.authorization ?? '').startsWith('Bearer '),
+          givenLength: given.length,
+          expectedLength: want.length,
+          userAgent: typeof ua === 'string' ? ua.slice(0, 60) : undefined,
+          hasVercelCronSchedule: 'x-vercel-cron-schedule' in request.headers,
+          hasVercelCron: 'x-vercel-cron' in request.headers,
+        },
+        'cron reseed unauthorized',
+      );
       return reply.code(401).send({ error: 'unauthorized' });
     }
     const { users, products, orders } = await seed(db, { reset: true });
