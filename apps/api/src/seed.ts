@@ -8,6 +8,12 @@ const USERS = [
   { email: 'editor@lab.test', role: 'editor' },
   { email: 'viewer@lab.test', role: 'viewer' },
 ] as const;
+// Flag defaults, as in migration 002; a reseed puts every flag back to these.
+const FLAG_DEFAULTS = {
+  'dashboard.revenue': true,
+  'products.detailPage': true,
+  'products.crash': false,
+} as const;
 const STATUSES = ['new', 'paid', 'shipped'] as const;
 const NAMES = [
   'Drucksensor',
@@ -83,12 +89,31 @@ export async function seed(db: Db, opts: { reset?: boolean } = {}): Promise<Seed
 
   await db.tx(async (t) => {
     await t.exec('truncate orders, products, users restart identity cascade');
+    // Visitors toggle flags and report errors; the daily reset clears both.
+    await t.exec('truncate errors');
+    for (const [name, enabled] of Object.entries(FLAG_DEFAULTS)) {
+      await t.query('update flags set enabled = $1 where name = $2', [enabled, name]);
+    }
 
     for (const [i, u] of USERS.entries()) {
       await t.query('insert into users (email, password_hash, role) values ($1, $2, $3)', [
         u.email,
         hashes[i],
         u.role,
+      ]);
+    }
+
+    // The owner account lives in env only: all three set means it is (re)created, otherwise it does not exist.
+    const {
+      SUPERADMIN_EMAIL: email,
+      SUPERADMIN_PASSWORD_HASH: hash,
+      SUPERADMIN_TOTP_SECRET: totp,
+    } = process.env;
+    if (email && hash && totp) {
+      await t.query('insert into users (email, password_hash, role) values (lower($1), $2, $3)', [
+        email,
+        hash,
+        'superadmin',
       ]);
     }
 

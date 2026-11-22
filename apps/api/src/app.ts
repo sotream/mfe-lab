@@ -1,5 +1,5 @@
 import swagger from '@fastify/swagger';
-import { createHash } from 'node:crypto';
+import { createHash, timingSafeEqual } from 'node:crypto';
 import Fastify, { type FastifyInstance } from 'fastify';
 import {
   jsonSchemaTransform,
@@ -9,6 +9,7 @@ import {
 import { registerAuth } from './auth.ts';
 import { migrate, openDb, type Db } from './db.ts';
 import { registerErrorHandler } from './errors.ts';
+import { registerGuards } from './guards.ts';
 import { flagRoutes } from './flags.ts';
 import { orderRoutes } from './orders.ts';
 import { productRoutes } from './products.ts';
@@ -38,7 +39,9 @@ export async function buildApp(opts: {
   migrate?: boolean;
   docs?: boolean; // Swagger UI at /docs; default on
 }): Promise<FastifyInstance> {
-  const app = Fastify({ logger: opts.logger ?? false });
+  // Vercel overwrites x-forwarded-for with the real client IP, so it is safe to trust there (rate
+  // limits and the IP allowlist key on request.ip). Elsewhere the header would be client-controlled.
+  const app = Fastify({ logger: opts.logger ?? false, trustProxy: Boolean(process.env.VERCEL) });
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
   registerErrorHandler(app);
@@ -65,7 +68,9 @@ export async function buildApp(opts: {
   app.get('/cron/reseed', { schema: { hide: true } }, async (request, reply) => {
     const secret = process.env.CRON_SECRET;
     if (!secret) return reply.code(404).send({ error: 'not_found' });
-    if (request.headers.authorization !== `Bearer ${secret}`) {
+    const given = Buffer.from(request.headers.authorization ?? '');
+    const want = Buffer.from(`Bearer ${secret}`);
+    if (given.length !== want.length || !timingSafeEqual(given, want)) {
       return reply.code(401).send({ error: 'unauthorized' });
     }
     const { users, products, orders } = await seed(db, { reset: true });
@@ -87,6 +92,7 @@ export async function buildApp(opts: {
     await app.register(swaggerUi, { routePrefix: '/docs' });
   }
 
+  await registerGuards(app);
   await registerAuth(app, { jwtSecret: opts.jwtSecret });
   await app.register(productRoutes);
   await app.register(orderRoutes);

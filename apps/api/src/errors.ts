@@ -14,6 +14,7 @@ export function registerErrorHandler(app: FastifyInstance) {
       const ctx = error.validationContext as keyof typeof VALIDATION_CODES | undefined;
       return reply.code(400).send({ error: (ctx && VALIDATION_CODES[ctx]) ?? 'invalid_body' });
     }
+    if (error.statusCode === 429) return reply.code(429).send({ error: 'rate_limited' });
     const code = (error as { code?: string }).code ?? '';
     // Malformed JSON, wrong content type, oversized body.
     if (code.startsWith('FST_ERR_CTP_')) {

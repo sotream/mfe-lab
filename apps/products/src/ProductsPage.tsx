@@ -8,6 +8,7 @@ import {
   type Product,
   type ProductInput,
 } from '@mfe/api-client';
+import { canDestroy, canWrite as canWriteUser } from '@mfe/auth-store';
 import { useAuth } from '@mfe/auth-store/react';
 import { emit } from '@mfe/events';
 import {
@@ -280,6 +281,7 @@ function ProductsTable({
   items,
   query,
   canWrite,
+  canDelete,
   base,
   detailLinks,
   onSort,
@@ -289,6 +291,7 @@ function ProductsTable({
   items: Product[];
   query: ListQuery;
   canWrite: boolean;
+  canDelete: boolean;
   base: string;
   detailLinks: boolean;
   onSort: (field: Sort) => void;
@@ -350,6 +353,8 @@ function ProductsTable({
                       className="ds1-button--sm"
                       variant="danger"
                       aria-label={t.deleteSku(p.sku)}
+                      disabled={!canDelete}
+                      title={canDelete ? undefined : t.demoNoDelete}
                       onClick={() => onDelete(p)}
                     >
                       {t.deleteBtn}
@@ -445,8 +450,9 @@ export const buildVersion: string = __BUILD_VERSION__;
 // base is the link prefix to a detail page: '' inside ProductsApp (relative), '/products/' on Home.
 export function ProductsContent({ base }: { base: string }) {
   const t = useT();
-  const role = useAuth((s) => s.user?.role);
-  const canWrite = role === 'admin' || role === 'editor';
+  const user = useAuth((s) => s.user);
+  const canWrite = canWriteUser(user);
+  const canDelete = canDestroy(user);
   const [text, setText] = useState('');
   const dispatch = useAppDispatch();
   const editing = useAppSelector((s) => s.productsUi.editing);
@@ -501,6 +507,7 @@ export function ProductsContent({ base }: { base: string }) {
           items={data?.items ?? []}
           query={query}
           canWrite={canWrite}
+          canDelete={canDelete}
           base={base}
           detailLinks={detailLinks}
           onSort={(f) => dispatch(setSort(f))}

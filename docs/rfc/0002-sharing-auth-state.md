@@ -51,6 +51,10 @@ getToken(): string | null;                       // for the API client
 - Singleton mismatch splits state silently. Mitigation: the inspector checks that `@mfe/auth-store` is loaded once, and an e2e test asserts that a login in the shell is visible in the products remote.
 - In-memory token means reload logs out. Acceptable here; a cookie session would be the production answer and needs its own RFC.
 
+## Public demo admin is read-only in production
+
+The demo accounts are public, so on the live deployment the API refuses the changes that affect every visitor (registry, flags, error log, orders, product delete) with `403 demo_read_only`. The API decides and tells the client through `user.demo` in the login and `/auth/me` responses; the shell shows a "Demo admin" chip and disables those controls, and remotes use the shared helpers `canWrite` and `canDestroy` from `@mfe/auth-store`. Previews, dev and tests are unlocked. An owner account with 2FA from env can use the full controls.
+
 ## Rollout
 
 T5. Tests: store unit tests, route guard, e2e in T9 (`E-shared-auth`).
@@ -64,3 +68,4 @@ T5. Tests: store unit tests, route guard, e2e in T9 (`E-shared-auth`).
 - 2026-11-18: T5: store implemented as specified; added `@mfe/api-client` and the `/api` dev-server proxy; `@mfe/auth-store` joined the shared singleton list.
 - 2026-11-20: T8: the inspector lists `@mfe/auth-store` in the shared table and shows `loaded once`.
 - 2026-11-20: T9: e2e `E-shared-auth` logs in as viewer and editor in the shell and checks that the products remote shows `Add product` only for the editor. Status set to Accepted.
+- 2026-11-22: T47: demo admin read-only in production, `demo` flag on the user, `canWrite`/`canAdmin`/`canDestroy` in the store.

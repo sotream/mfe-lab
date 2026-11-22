@@ -31,10 +31,14 @@ export default defineConfig({
         gracefulShutdown: { signal: 'SIGTERM', timeout: 60_000 },
       }
     : [
-        server(
-          'pnpm --filter @mfe/api seed && pnpm --filter @mfe/api dev',
-          'http://127.0.0.1:4000/health',
-        ),
+        {
+          ...server(
+            'pnpm --filter @mfe/api seed && pnpm --filter @mfe/api dev',
+            'http://127.0.0.1:4000/health',
+          ),
+          // The suite logs in far more than 10 times a minute from one IP.
+          env: { RATE_LIMIT: 'off' },
+        },
         server('pnpm --filter @mfe/products dev', 'http://localhost:3001/mf-manifest.json'),
         server('pnpm --filter @mfe/dashboard dev', 'http://localhost:3002/mf-manifest.json'),
         server('pnpm --filter @mfe/orders dev', 'http://localhost:3003/mf-manifest.json'),

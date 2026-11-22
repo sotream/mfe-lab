@@ -1,3 +1,4 @@
+import { canWrite as canWriteUser } from '@mfe/auth-store';
 import { useAuth } from '@mfe/auth-store/react';
 import { Skeleton, Table } from '@mfe/ui';
 import type { ReactNode } from 'react';
@@ -19,8 +20,7 @@ const head = (cols: number) => (
 );
 
 function ProductsFallback() {
-  const role = useAuth((s) => s.user?.role);
-  const canWrite = role === 'admin' || role === 'editor';
+  const canWrite = useAuth((s) => canWriteUser(s.user));
   return (
     <div className="fb">
       <div className="fb-toolbar">
