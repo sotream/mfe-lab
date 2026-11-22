@@ -4,7 +4,7 @@
 import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { changedApps } from '../../scripts/changed-apps.ts';
+import { changedApps, previewNeeded } from '../../scripts/changed-apps.ts';
 
 const all = ['api', 'products', 'dashboard', 'orders', 'shell'];
 
@@ -81,5 +81,39 @@ describe('changed-apps', () => {
     });
     expect(r.status).toBe(0);
     expect(r.stdout.trim()).toBe('');
+  });
+});
+
+describe('previewNeeded', () => {
+  it.each([
+    ['docs only', ['docs/deploy.md', 'README.md']],
+    ['tests only', ['tests/deploy/x.test.ts', 'apps/api/test/y.ts']],
+    ['e2e only', ['e2e/home.spec.ts']],
+    ['app test file', ['apps/products/test/x.test.tsx']],
+    ['ci.yml only', ['.github/workflows/ci.yml']],
+  ])('false for %s', (_n, files) => {
+    expect(previewNeeded(files)).toBe(false);
+  });
+
+  it.each([
+    ['app source', ['apps/products/src/x.tsx']],
+    ['shared package', ['packages/ui/src/x.ts']],
+    ['lockfile', ['pnpm-lock.yaml']],
+    ['preview workflow', ['.github/workflows/preview.yml']],
+    ['preview script', ['scripts/preview-comment.ts']],
+    ['app change next to docs', ['docs/a.md', 'apps/shell/src/a.tsx']],
+  ])('true for %s', (_n, files) => {
+    expect(previewNeeded(files)).toBe(true);
+  });
+
+  it('CLI --preview-needed prints true or false', () => {
+    const run = (input: string) =>
+      spawnSync('node', ['scripts/changed-apps.ts', '--preview-needed'], {
+        cwd: resolve(import.meta.dirname, '../..'),
+        input,
+        encoding: 'utf8',
+      }).stdout.trim();
+    expect(run('docs/x.md\n')).toBe('false');
+    expect(run('apps/api/src/x.ts\n')).toBe('true');
   });
 });

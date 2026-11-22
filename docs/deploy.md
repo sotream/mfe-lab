@@ -107,6 +107,8 @@ Repository secrets: `VERCEL_TOKEN`, `NEON_API_KEY`. `NEON_API_KEY` is passed onl
 
 `.github/workflows/preview.yml` gives every same-repo PR a live copy of the lab (RFC 0018). It never touches production data or production deployments.
 
+A preview is skipped when a PR changes no app: only docs, tests (`apps/*/test`, `*.test.*`, `*.spec.*`, `e2e`, `tests`) or CI files other than the preview pipeline. The Plan step decides with `previewNeeded` in `scripts/changed-apps.ts`; the Neon, migrate, deploy and smoke steps are skipped, the job succeeds and the comment says "Preview skipped". This saves the Vercel free plan's 100 deployments a day. PRs that touch the preview pipeline itself (`preview.yml`, `scripts/preview-*.ts`, `scripts/provision.ts`, `scripts/vercel-config.ts`) still get a real preview.
+
 ```mermaid
 flowchart LR
   PR[PR opened or pushed] --> N[Neon branch preview/pr-N from main, migrate]

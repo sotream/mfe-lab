@@ -38,6 +38,10 @@ Neon free-tier branch cap (the comment says "preview unavailable"). The preview 
 
 T43. Needs no new secrets.
 
+## Update 2026-11-22 (T60)
+
+A PR that changes no app (only docs, tests or CI, see `previewNeeded` in `scripts/changed-apps.ts`) gets no preview: the job skips Neon, migrate, deploy and smoke, and the comment says "Preview skipped". Reason: the Vercel free plan allows 100 deployments a day. PRs that touch the preview pipeline itself keep a real preview. Cleanup on close is unchanged (deleting what does not exist is a no-op).
+
 ## Open questions
 
 - Should a PR that changes `packages/**` preview all remotes? It does, through `scripts/changed-apps.ts`.

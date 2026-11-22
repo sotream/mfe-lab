@@ -90,4 +90,15 @@ describe('preview.yml', () => {
     expect(deploy).toBeTruthy();
     expect(job(deploy!)).toMatch(/action\s*!=\s*'closed'/);
   });
+
+  it('Q-workflow: Plan computes PREVIEW_NEEDED and the deploy steps are gated on it', () => {
+    expect(t).toMatch(/changed-apps\.ts --preview-needed/);
+    expect(t).toMatch(/PREVIEW_NEEDED=\$needed/);
+    const body = job('preview');
+    for (const name of ['Neon branch', 'Migrate', 'Deploy previews', 'Smoke']) {
+      const step = new RegExp(`- name: ${name}\\n((?: {8}.*\\n)+)`).exec(body)?.[1] ?? '';
+      expect(step, name).toMatch(/if:\s*env\.PREVIEW_NEEDED == 'true'/);
+    }
+    expect(body).toMatch(/export STATE=skipped/);
+  });
 });

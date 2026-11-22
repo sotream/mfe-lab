@@ -126,3 +126,12 @@ describe('preview env', () => {
     expect(env).toContain(`PREVIEW_API_URL=https://${previewHost('api', 42)}`);
   });
 });
+
+describe('preview comment: skipped', () => {
+  it('has the marker and "Preview skipped" and no URL', () => {
+    const body = previewComment({ pr: 42, sha: SHA, state: 'skipped' });
+    expect(body).toContain(MARKER);
+    expect(body).toContain('Preview skipped');
+    expect(body).not.toMatch(/https?:\/\/|vercel\.app/);
+  });
+});
