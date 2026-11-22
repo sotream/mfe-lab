@@ -4,6 +4,7 @@
 
 <p align="center">
   <a href="https://github.com/sotream/mfe-lab/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/sotream/mfe-lab/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://mfe-lab.vercel.app"><img alt="Live demo" src="https://img.shields.io/badge/demo-live-2ea043?style=flat-square&labelColor=161b22"></a>
   <img alt="React 19" src="https://img.shields.io/badge/React-19-0e1116?style=flat-square&labelColor=161b22&logo=react&logoColor=f2efe9">
   <img alt="Module Federation 2" src="https://img.shields.io/badge/Module%20Federation-2-0e1116?style=flat-square&labelColor=161b22&logo=webpack&logoColor=f2efe9">
   <img alt="Rspack 2" src="https://img.shields.io/badge/Rspack-2-0e1116?style=flat-square&labelColor=161b22&logo=rspack&logoColor=f2efe9">
@@ -12,13 +13,14 @@
 </p>
 
 <p align="center">
+  <a href="https://mfe-lab.vercel.app"><b>Live demo</b></a>&nbsp;&nbsp;&nbsp;
   <a href="docs/tour.md"><b>Tour</b></a>&nbsp;&nbsp;&nbsp;
   <a href="docs/architecture.md"><b>How it works</b></a>&nbsp;&nbsp;&nbsp;
   <a href="docs/rfc/"><b>RFCs</b></a>&nbsp;&nbsp;&nbsp;
   <a href="#quick-start"><b>Quick start</b></a>
 </p>
 
-**Live demo: <https://mfe-lab.vercel.app>**. Log in with the demo accounts from [Quick start](#quick-start). A daily reset at 03:00 UTC puts back the products, orders and demo users, the remote registry (no canary, all remotes on), the feature flags and the error log. The database is on a free tier, so the first request may take a second to wake it.
+**Live demo: <https://mfe-lab.vercel.app>**. Sign in as `admin@lab.test` / `lab12345` (demo-only; read-only on the live site), or as `editor@lab.test` / `viewer@lab.test` with the same password. A daily reset at 03:00 UTC puts back the products, orders and demo users, the remote registry (no canary, all remotes on), the feature flags and the error log. The database is on a free tier, so the first request may take a second to wake it.
 
 One shell loads three independently built and deployed remotes (two React, one Vue 3.5) **at runtime** with Module Federation 2, on top of a small Fastify + Postgres API.
 
@@ -150,6 +152,8 @@ Choices the lab leaves out on purpose, each with the RFC that records it.
 - **A shared store or cache across remotes.** Each remote owns its TanStack Query client, and they talk through typed events. A global store or shared query client would couple the releases that micro frontends exist to decouple ([RFC 0006](docs/rfc/0006-data-between-remotes.md), [RFC 0012](docs/rfc/0012-locale-across-remotes.md)).
 - **Native Federation instead of Module Federation 2.** It would replace working Rspack, manifest, inspector and test code for little gain. [RFC 0003](docs/rfc/0003-native-federation-comparison.md) lists what would reopen it, such as dropping Rspack, consuming remotes from non-JS hosts, or a blocking MF2 bug.
 - **Iframes for isolation.** No shared token, layout or deps, and poor accessibility ([RFC 0001](docs/rfc/0001-module-federation-for-frontend.md), [RFC 0016](docs/rfc/0016-framework-agnostic-remotes-and-css-isolation.md)). Shadow DOM for the Vue remote and a prefix rule for the React ones give enough isolation.
+
+- **Keeping the session across a reload.** The access token lives only in memory, so a page reload signs you out. A stored token (localStorage or a JS-readable cookie) is what an XSS would steal, and [RFC 0002](docs/rfc/0002-sharing-auth-state.md) rejects localStorage for that reason. An HttpOnly refresh cookie with rotation would fix the reload, but a demo does not need it, and the RFC lists refresh tokens and cookie sessions as non-goals. This changes if real users with long sessions appear.
 
 ## How it was built
 
