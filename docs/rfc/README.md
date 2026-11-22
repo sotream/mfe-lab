@@ -32,3 +32,4 @@ When an RFC is needed: anything that changes the architecture, a shared contract
 | 0015 | Performance budgets                          | Accepted |
 | 0016 | Framework-agnostic remotes and CSS isolation | Accepted |
 | 0017 | Remote registry, canary and kill switch      | Accepted |
+| 0018 | PR previews with a database branch           | Accepted |

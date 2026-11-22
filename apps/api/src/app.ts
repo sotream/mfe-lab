@@ -1,4 +1,5 @@
 import swagger from '@fastify/swagger';
+import { createHash } from 'node:crypto';
 import Fastify, { type FastifyInstance } from 'fastify';
 import {
   jsonSchemaTransform,
@@ -22,6 +23,14 @@ declare module 'fastify' {
   }
 }
 
+// Non-secret id of the database host (first 12 hex of sha256), so a deploy can prove which database it uses.
+// Same function as dbFingerprint in scripts/provision.ts (the API cannot import from scripts/).
+const dbId = (url: string) => {
+  const host = URL.canParse(url) ? new URL(url).hostname : '';
+  // pglite:... has no host
+  return host ? createHash('sha256').update(host).digest('hex').slice(0, 12) : 'local';
+};
+
 export async function buildApp(opts: {
   dbUrl: string;
   logger?: boolean;
@@ -41,7 +50,7 @@ export async function buildApp(opts: {
 
   app.get('/health', async () => {
     await db.query('select 1');
-    return { status: 'ok' };
+    return { status: 'ok', db: dbId(opts.dbUrl) };
   });
 
   // Vercel Cron daily demo reset. Off (404) unless CRON_SECRET is set; hidden from Swagger.

@@ -234,3 +234,8 @@ Nothing planned.
 
 - **Goal:** the inspector Remotes table has 5 two-line columns (Remote, Manifest, Build, Use, Rollout) and fits from 1024 px up; the full values and the admin registry form move to a Details dialog.
 - **Done when:** no horizontal scroll from 1024 px in EN and DE, for admin and viewer, with long canary URLs; Details (button or a click on the row) opens a native `<dialog>` with the full URLs and Copy, the build, variant, bucket, status and the manifest in use; admins edit canary URL, percent and Off there and Save through `updateRegistry`; Escape closes and focus returns to the Details button; inspector layout shift stays under 0.01; no new dependency and no budget raised.
+
+## T43 PR previews
+
+- **Goal:** every same-repo PR gets a live stack (shell, changed remotes, API on its own Neon branch) and a sticky comment; closing the PR cleans up (RFC 0018).
+- **Done when:** `preview.yml` deploys preview (never `--prod`) builds under `*-pr-<n>.vercel.app` aliases, skips forks and Dependabot, and its cleanup job deletes the Neon branch `preview/pr-<n>` and the aliases; the shell's `/api` rewrite reaches the preview API; smoke signs in as the demo admin and sees all three frames; the sticky comment lists the apps with `preview` or `production`, the branch, the commit and the smoke result and reads "Preview removed" on close; `docs/deploy.md` and RFC 0018 are added; no new dependency; `pnpm lint && pnpm typecheck && pnpm test` pass.

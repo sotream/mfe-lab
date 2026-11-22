@@ -1,0 +1,150 @@
+name: Preview
+
+# A live copy of the lab per same-repo PR: shell, the remotes the PR changed, and an API on its own Neon branch.
+# Preview deployments only (never --prod), under stable *.vercel.app aliases. Cleaned up when the PR closes.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  VERCEL_CLI: vercel@66.6.0
+  PR: ${{ github.event.pull_request.number }}
+
+jobs:
+  preview:
+    # Not forks (no secrets), not Dependabot, not on close.
+    if: >-
+      github.event.action != 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    concurrency:
+      group: preview-pr-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+      GH_TOKEN: ${{ github.token }}
+      SHA: ${{ github.event.pull_request.head.sha }}
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Plan
+        run: |
+          # The merge commit is checked out; BASE_SHA..HEAD is what the PR changes.
+          changed=$(git diff --name-only "$BASE_SHA" HEAD | node scripts/changed-apps.ts | { grep -E '^(products|dashboard|orders)$' || true; } | tr '\n' ' ')
+          echo "changed remotes: ${changed:-none}"
+          {
+            echo "CHANGED=$changed"
+            # shellcheck disable=SC2086
+            node scripts/preview-urls.ts env "$PR" $changed
+            echo "VERCEL_SCOPE=$(node scripts/provision.ts vercel-scope)"
+          } >> "$GITHUB_ENV"
+      # Fails (and the comment says "preview unavailable") when Neon refuses, for example at the free-tier branch limit.
+      - name: Neon branch
+        id: neon
+        run: node scripts/provision.ts preview-db "$PR"
+      - run: pnpm --filter @mfe/api migrate
+      - name: Deploy previews
+        id: deploy
+        run: |
+          set -eu
+          vc() { pnpm dlx "$VERCEL_CLI" "$@" --token "$VERCEL_TOKEN" ${VERCEL_SCOPE:+--scope "$VERCEL_SCOPE"}; }
+          # deploy <app> <project> [vercel deploy args]: preview build, then alias to the stable PR host.
+          deploy() {
+            app=$1; project=$2; shift 2
+            host=$(node scripts/preview-urls.ts hosts "$PR" | awk -v a="$app" '$1 == a { print $2 }')
+            rm -rf .vercel
+            vc link --yes --project "$project"
+            vc pull --yes --environment=preview
+            if [ "$app" = api ]; then
+              # Vercel detects api/*.js functions before it runs buildCommand; the bundle is gitignored, so build it first.
+              pnpm --filter @mfe/api build
+            fi
+            vc build
+            if [ "$app" = api ]; then
+              [ -n "$(find .vercel/output/functions -name '*.func' -type d 2>/dev/null)" ] || { echo "no function in .vercel/output/functions" >&2; exit 1; }
+            fi
+            # The URL is the only stdout of `vercel deploy` (progress goes to stderr).
+            url=$(vc deploy --prebuilt "$@" 2>/tmp/deploy.err) || { cat /tmp/deploy.err >&2; exit 1; }
+            echo "$app: $url -> $host"
+            vc alias set "$url" "$host"
+          }
+          # Runtime env of this deployment only (not a project env var): the PR's Neon branch.
+          deploy api mfe-lab-api -e "DATABASE_URL=$DATABASE_URL"
+          for app in $CHANGED; do deploy "$app" "mfe-lab-$app"; done
+          # `vercel build` ignores vercel.json build.env, so the shell gets MF_*_URL from the environment (set in Plan).
+          # Its /api rewrite (same origin, no CORS) must reach the preview API: regenerate the configs in this checkout.
+          PREVIEW_API_URL="$PREVIEW_API_URL" node scripts/vercel-config.ts
+          grep -q "$PREVIEW_API_URL" apps/shell/vercel.json
+          deploy shell mfe-lab
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Smoke
+        id: smoke
+        run: node scripts/preview-smoke.ts "$PREVIEW_SHELL_URL" "$PREVIEW_API_URL"
+      - name: Comment
+        if: always()
+        run: |
+          if [ "${{ job.status }}" = success ]; then
+            export SMOKE=passed
+          elif [ "${{ job.status }}" = cancelled ]; then
+            exit 0
+          elif [ "${{ steps.smoke.outcome }}" = failure ]; then
+            export SMOKE=failed
+          elif [ "${{ steps.neon.outcome }}" = failure ]; then
+            export UNAVAILABLE="could not create the Neon branch (free-tier branch limit?), see the run"
+          else
+            export UNAVAILABLE="the build or deploy failed, see the run"
+          fi
+          node scripts/preview-comment.ts post
+
+  cleanup:
+    name: Cleanup (remove preview)
+    # Runs on close, never cancelled; waits for a deploy of the same PR that is still running.
+    if: >-
+      github.event.action == 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: preview-pr-${{ github.event.pull_request.number }}
+      cancel-in-progress: false
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+      GH_TOKEN: ${{ github.token }}
+      SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: node scripts/provision.ts preview-db-delete "$PR"
+      - name: Remove aliases
+        run: |
+          slug=$(node scripts/provision.ts vercel-scope)
+          for host in $(node scripts/preview-urls.ts hosts "$PR" | awk '{ print $2 }'); do
+            # A missing alias (app without a preview) is fine.
+            pnpm dlx "$VERCEL_CLI" alias rm "$host" --yes --token "$VERCEL_TOKEN" ${slug:+--scope "$slug"} || echo "no alias $host"
+          done
+      - name: Comment
+        run: STATE=closed node scripts/preview-comment.ts post

@@ -4,6 +4,8 @@
 //   node scripts/provision.ts           provision
 //   node scripts/provision.ts db-url    mask the pooled Neon URI and export it as DATABASE_URL (GITHUB_ENV)
 //   node scripts/provision.ts vercel-scope  print the Vercel team slug (empty for a personal account)
+//   node scripts/provision.ts preview-db <pr>         find or create Neon branch preview/pr-<pr>, export its URI as DATABASE_URL
+//   node scripts/provision.ts preview-db-delete <pr>  delete that branch (no-op when missing)
 // The Vercel team and the Neon organization are discovered from the tokens; nothing is stored.
 import { createHash, randomBytes } from 'node:crypto';
 import { appendFileSync, readFileSync } from 'node:fs';
@@ -87,23 +89,76 @@ async function neonProject(env: Env, f: Fetch, log: (s: string) => void) {
   return project.id as string;
 }
 
+// Pooled URI of a database/role (of a branch when given). pg warns on sslmode=require (alias of verify-full today,
+// weaker in pg v9); Neon certs are publicly trusted, so pin verify-full.
+async function neonUri(f: Fetch, key: string, project: string, branchId?: string) {
+  const q = `database_name=${DB}&role_name=${ROLE}&pooled=true${branchId ? `&branch_id=${branchId}` : ''}`;
+  const { uri } = await call(f, key, 'GET', `${NEON}/projects/${project}/connection_uri?${q}`);
+  const url = new URL(uri);
+  url.searchParams.set('sslmode', 'verify-full');
+  return url.toString();
+}
+
 export async function neonDatabaseUrl(
   env: Env,
   f: Fetch = fetch,
   log: (s: string) => void = console.log,
 ) {
-  const id = await neonProject(env, f, log);
-  const q = `database_name=${DB}&role_name=${ROLE}&pooled=true`;
-  const { uri } = await call(
-    f,
-    env.NEON_API_KEY!,
-    'GET',
-    `${NEON}/projects/${id}/connection_uri?${q}`,
-  );
-  // pg warns on sslmode=require (alias of verify-full today, weaker in pg v9); Neon certs are publicly trusted.
-  const url = new URL(uri);
-  url.searchParams.set('sslmode', 'verify-full');
-  return url.toString();
+  return neonUri(f, env.NEON_API_KEY!, await neonProject(env, f, log));
+}
+
+// First 12 hex of sha256 of the database host: what the API reports as /health db (apps/api/src/app.ts has a copy).
+export const dbFingerprint = (url: string) =>
+  createHash('sha256').update(new URL(url).hostname).digest('hex').slice(0, 12);
+
+export const previewBranchName = (pr: number | string) => `preview/pr-${pr}`;
+
+type Branch = { id: string; name: string; default?: boolean };
+async function neonBranches(f: Fetch, key: string, project: string) {
+  const r = await call(f, key, 'GET', `${NEON}/projects/${project}/branches?limit=100`);
+  return (r?.branches ?? []) as Branch[];
+}
+
+// The pooled URI of branch preview/pr-<pr>, created from the default branch when missing (reused otherwise).
+// Throws when Neon refuses (for example the free-tier branch limit).
+export async function ensureNeonBranch(
+  env: Env,
+  pr: number | string,
+  f: Fetch = fetch,
+  log: (s: string) => void = console.log,
+) {
+  const key = env.NEON_API_KEY!;
+  const project = await neonProject(env, f, log);
+  const name = previewBranchName(pr);
+  const branches = await neonBranches(f, key, project);
+  let branch = branches.find((b) => b.name === name);
+  if (branch) log(`neon branch ${name}: exists`);
+  else {
+    const parent = branches.find((b) => b.default);
+    if (!parent) throw new Error('neon: no default branch to branch from');
+    const created = await call(f, key, 'POST', `${NEON}/projects/${project}/branches`, {
+      branch: { name, parent_id: parent.id },
+      endpoints: [{ type: 'read_write' }],
+    });
+    branch = created.branch as Branch;
+    log(`neon branch ${name}: created`);
+  }
+  return neonUri(f, key, project, branch.id);
+}
+
+export async function deleteNeonBranch(
+  env: Env,
+  pr: number | string,
+  f: Fetch = fetch,
+  log: (s: string) => void = console.log,
+) {
+  const key = env.NEON_API_KEY!;
+  const project = await neonProject(env, f, log);
+  const name = previewBranchName(pr);
+  const branch = (await neonBranches(f, key, project)).find((b) => b.name === name);
+  if (!branch) return log(`neon branch ${name}: already gone`);
+  await call(f, key, 'DELETE', `${NEON}/projects/${project}/branches/${branch.id}`);
+  log(`neon branch ${name}: deleted`);
 }
 
 async function vercelProject(v: Vercel, name: string, dir: string, log: (s: string) => void) {
@@ -206,6 +261,15 @@ if (import.meta.main) {
       const uri = await neonDatabaseUrl(process.env, fetch, () => {});
       console.log(`::add-mask::${uri}`);
       appendFileSync(process.env.GITHUB_ENV!, `DATABASE_URL=${uri}\n`);
+    } else if (process.argv[2] === 'preview-db') {
+      const uri = await ensureNeonBranch(process.env, process.argv[3]!);
+      console.log(`::add-mask::${uri}`);
+      appendFileSync(
+        process.env.GITHUB_ENV!,
+        `DATABASE_URL=${uri}\nPREVIEW_DB_ID=${dbFingerprint(uri)}\n`,
+      );
+    } else if (process.argv[2] === 'preview-db-delete') {
+      await deleteNeonBranch(process.env, process.argv[3]!);
     } else if (process.argv[2] === 'vercel-scope') {
       console.log((await vercelScope(process.env))?.slug ?? '');
     } else await provision(process.env);
