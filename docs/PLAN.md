@@ -294,3 +294,8 @@ Nothing planned.
 
 - **Goal:** login no longer depends on the reseed for env-provisioned accounts; cron auth failures are logged without secrets.
 - **Done when:** a login for the env-configured email (case-insensitive) with all env vars set creates or updates that row from env before the normal login path, through the same helper `seed()` uses; no other email creates a row; a 401 at `/cron/reseed` logs a warning with only presence flags, lengths and a truncated user agent, never any part of a secret; `pnpm lint && pnpm typecheck && pnpm test` pass; no new dependency.
+
+## T55 README banner with the mark
+
+- **Goal:** the README opens with one banner that carries the mark and shows the current three remotes.
+- **Done when:** the separate logo block above the banner is gone; `docs/img/banner.svg` has the mfe-lab mark before the wordmark (amber hyphen), its description and shell illustration show products, dashboard and orders (Vue), and the stack line names Vue; the banner renders without clipping or overlap at 880 and 1280 px; `logo.svg` and `logo-light.svg` stay for other uses; `pnpm lint && pnpm test` pass; no new dependency.
