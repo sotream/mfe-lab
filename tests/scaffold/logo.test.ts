@@ -1,4 +1,4 @@
-// Black-box checks on the T40 logo assets: favicon files, README references, vercel cache rule.
+// Black-box checks on the T40 logo assets and the T55 README banner: favicon files, banner content, vercel cache rule.
 import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToRegexp } from 'path-to-regexp';
@@ -30,13 +30,29 @@ describe('brand assets', () => {
   });
 });
 
-describe('README logo', () => {
-  it('references both logo files and both exist', () => {
-    const readme = readFileSync(join(root, 'README.md'), 'utf8');
+describe('README banner', () => {
+  const banner = () => readFileSync(join(root, 'docs/img/banner.svg'), 'utf8');
+
+  it('the logo files exist', () => {
     for (const f of ['docs/img/logo.svg', 'docs/img/logo-light.svg']) {
-      expect(readme, f).toContain(f);
       expect(existsSync(join(root, f)), f).toBe(true);
     }
+  });
+
+  it("the README's first image is docs/img/banner.svg", () => {
+    const readme = readFileSync(join(root, 'README.md'), 'utf8');
+    const first = /<img[^>]*\ssrc="([^"]+)"|!\[[^\]]*\]\(([^)\s]+)/.exec(readme);
+    expect(first?.[1] ?? first?.[2]).toBe('docs/img/banner.svg');
+  });
+
+  it('banner.svg carries the mark', () => {
+    expect(banner()).toContain('M27 14h10v10l8 13.8H19L27 24z');
+  });
+
+  it('banner.svg shows three remotes, including orders', () => {
+    const svg = banner();
+    expect(svg).toMatch(/orders/i);
+    expect(svg).not.toContain('two independently deployed');
   });
 });
 
