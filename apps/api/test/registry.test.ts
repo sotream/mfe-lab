@@ -4,7 +4,7 @@ import { call, freshApp } from './helpers.ts';
 
 type Row = { name: string; canaryUrl: string | null; canaryPercent: number; disabled: boolean };
 
-const OK_URL = 'https://cdn.example.com/products/1.2.3/mf-manifest.json';
+const OK_URL = 'https://mfe-lab-products.vercel.app/releases/1.2.3/mf-manifest.json';
 const patch = (ctx: Awaited<ReturnType<typeof freshApp>>, payload: object, name = 'products') =>
   call(ctx, { method: 'PATCH', url: `/registry/${name}`, payload });
 const list = async (ctx: Awaited<ReturnType<typeof freshApp>>) =>
@@ -50,15 +50,14 @@ describe('registry', () => {
     expect((await list(ctx)).find((r) => r.name === 'products')?.canaryUrl).toBeNull();
   });
 
-  it('Q-registry-api: localhost and 127.0.0.1 http URLs are accepted', async () => {
+  it('Q-registry-api: localhost http URLs are accepted, 127.0.0.1 is not', async () => {
     const ctx = await freshApp();
-    for (const canaryUrl of [
-      'http://localhost:3001/mf-manifest.json',
-      'http://127.0.0.1:3001/releases/1.0.0/mf-manifest.json',
-    ]) {
-      const res = await patch(ctx, { canaryUrl });
-      expect(res.statusCode, canaryUrl).toBe(200);
-    }
+    const local = 'http://localhost:3001/releases/1.0.0/mf-manifest.json';
+    expect((await patch(ctx, { canaryUrl: local })).statusCode).toBe(200);
+    // T46: 127.0.0.1 is no longer allowed.
+    expect(
+      (await patch(ctx, { canaryUrl: 'http://127.0.0.1:3001/mf-manifest.json' })).statusCode,
+    ).toBe(400);
   });
 
   it('Q-registry-api: editor and viewer get 403, no token 401, row unchanged', async () => {
@@ -107,7 +106,7 @@ describe('registry', () => {
       const res = await patch(ctx, payload);
       expect(res.statusCode, JSON.stringify(payload)).toBe(400);
       expect(res.body).not.toMatch(
-        /pg_|constraint|violates|SQL|relation|canary_percent|canary_url/i,
+        /pg_|constraint|violates|SQL|relation|canary_percent|(?<![a-z_])canary_url/i,
       );
     }
     expect((await list(ctx)).find((r) => r.name === 'products')).toMatchObject({

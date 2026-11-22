@@ -215,3 +215,25 @@ describe('fallback once-only (through remotes.ts)', () => {
     expect(call.map((c) => c.nameOrAlias)).toEqual(['dashboard', 'orders']);
   });
 });
+
+describe('resolveRemote trust (T46)', () => {
+  // Q-resolve-ignores-bad-row: rows written before the fix must not load foreign scripts.
+  it.each([
+    'https://evil.example/mf-manifest.json',
+    'https://mfe-lab.vercel.app@evil.example/mf-manifest.json',
+    'https://mfe-lab-products-pr-12.vercel.app.evil.example/mf-manifest.json',
+    'http://evil.example/mf-manifest.json',
+    'https://mfe-lab-products.vercel.app/evil.js',
+  ])('Q-resolve-ignores-bad-row: %s at 100%% resolves to stable', (canaryUrl) => {
+    const res = resolveRemote('products', row({ canaryUrl, canaryPercent: 100 }), 1);
+    expect(res.variant).toBe('stable');
+    expect(res.entry).toBe(STABLE);
+  });
+
+  it('Q-resolve-ignores-bad-row: an allowed canary (localhost in tests) still resolves to canary', () => {
+    expect(resolveRemote('products', row({ canaryPercent: 100 }), 1)).toMatchObject({
+      variant: 'canary',
+      entry: CANARY,
+    });
+  });
+});
