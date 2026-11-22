@@ -19,6 +19,11 @@
   cursor: pointer;
 }
 
+.ds1-select--sm .ds1-select-trigger {
+  height: 30px;
+  padding: 0 var(--ds1-space-xs);
+}
+
 .ds1-select-trigger:hover {
   border-color: var(--ds1-muted);
 }

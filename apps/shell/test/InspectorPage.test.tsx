@@ -52,8 +52,8 @@ describe('InspectorPage', () => {
     render(<InspectorPage />);
     expect(screen.getByRole('heading', { level: 1, name: 'Federation inspector' })).toBeTruthy();
     expect(screen.getByRole('heading', { level: 2, name: 'Remotes' })).toBeTruthy();
-    // T41: five columns; Status moved into the row header, Version into Build
-    for (const h of [/^Remote/, /^Manifest/, /^Build/, /^Use/, /^Rollout/]) {
+    // T41: five columns; Status moved into the row header, Version into Build; T58: plus a hidden Details header
+    for (const h of [/^Remote/, /^Manifest/, /^Build/, /^Use/, /^Rollout/, /^Details/]) {
       expect(within(remotesTable()).getByRole('columnheader', { name: h })).toBeTruthy();
     }
     const initial = within(remotesTable()).getAllByRole('row').slice(1);
@@ -65,15 +65,17 @@ describe('InspectorPage', () => {
       expect.stringMatching(/^dashboard/),
       expect.stringMatching(/^orders/),
     ]);
-    expect(within(rowFor(PRODUCTS)).getByText('checking…')).toBeTruthy();
-    expect(within(rowFor(DASHBOARD)).getByText('checking…')).toBeTruthy();
+    // T58: the status word lives in the row header (hidden text for up, visible for the rest)
+    const status = (u: string) => within(rowFor(u)).getByRole('rowheader').textContent ?? '';
+    expect(status(PRODUCTS)).toContain('checking…');
+    expect(status(DASHBOARD)).toContain('checking…');
 
     await tick(0);
     const p = within(rowFor(PRODUCTS));
-    expect(p.getByText('up')).toBeTruthy();
+    expect(status(PRODUCTS)).toMatch(/\bup\b/);
     expect(p.getByText('p-1')).toBeTruthy();
     const d = within(rowFor(DASHBOARD));
-    expect(d.getByText('down')).toBeTruthy();
+    expect(status(DASHBOARD)).toMatch(/down$/);
     expect(d.getAllByText('—').length).toBeGreaterThan(0); // version, plus the registry columns
     expect(screen.queryByText('checking…')).toBeNull();
   });
@@ -87,13 +89,13 @@ describe('InspectorPage', () => {
     await tick(0);
     expect(callsTo(fetch, PRODUCTS)).toBe(1);
     expect(callsTo(fetch, DASHBOARD)).toBe(1);
-    expect(within(rowFor(DASHBOARD)).getByText('down')).toBeTruthy();
+    expect(within(rowFor(DASHBOARD)).getByRole('rowheader').textContent).toMatch(/down$/);
 
     dashboardUp = true;
     await tick(5000);
     expect(callsTo(fetch, PRODUCTS)).toBe(2);
     expect(callsTo(fetch, DASHBOARD)).toBe(2);
-    expect(within(rowFor(DASHBOARD)).getByText('up')).toBeTruthy();
+    expect(within(rowFor(DASHBOARD)).getByRole('rowheader').textContent).toMatch(/\bup\b/);
 
     unmount();
     const before = fetch.mock.calls.length;

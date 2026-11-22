@@ -348,69 +348,152 @@ ol.panel-body {
   border-bottom: 0;
 }
 
-.manifest {
-  color: var(--ds1-muted);
-}
-
-/* 5 two-line columns: fixed layout, the Manifest column takes the rest; below 44rem the scroll region takes over */
+/* One line per row, everything centred. Fixed layout, the Manifest column takes the rest; below 48rem the scroll region takes over. */
 .ds1-table.remotes {
-  min-width: 44rem;
+  min-width: 48rem;
   table-layout: fixed;
 }
 
 .remotes th:nth-child(1) {
-  width: 9.5rem;
+  width: 12rem;
 }
 
 .remotes th:nth-child(3) {
-  width: 8.5rem;
+  width: 12rem;
 }
 
 .remotes th:nth-child(4) {
-  width: 8rem;
+  width: 7.5rem;
 }
 
 .remotes th:nth-child(5) {
-  width: 8.5rem;
+  width: 6.5rem;
+}
+
+.remotes th:nth-child(6) {
+  width: 3rem;
 }
 
 .remotes th,
 .remotes td {
+  padding-block: 0;
   padding-inline: var(--ds1-space-xs);
-  vertical-align: top;
+  vertical-align: middle;
+}
+
+.remotes thead th {
+  height: 40px;
+}
+
+.remotes tbody th,
+.remotes tbody td {
+  height: 48px;
+}
+
+.remotes td {
+  white-space: nowrap;
 }
 
 .remotes td.ds1-mono {
-  font-size: var(--ds1-text-xs);
+  color: var(--ds1-ink-2);
+  font-size: 0.8125rem;
 }
 
 .remote-row {
   cursor: pointer;
 }
 
-/* second line of a cell; fixed height so "checking…" and "—" do not shift rows (CLS) */
-.sub {
+.remotes .chip {
+  font-family: var(--ds1-font-body);
+  font-size: var(--ds1-text-xs);
+  line-height: 1.5;
+}
+
+.remote-name,
+.manifest-line,
+.build-line {
   display: flex;
-  gap: var(--ds1-space-2xs);
+  gap: var(--ds1-space-xs);
   align-items: center;
-  min-height: 30px;
+  min-width: 0;
+}
+
+.manifest-line {
+  overflow: hidden;
+}
+
+.manifest-line > .ds1-trunc {
+  display: flex;
+  min-width: 0;
+}
+
+.manifest-line > .chip,
+.build-line > .chip {
+  flex: none;
+}
+
+.remote-state {
   color: var(--ds1-muted);
   font-size: var(--ds1-text-xs);
   white-space: nowrap;
 }
 
-.sub .chip {
-  min-width: 4rem;
-  font-size: var(--ds1-text-xs);
-  text-align: center;
+/* status dot: shape plus the word, never colour alone */
+.dot {
+  display: inline-block;
+  flex: none;
+  box-sizing: border-box;
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid var(--ds1-muted);
+  border-radius: 50%;
+  background-color: var(--ds1-muted);
 }
 
-.sub-label {
-  flex: none;
+.dot--up {
+  border-color: var(--ds1-ok);
+  background-color: var(--ds1-ok);
+}
+
+.dot--down {
+  border-color: var(--ds1-bad);
+  background-color: var(--ds1-bad);
+}
+
+.dot--off {
+  background-color: transparent;
+}
+
+.open-cell {
+  text-align: right;
+}
+
+.remotes .open {
+  min-width: 32px;
+  height: 32px;
+  padding: 0;
+  font-size: var(--ds1-text-lg);
+  line-height: 1;
 }
 
 .remotes .ds1-select {
-  min-width: 6rem;
+  min-width: 5.5rem;
+}
+
+.remotes-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds1-space-xs) var(--ds1-space-md);
+  align-items: center;
+  justify-content: space-between;
+  color: var(--ds1-muted);
+  font-size: 0.8125rem;
+}
+
+.legend {
+  display: flex;
+  gap: var(--ds1-space-2xs);
+  align-items: center;
 }
 
 .details-dialog {

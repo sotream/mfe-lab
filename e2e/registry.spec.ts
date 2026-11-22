@@ -78,8 +78,8 @@ test.describe('canary', () => {
     await page.getByRole('link', { name: 'Inspector' }).click();
     await expect(page.getByRole('heading', { level: 2, name: 'Errors' })).toBeVisible();
   }
-  // T41: the variant chip is line 2 of the Build cell (second cell; the first is Manifest, whose canary label is
-  // also the word "canary"), so match the chip text inside that cell, not the cell name
+  // T41/T58: the variant chip sits after the stamp in the Build cell (second cell; the first is Manifest, whose
+  // "+ canary" chip is not an exact "canary" match), so match the chip text inside that cell, not the cell name
   const variantCell = (page: Page, text: string) =>
     page
       .getByRole('row', { name: /^products/ })

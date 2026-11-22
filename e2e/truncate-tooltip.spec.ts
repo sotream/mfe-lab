@@ -105,23 +105,22 @@ for (const who of ['admin', 'viewer'] as const) {
   });
 }
 
-test('E-manifest-fits: a viewer sees a long canary line truncated in the middle with the full URL in the tooltip', async ({
+// T58: a canary no longer adds a second URL line; the Manifest cell keeps only the stable URL plus a "+ canary" chip,
+// and the full canary URL is in the Details dialog.
+test('E-manifest-fits: a canary adds only a chip to the Manifest cell, the full URL is in Details', async ({
   page,
   request,
 }) => {
   await setCanary(request, LONG_CANARY);
   await openInspector(page, 'viewer');
-  const trigger = manifestCell(page).locator('[tabindex="0"]').nth(1); // stable first, canary second
-  const pieces = trigger.locator('[aria-hidden="true"]');
-  await expect(pieces).toHaveCount(2);
-  expect(await pieces.first().evaluate((e) => e.scrollWidth > e.clientWidth)).toBe(true);
-  expect(await pieces.nth(1).textContent()).toBe('/mf-manifest.json');
-  // copy/select-all gives the whole URL
-  expect(await manifestCell(page).evaluate((e) => (e as HTMLElement).textContent)).toContain(
-    LONG_CANARY,
-  );
-  await trigger.hover();
-  await expect(page.getByRole('tooltip')).toHaveText(LONG_CANARY);
+  const cell = manifestCell(page);
+  await expect(cell.locator('[tabindex="0"]')).toHaveCount(1); // the stable URL only
+  await expect(cell).toContainText(/\+\s*canary/);
+  expect(await cell.evaluate((e) => (e as HTMLElement).textContent)).not.toContain(LONG_CANARY);
+  await page.getByRole('button', { name: 'Details for products' }).click();
+  await expect(
+    page.getByRole('dialog', { name: 'products: details' }).getByText(LONG_CANARY),
+  ).toBeVisible();
 });
 
 test('E-tooltip-hints: the Manifest and Rollout header hints open on keyboard focus', async ({

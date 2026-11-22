@@ -12,10 +12,10 @@ async function login(page: Page, email: string): Promise<void> {
 
 const rowOf = (page: Page, name: string) =>
   page.getByRole('row').filter({ has: page.getByRole('rowheader', { name, exact: true }) });
-// T41: the status chip is inside the row header ("productsup"), so match the name plus a status word (flag rows are also "products.…")
+// T41/T58: the status is inside the row header ("products, up" or "productsdown"), so match the name, an optional comma and a status word (flag rows are also "products.…")
 const remoteRow = (page: Page, name: string) =>
   page.getByRole('row').filter({
-    has: page.getByRole('rowheader', { name: new RegExp(`^${name}\\s*(up|down|checking|off)`) }),
+    has: page.getByRole('rowheader', { name: new RegExp(`^${name}[\\s,]*(up|down|checking|off)`) }),
   });
 const products = (page: Page) => page.locator('section[data-remote="products"]');
 const dashboard = (page: Page) => page.locator('section[data-remote="dashboard"]');
