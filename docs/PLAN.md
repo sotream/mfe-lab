@@ -249,3 +249,8 @@ Nothing planned.
 
 - **Goal:** a reviewer who opens the repo for a minute sees what is unusual, can try it live in two minutes, and can read what was left out on purpose.
 - **Done when:** the README says three remotes (two React, one Vue) and its numbers match `perf-budget.json`, `size-budget` and the last vitals run; it has a "Try it in 2 minutes" box, a PR previews bullet, RFCs 0012-0018 in the table and a "Deliberately not done" section whose items each cite an existing RFC; the tour has the new screenshots; `docs/deploy.md` says Vercel Authentication is off on the five projects; no new dependency.
+
+## T45 Architecture diagram refresh
+
+- **Goal:** the first image in the README shows the lab as it is now.
+- **Done when:** `docs/img/architecture.svg` says "three remotes", shows `orders` (Vue 3.5, `mount(el, ctx)`, Shadow DOM, only `@mfe/auth-store` shared), the registry read (`GET /registry`: stable, canary, off), the Orders nav link, and the API with Postgres (Neon in prod, PGlite in dev); it renders without overlapping or clipped text at 880 px and at its natural size; the README alt text and the first diagram in `docs/architecture.md` match; no new dependency.
