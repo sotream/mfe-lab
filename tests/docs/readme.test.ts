@@ -37,6 +37,7 @@ describe('docs links', () => {
     'docs/api.md',
     'docs/deploy.md',
     'docs/testing.md',
+    'docs/how-it-was-built.md',
   ]) {
     it(`Q-readme: every relative link in ${file} resolves`, () => {
       const md = read(file);
