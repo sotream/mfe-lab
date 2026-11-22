@@ -119,7 +119,7 @@ flowchart LR
 - Only the remotes the PR changed get a preview; the others stay on their production URLs from `deploy/urls.json`. The shell is built with those `MF_*_URL`, and `PREVIEW_API_URL=<preview api> node scripts/vercel-config.ts` regenerates the configs in the throwaway checkout so the shell's `/api` rewrite reaches the preview API. The browser stays same-origin, so there is no CORS.
 - Smoke: `scripts/preview-smoke.ts` signs in as the demo admin and waits for the products, dashboard and orders frames.
 - One sticky comment (marker `<!-- mfe-lab-preview -->`, `scripts/preview-comment.ts`) is edited on every push and set to "Preview removed" on close.
-- Limits: forks and Dependabot PRs are skipped (no secrets); Neon free tier caps branches, and then the comment says "preview unavailable"; the preview shares `JWT_SECRET` with production and the demo logins are public; previews must be reachable without a Vercel login (Vercel Authentication on the projects must not cover them).
+- Limits: forks and Dependabot PRs are skipped (no secrets); Neon free tier caps branches, and then the comment says "preview unavailable"; the preview shares `JWT_SECRET` with production and the demo logins are public; previews must be reachable without a Vercel login, so Vercel Authentication (deployment protection) is off on all five projects (owner decision, 2026-11-22) and preview links are public, like production.
 - The job runs PR code with the deploy secrets, which is acceptable only because forks are skipped.
 
 ## Owner checklist

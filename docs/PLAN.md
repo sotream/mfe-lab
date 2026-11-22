@@ -244,3 +244,8 @@ Nothing planned.
 
 - **Goal:** every same-repo PR gets a live stack (shell, changed remotes, API on its own Neon branch) and a sticky comment; closing the PR cleans up (RFC 0018).
 - **Done when:** `preview.yml` deploys preview (never `--prod`) builds under `*-pr-<n>.vercel.app` aliases, skips forks and Dependabot, and its cleanup job deletes the Neon branch `preview/pr-<n>` and the aliases; the shell's `/api` rewrite reaches the preview API; smoke signs in as the demo admin and sees all three frames; the sticky comment lists the apps with `preview` or `production`, the branch, the commit and the smoke result and reads "Preview removed" on close; `docs/deploy.md` and RFC 0018 are added; no new dependency; `pnpm lint && pnpm typecheck && pnpm test` pass.
+
+## T44 README as a case study
+
+- **Goal:** a reviewer who opens the repo for a minute sees what is unusual, can try it live in two minutes, and can read what was left out on purpose.
+- **Done when:** the README says three remotes (two React, one Vue) and its numbers match `perf-budget.json`, `size-budget` and the last vitals run; it has a "Try it in 2 minutes" box, a PR previews bullet, RFCs 0012-0018 in the table and a "Deliberately not done" section whose items each cite an existing RFC; the tour has the new screenshots; `docs/deploy.md` says Vercel Authentication is off on the five projects; no new dependency.
