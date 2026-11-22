@@ -93,11 +93,34 @@ Per app: `vercel link --yes --project <name>` (so no project id is stored), `ver
 
 If two merges land while a deploy is running, the queue keeps only the newest pending run, so the skipped commit's changes are not deployed. Run `deploy.yml` with `all` to catch up.
 
-No PR previews yet: an API preview would use the production database. Previews with a Neon branch per PR are a later task.
+PR previews are a separate workflow, see below.
 
 ### Secrets (names only)
 
 Repository secrets: `VERCEL_TOKEN`, `NEON_API_KEY`. The Vercel GitHub app is not needed. Set them yourself with `gh secret set`; never paste values to an agent. The runtime secrets live only in the Vercel project env.
+
+## PR previews
+
+`.github/workflows/preview.yml` gives every same-repo PR a live copy of the lab (RFC 0018). It never touches production data or production deployments.
+
+```mermaid
+flowchart LR
+  PR[PR opened or pushed] --> N[Neon branch preview/pr-N from main, migrate]
+  N --> A[API preview, DATABASE_URL = the branch]
+  A --> R[changed remotes: preview]
+  R --> S[shell preview, /api rewrite to the preview API]
+  S --> K[smoke: admin login, three frames]
+  K --> C[sticky PR comment]
+  X[PR closed] --> D[delete branch and aliases, comment: Preview removed]
+```
+
+- `vercel build` and `vercel deploy --prebuilt` without `--prod`, in the existing projects, then `vercel alias set` to stable hosts: `mfe-lab-pr-<n>.vercel.app`, `mfe-lab-<app>-pr-<n>.vercel.app` (`scripts/preview-urls.ts`).
+- The API gets `DATABASE_URL` as a runtime env of that deployment only (`-e`), not a project env var.
+- Only the remotes the PR changed get a preview; the others stay on their production URLs from `deploy/urls.json`. The shell is built with those `MF_*_URL`, and `PREVIEW_API_URL=<preview api> node scripts/vercel-config.ts` regenerates the configs in the throwaway checkout so the shell's `/api` rewrite reaches the preview API. The browser stays same-origin, so there is no CORS.
+- Smoke: `scripts/preview-smoke.ts` signs in as the demo admin and waits for the products, dashboard and orders frames.
+- One sticky comment (marker `<!-- mfe-lab-preview -->`, `scripts/preview-comment.ts`) is edited on every push and set to "Preview removed" on close.
+- Limits: forks and Dependabot PRs are skipped (no secrets); Neon free tier caps branches, and then the comment says "preview unavailable"; the preview shares `JWT_SECRET` with production and the demo logins are public; previews must be reachable without a Vercel login (Vercel Authentication on the projects must not cover them).
+- The job runs PR code with the deploy secrets, which is acceptable only because forks are skipped.
 
 ## Owner checklist
 

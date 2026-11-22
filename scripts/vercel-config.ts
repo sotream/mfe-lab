@@ -7,6 +7,8 @@ const root = resolve(import.meta.dirname, '..');
 const urls: Record<'shell' | 'products' | 'dashboard' | 'orders' | 'api', string> = JSON.parse(
   readFileSync(join(root, 'deploy/urls.json'), 'utf8'),
 );
+// PREVIEW_API_URL points the /api rewrite at a PR preview API (preview.yml); unset, the output is the committed one.
+const apiUrl = process.env.PREVIEW_API_URL ?? urls.api;
 const out = resolve(process.argv[2] ?? root);
 
 const header = (source: string, key: string, value: string) => ({
@@ -22,7 +24,7 @@ function staticApp(name: 'shell' | 'products' | 'dashboard' | 'orders') {
     buildCommand: 'pnpm build',
     outputDirectory: 'dist',
     rewrites: [
-      { source: '/api/:path*', destination: `${urls.api}/:path*` },
+      { source: '/api/:path*', destination: `${apiUrl}/:path*` },
       { source: '/(.*)', destination: '/index.html' },
     ],
     headers: [
