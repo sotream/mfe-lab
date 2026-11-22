@@ -1,4 +1,4 @@
-import { login } from '@mfe/auth-store';
+import { login, roleLabel } from '@mfe/auth-store';
 import { useAuth } from '@mfe/auth-store/react';
 import { Button, detectLocale } from '@mfe/ui';
 import '@mfe/ui/base.css';
@@ -30,7 +30,7 @@ function StandaloneBar() {
           {role}
         </Button>
       ))}
-      <span>{user ? t.signedIn(user.email, user.role) : t.signedOut}</span>
+      <span>{user ? t.signedIn(user.email, roleLabel(user.role)) : t.signedOut}</span>
     </div>
   );
 }

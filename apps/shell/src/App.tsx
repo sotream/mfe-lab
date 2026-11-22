@@ -1,4 +1,4 @@
-import { logout, type Role } from '@mfe/auth-store';
+import { logout, roleLabel } from '@mfe/auth-store';
 import { useAuth } from '@mfe/auth-store/react';
 import { report } from '@mfe/telemetry';
 import {
@@ -120,9 +120,6 @@ function LanguageSwitch() {
     </div>
   );
 }
-
-// The owner account looks like a plain admin in the UI.
-const roleLabel = (role: Role) => (role === 'superadmin' ? 'admin' : role);
 
 function Layout() {
   const user = useAuth((s) => s.user);
