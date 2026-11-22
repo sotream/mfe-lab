@@ -97,7 +97,9 @@ describe('auth', () => {
     const { token, user } = await tokenFor('editor@lab.test');
     const res = await get('/auth/me', bearer(token));
     expect(res.statusCode).toBe(200);
-    expect(res.json()).toEqual({ user: { id: user.id, email: user.email, role: user.role } });
+    expect(res.json()).toEqual({
+      user: { id: user.id, email: user.email, role: user.role, demo: false },
+    });
   });
 
   it('Q-me-401: missing, malformed, garbage and foreign-secret tokens are unauthorized', async () => {

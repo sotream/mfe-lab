@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it, vi } from 'vitest';
 import { call, count, freshApp, isIso, type Ctx } from './helpers.ts';
 
 type Row = {
@@ -22,6 +22,13 @@ const body = (o: Partial<Record<string, unknown>> = {}) => ({
 });
 const post = (ctx: Ctx, payload: object | string, headers?: Record<string, string>) =>
   call(ctx, { method: 'POST', url: '/errors', as: null, payload, headers });
+// POST /errors is limited to 30 per minute per IP; trustProxy is on when VERCEL is set, so a bulk test
+// spreads its posts over distinct x-forwarded-for addresses (25 per address).
+vi.stubEnv('VERCEL', '1');
+afterAll(() => vi.unstubAllEnvs());
+const ip = (i: number) => ({
+  'x-forwarded-for': `10.0.${Math.floor(i / 25 / 250)}.${Math.floor(i / 25) % 250}`,
+});
 const list = async (ctx: Ctx, query?: Record<string, string>) => {
   const res = await call(ctx, { url: '/errors', query });
   expect(res.statusCode, res.body).toBe(200);
@@ -88,7 +95,7 @@ describe('errors api', () => {
 
   it('Q-errors-api: GET returns at most 50', async () => {
     const ctx = await freshApp();
-    for (let i = 0; i < 55; i++) await post(ctx, body({ message: `m${i}` }));
+    for (let i = 0; i < 55; i++) await post(ctx, body({ message: `m${i}` }), ip(i));
     const rows = await list(ctx);
     expect(rows).toHaveLength(50);
     expect(rows[0]?.message).toBe('m54');
@@ -130,7 +137,7 @@ describe('errors api', () => {
 
   it('Q-errors-api: retention keeps the newest 1000', async () => {
     const ctx = await freshApp();
-    for (let i = 0; i < 1005; i++) await post(ctx, body({ message: `m${i}` }));
+    for (let i = 0; i < 1005; i++) await post(ctx, body({ message: `m${i}` }), ip(i));
     expect(await count(ctx.app.db, 'errors')).toBe(1000);
     const messages = await ctx.app.db.query<{ message: string }>('SELECT message FROM errors');
     expect(messages.some((r) => r.message === 'm0')).toBe(false);
