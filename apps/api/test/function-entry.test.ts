@@ -16,7 +16,7 @@ describe('vercel function entry', () => {
     expect(entryPath()).toBeTruthy();
     const r = await invoke('/health');
     expect(r.statusCode).toBe(200);
-    expect(JSON.parse(r.body)).toEqual({ status: 'ok' });
+    expect(JSON.parse(r.body)).toEqual({ status: 'ok', db: 'local' });
   });
 
   it('Q-function-entry: production does not migrate, an unmigrated database fails clearly', async () => {
