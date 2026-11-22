@@ -28,7 +28,7 @@
 
 **Live demo: <https://mfe-lab.vercel.app>**. Log in with the demo accounts from [Quick start](#quick-start). Data resets daily at 03:00 UTC. The database is on a free tier, so the first request may take a second to wake it.
 
-One shell loads two independently built and deployed React remotes **at runtime** with Module Federation 2, on top of a small Fastify + Postgres API.
+One shell loads three independently built and deployed remotes (two React, one Vue 3.5) **at runtime** with Module Federation 2, on top of a small Fastify + Postgres API.
 
 It answers the questions a real micro frontend platform runs into:
 
@@ -37,6 +37,18 @@ It answers the questions a real micro frontend platform runs into:
 - What happens when one remote is down, or ships a new version?
 
 Every answer is running code, covered by black-box tests and argued in a short RFC.
+
+### Try it in 2 minutes
+
+On the [live site](https://mfe-lab.vercel.app) (the changes below are real and shared, so please undo them at the end):
+
+1. Sign in as `admin@lab.test` / `lab12345` (demo-only). Home shows the products and dashboard frames, each labelled with its remote name and build stamp.
+2. Open **Inspector**, then **Details** on the `products` row. Set `products canary URL` to `https://mfe-lab-products.vercel.app/mf-manifest.json` and the percent to `30`, then Save. The Rollout cell reads `canary 30%`; the dialog shows your bucket (0-99, below 30 means canary). ([RFC 0017](docs/rfc/0017-remote-registry-canary-and-kill-switch.md))
+3. Open **Details** on `dashboard`, tick `Switch dashboard off`, Save and reload. Sign in again and look at Home: the dashboard frame says "switched off right now" and the products table keeps working.
+4. Open **Orders**. It is a Vue 3.5 remote. In DevTools, the frame body is a `#shadow-root (open)`, and `document.head` has no orders styles. ([RFC 0016](docs/rfc/0016-framework-agnostic-remotes-and-css-isolation.md))
+5. Click **DE**. Every remote switches language without a reload, and prices and dates follow German formats. ([RFC 0012](docs/rfc/0012-locale-across-remotes.md))
+
+Undo: untick the dashboard switch, set the products canary percent back to `0` and clear the URL.
 
 ![Architecture: browser, shell host, shared singletons, products, dashboard and orders remotes, event bus, API](docs/img/architecture.svg)
 
@@ -54,13 +66,18 @@ Every answer is running code, covered by black-box tests and argued in a short R
 - **Locale across remotes.** German by default for German browsers, with an EN switch. The shell owns the language (`<html lang>` plus an event), each remote owns its strings, and `Intl` formats prices, dates and times. ([RFC 0012](docs/rfc/0012-locale-across-remotes.md))
 - **Remote registry, canary and kill switch.** The API keeps a registry of remotes. An admin can send a percentage of users to a canary manifest, or switch a remote off, without redeploying the shell; a canary that fails to load falls back to stable. ([RFC 0017](docs/rfc/0017-remote-registry-canary-and-kill-switch.md))
 - **Mixed frameworks and CSS isolation.** The `orders` remote is Vue 3.5. The shell mounts it through a framework-agnostic `mount(el, ctx)` contract, and it renders in a Shadow DOM, so the lab's global CSS cannot reach it. The React remotes follow a checked class-prefix rule. ([RFC 0016](docs/rfc/0016-framework-agnostic-remotes-and-css-isolation.md))
+- **PR previews.** Every same-repo PR gets its own live stack (shell, the remotes it changed, an API on a copy-on-write Neon branch of the data) and one sticky comment with the links. Closing the PR deletes it all. See [#65](https://github.com/sotream/mfe-lab/pull/65) for the first one, and [RFC 0018](docs/rfc/0018-pr-previews-with-a-database-branch.md).
 - **Prefetch on idle.** Measured first: −31.5% median time to the first product row on Fast 4G. ([RFC 0005](docs/rfc/0005-prefetch-remotes.md))
-- **Performance budgets.** Gzipped bundle size is gated in CI (shell initial JS 33.5 KB of 37 KB, products 64 KB of 71 KB, dashboard 51 KB of 56 KB, orders 64 KB of 72 KB); lab LCP, CLS and time-to-remotes are checked on the live site after each deploy (LCP median 1.6 s on Fast 4G). ([RFC 0015](docs/rfc/0015-performance-budgets.md))
+- **Performance budgets.** Gzipped bundle size is gated in CI (shell initial JS 33.4 KB of 37 KB, products 64.8 KB of 71 KB, dashboard 51.1 KB of 56 KB, orders 66.9 KB of 72 KB); lab LCP, CLS and time-to-remotes are checked on the live site after each deploy (LCP median 1.8 s on Fast 4G). ([RFC 0015](docs/rfc/0015-performance-budgets.md))
 - **An inspector page.** It shows remotes, versions, shared dependencies, flags, errors and a live event log.
 
-| Two remotes, one page                                   | One remote down                                                               | Live event log                                         |
+| Products and dashboard, one page                        | One remote down                                                               | Live event log                                         |
 | ------------------------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------ |
 | ![Home with both frames](docs/screenshots/2-frames.png) | ![Products down, dashboard still working](docs/screenshots/3-remote-down.png) | ![Inspector Events log](docs/screenshots/8-events.png) |
+
+| Remote details and canary (admin)                                                     | Dashboard switched off                                                               | Orders, Vue in a Shadow DOM                                             |
+| ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------- |
+| ![Details dialog with canary URL and percent](docs/screenshots/13-details-dialog.png) | ![Home with the dashboard frame switched off](docs/screenshots/15-dashboard-off.png) | ![Orders table from the Vue remote](docs/screenshots/16-orders-vue.png) |
 
 The [tour](docs/tour.md) walks through every feature with screenshots and hands-on steps.
 
@@ -112,19 +129,35 @@ packages/        auth-store, api-client, events, ui, telemetry
 - [Brief](docs/BRIEF.md) and [plan](docs/PLAN.md): the task list, with each task's done criteria.
 - RFCs, one per decision:
 
-| #    | RFC                                                                                   | Decision                                                                                                                         |
-| ---- | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| 0001 | [Module Federation for the frontend](docs/rfc/0001-module-federation-for-frontend.md) | One shell host and two remotes, built and served independently, joined at runtime with Rspack and `@module-federation/enhanced`. |
-| 0002 | [Sharing auth state](docs/rfc/0002-sharing-auth-state.md)                             | The shell owns login; remotes read user and token from the `@mfe/auth-store` singleton; the token stays in memory.               |
-| 0003 | [Native Federation comparison](docs/rfc/0003-native-federation-comparison.md)         | Stay on Module Federation 2; Native Federation would replace working code for little gain.                                       |
-| 0004 | [Versioned remotes](docs/rfc/0004-versioned-remotes.md)                               | Freeze a remote into a static release; the shell switches versions by changing only the manifest URL.                            |
-| 0005 | [Prefetch remotes on idle](docs/rfc/0005-prefetch-remotes.md)                         | After first render the shell preloads both remotes on idle; measured 1201 to 823 ms on Fast 4G.                                  |
-| 0006 | [Data between remotes](docs/rfc/0006-data-between-remotes.md)                         | One TanStack Query client per remote, Redux Toolkit local to products, typed `window` events between remotes; nothing shared.    |
-| 0007 | [Routing inside remotes](docs/rfc/0007-routing-inside-remotes.md)                     | The shell mounts a remote at `<name>/*`; the remote owns the subtree with relative links, on the shared router.                  |
-| 0008 | [Design system versioning](docs/rfc/0008-design-system-versioning.md)                 | `@mfe/ui` is a non-singleton semver share; CSS carries a major prefix (`ds1-`), so two versions can coexist.                     |
-| 0009 | [Feature flags](docs/rfc/0009-feature-flags.md)                                       | Flags live in the API; each remote reads them with its own query client; `flags:changed` refreshes them without a reload.        |
-| 0010 | [Error tracking per remote](docs/rfc/0010-error-tracking.md)                          | Frames and `window` handlers report to the API with remote and build; admins read them in the inspector.                         |
-| 0011 | [Accessibility across remotes](docs/rfc/0011-accessibility-across-remotes.md)         | The shell owns title, focus, skip link, `h1` and the live region; remotes own their subtree and announce through an event.       |
+| #    | RFC                                                                                                           | Decision                                                                                                                                             |
+| ---- | ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0001 | [Module Federation for the frontend](docs/rfc/0001-module-federation-for-frontend.md)                         | One shell host and independently built remotes, joined at runtime with Rspack and `@module-federation/enhanced`.                                     |
+| 0002 | [Sharing auth state](docs/rfc/0002-sharing-auth-state.md)                                                     | The shell owns login; remotes read user and token from the `@mfe/auth-store` singleton; the token stays in memory.                                   |
+| 0003 | [Native Federation comparison](docs/rfc/0003-native-federation-comparison.md)                                 | Stay on Module Federation 2; Native Federation would replace working code for little gain.                                                           |
+| 0004 | [Versioned remotes](docs/rfc/0004-versioned-remotes.md)                                                       | Freeze a remote into a static release; the shell switches versions by changing only the manifest URL.                                                |
+| 0005 | [Prefetch remotes on idle](docs/rfc/0005-prefetch-remotes.md)                                                 | After first render the shell preloads both remotes on idle; measured 1201 to 823 ms on Fast 4G.                                                      |
+| 0006 | [Data between remotes](docs/rfc/0006-data-between-remotes.md)                                                 | One TanStack Query client per remote, Redux Toolkit local to products, typed `window` events between remotes; nothing shared.                        |
+| 0007 | [Routing inside remotes](docs/rfc/0007-routing-inside-remotes.md)                                             | The shell mounts a remote at `<name>/*`; the remote owns the subtree with relative links, on the shared router.                                      |
+| 0008 | [Design system versioning](docs/rfc/0008-design-system-versioning.md)                                         | `@mfe/ui` is a non-singleton semver share; CSS carries a major prefix (`ds1-`), so two versions can coexist.                                         |
+| 0009 | [Feature flags](docs/rfc/0009-feature-flags.md)                                                               | Flags live in the API; each remote reads them with its own query client; `flags:changed` refreshes them without a reload.                            |
+| 0010 | [Error tracking per remote](docs/rfc/0010-error-tracking.md)                                                  | Frames and `window` handlers report to the API with remote and build; admins read them in the inspector.                                             |
+| 0011 | [Accessibility across remotes](docs/rfc/0011-accessibility-across-remotes.md)                                 | The shell owns title, focus, skip link, `h1` and the live region; remotes own their subtree and announce through an event.                           |
+| 0012 | [Locale across remotes](docs/rfc/0012-locale-across-remotes.md)                                               | The shell owns the language (`<html lang>` plus `locale:changed`); each app translates its own strings; `Intl` formats money and dates.              |
+| 0013 | [Postgres for the API](docs/rfc/0013-postgres-for-the-api.md)                                                 | Postgres everywhere: Neon over TCP in production, PGlite (Postgres in WASM) in dev and tests, selected by `DATABASE_URL`.                            |
+| 0014 | [Typed federation contract](docs/rfc/0014-typed-federation-contract.md)                                       | What each remote exposes lives in one file; a wrong module name fails `pnpm typecheck`.                                                              |
+| 0015 | [Performance budgets](docs/rfc/0015-performance-budgets.md)                                                   | Gzipped size is gated in CI, Web Vitals are measured on the live site after each deploy; budgets live in `perf-budget.json`.                         |
+| 0016 | [Framework-agnostic remotes and CSS isolation](docs/rfc/0016-framework-agnostic-remotes-and-css-isolation.md) | A `mount(el, ctx)` contract lets a Vue remote render in a Shadow DOM; React remotes follow a checked class-prefix rule.                              |
+| 0017 | [Remote registry, canary and kill switch](docs/rfc/0017-remote-registry-canary-and-kill-switch.md)            | The API holds a canary URL, a percentage and an off switch per remote; the shell decides per user at boot, and a failed canary falls back to stable. |
+| 0018 | [PR previews with a database branch](docs/rfc/0018-pr-previews-with-a-database-branch.md)                     | Each PR gets a public stack and an API on its own Neon branch, with a sticky comment; closing the PR deletes it all.                                 |
+
+## Deliberately not done
+
+Choices the lab leaves out on purpose, each with the RFC that records it.
+
+- **Server-side rendering or streaming of remotes.** Not yet, on purpose. Client-side composition is the subject of the lab, and the brief rules out SSR and Next.js ([BRIEF](docs/BRIEF.md), [RFC 0001](docs/rfc/0001-module-federation-for-frontend.md), [RFC 0016](docs/rfc/0016-framework-agnostic-remotes-and-css-isolation.md) and [RFC 0017](docs/rfc/0017-remote-registry-canary-and-kill-switch.md) as non-goals). Composing on the server would add a Node build per remote, and the Vercel function loader already rejects ESM-only dependencies loaded through `require()` ([deploy notes](docs/deploy.md)). [RFC 0003](docs/rfc/0003-native-federation-comparison.md) notes that Module Federation's own SSR support is still listed as planned. This changes if SEO or first paint for anonymous pages becomes a goal.
+- **A shared store or cache across remotes.** Each remote owns its TanStack Query client, and they talk through typed events. A global store or shared query client would couple the releases that micro frontends exist to decouple ([RFC 0006](docs/rfc/0006-data-between-remotes.md), [RFC 0012](docs/rfc/0012-locale-across-remotes.md)).
+- **Native Federation instead of Module Federation 2.** It would replace working Rspack, manifest, inspector and test code for little gain. [RFC 0003](docs/rfc/0003-native-federation-comparison.md) lists what would reopen it, such as dropping Rspack, consuming remotes from non-JS hosts, or a blocking MF2 bug.
+- **Iframes for isolation.** No shared token, layout or deps, and poor accessibility ([RFC 0001](docs/rfc/0001-module-federation-for-frontend.md), [RFC 0016](docs/rfc/0016-framework-agnostic-remotes-and-css-isolation.md)). Shadow DOM for the Vue remote and a prefix rule for the React ones give enough isolation.
 
 ## How it was built
 
