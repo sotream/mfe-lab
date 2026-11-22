@@ -354,11 +354,17 @@ function ProductsTable({
                       variant="danger"
                       aria-label={t.deleteSku(p.sku)}
                       disabled={!canDelete}
-                      title={canDelete ? undefined : t.demoNoDelete}
+                      aria-disabled={canDelete ? undefined : true}
+                      aria-describedby={canDelete ? undefined : `delete-why-${p.id}`}
                       onClick={() => onDelete(p)}
                     >
                       {t.deleteBtn}
                     </Button>
+                    {!canDelete && (
+                      <span id={`delete-why-${p.id}`} className="visually-hidden">
+                        {t.demoNoDelete}
+                      </span>
+                    )}
                   </div>
                 </td>
               )}
