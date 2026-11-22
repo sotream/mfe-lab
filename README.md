@@ -50,7 +50,7 @@ On the [live site](https://mfe-lab.vercel.app) (the changes below are real and s
 
 Undo: untick the dashboard switch, set the products canary percent back to `0` and clear the URL.
 
-![Architecture: browser, shell host, shared singletons, products, dashboard and orders remotes, event bus, API](docs/img/architecture.svg)
+![Architecture: the shell host reads the remote registry (stable, canary or off) and loads the products, dashboard and orders (Vue, Shadow DOM) remotes at runtime; shared singletons, the products:changed event bus, and the Fastify API with Postgres (Neon in production, PGlite in dev)](docs/img/architecture.svg)
 
 ## What it shows
 

@@ -20,7 +20,8 @@ flowchart TB
   P -. "reuses" .-> SH
   D -. "reuses" .-> SH
   O -. "reuses auth-store only" .-> SH
-  P & D & O -. "REST + JWT" .-> A[("api :4000 · Postgres")]
+  S -. "GET /registry at boot:<br/>stable · canary · off" .-> A
+  P & D & O -. "REST + JWT" .-> A[("api :4000 · Postgres<br/>Neon in prod, PGlite in dev")]
 ```
 
 Loading one remote, including the "remote down" path:
