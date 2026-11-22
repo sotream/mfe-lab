@@ -8,6 +8,7 @@ import {
   type ErrorRow,
   type Flag,
 } from '@mfe/api-client';
+import { canAdmin } from '@mfe/auth-store';
 import { useAuth } from '@mfe/auth-store/react';
 import { emit } from '@mfe/events';
 import '@mfe/ui/select.css';
@@ -146,7 +147,9 @@ function DetailsDialog({
   onClose: () => void;
 }) {
   const t = useT().inspector;
-  const isAdmin = useAuth((s) => s.user?.role === 'admin');
+  const demoNote = useT().demoAdmin;
+  const isAdmin = useAuth((s) => canAdmin(s.user));
+  const locked = useAuth((s) => s.user?.demo === true);
   useSyncExternalStore(subscribeRemotes, registryVersion);
   const row = registryRow(name);
   const { shown, entry, bucket } = describeRemote(name);
@@ -223,6 +226,8 @@ function DetailsDialog({
             type="url"
             placeholder="https://…/mf-manifest.json"
             value={url}
+            disabled={locked}
+            aria-disabled={locked || undefined}
             onChange={(e) => setUrl(e.target.value)}
           />
           <Field
@@ -232,6 +237,8 @@ function DetailsDialog({
             max={100}
             step={1}
             value={percent}
+            disabled={locked}
+            aria-disabled={locked || undefined}
             onChange={(e) => setPercent(e.target.value)}
           />
           <label className="details-off">
@@ -239,15 +246,24 @@ function DetailsDialog({
               type="checkbox"
               className="switch"
               checked={off}
+              disabled={locked}
+              aria-disabled={locked || undefined}
               onChange={(e) => setOff(e.target.checked)}
             />
             {t.offOf(name)}
           </label>
           <p className="details-hint">{t.registryHint}</p>
+          {locked && <p className="details-demo">{demoNote}</p>}
           {failed && <p role="alert">{t.registryFailed}</p>}
           <div className="details-actions">
             <Button onClick={onClose}>{t.cancel}</Button>
-            <Button type="submit" variant="primary" aria-label={t.saveOf(name)}>
+            <Button
+              type="submit"
+              variant="primary"
+              aria-label={t.saveOf(name)}
+              disabled={locked}
+              aria-disabled={locked || undefined}
+            >
               {t.save}
             </Button>
           </div>
@@ -341,7 +357,8 @@ function Flags({ flags, setFlags }: { flags: Flag[]; setFlags: Dispatch<SetState
   const tt = useT();
   const t = tt.inspector;
   const user = useAuth((s) => s.user);
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = canAdmin(user);
+  const locked = user?.demo === true;
   const [failed, setFailed] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const signedIn = user !== null;
@@ -376,6 +393,7 @@ function Flags({ flags, setFlags }: { flags: Flag[]; setFlags: Dispatch<SetState
         <p className="panel-body">{t.signInFlags}</p>
       ) : (
         <>
+          {locked && <p className="panel-body details-demo">{tt.demoAdmin}</p>}
           {failed && (
             <p role="alert" className="panel-body">
               {t.flagsFailed}
@@ -410,7 +428,8 @@ function Flags({ flags, setFlags }: { flags: Flag[]; setFlags: Dispatch<SetState
                         className="switch"
                         aria-label={f.name}
                         checked={f.enabled}
-                        disabled={!isAdmin}
+                        disabled={!isAdmin || locked}
+                        aria-disabled={locked || undefined}
                         onChange={(e) => void toggle(f.name, e.target.checked)}
                       />
                     </td>
@@ -430,7 +449,8 @@ function Errors() {
   const tt = useT();
   const t = tt.inspector;
   const locale = useLocale();
-  const isAdmin = useAuth((s) => s.user?.role === 'admin');
+  const isAdmin = useAuth((s) => canAdmin(s.user));
+  const locked = useAuth((s) => s.user?.demo === true);
   const [summary, setSummary] = useState<{ remote: string; count: number }[]>([]);
   const [rows, setRows] = useState<ErrorRow[]>([]);
   const [failed, setFailed] = useState(false);
@@ -463,6 +483,7 @@ function Errors() {
         <p className="panel-body">{t.adminsOnly}</p>
       ) : (
         <>
+          {locked && <p className="panel-body details-demo">{tt.demoAdmin}</p>}
           {failed && <p className="panel-body">{t.errorsFailed}</p>}
           <div className="panel-body panel-toolbar">
             <ul className="chips">
@@ -473,7 +494,12 @@ function Errors() {
             <Button className="ds1-button--sm" onClick={() => void refresh()}>
               {t.refresh}
             </Button>
-            <Button className="ds1-button--sm" onClick={() => void clear()}>
+            <Button
+              className="ds1-button--sm"
+              disabled={locked}
+              aria-disabled={locked || undefined}
+              onClick={() => void clear()}
+            >
               {t.clear}
             </Button>
           </div>

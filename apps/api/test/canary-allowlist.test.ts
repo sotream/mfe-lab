@@ -11,7 +11,11 @@ import { call, freshApp, type Ctx } from './helpers.ts';
 const prodCtx = async (): Promise<Ctx> => {
   vi.stubEnv('NODE_ENV', 'production');
   onTestFinished(() => void vi.unstubAllEnvs());
-  const app = await buildApp({ dbUrl: 'pglite:memory', jwtSecret: 'test-secret', migrate: true });
+  const app = await buildApp({
+    dbUrl: 'pglite:memory',
+    jwtSecret: 'canary-allowlist-test-secret-0123456789abcdef',
+    migrate: true,
+  });
   onTestFinished(() => app.close());
   await seed(app.db);
   const res = await app.inject({

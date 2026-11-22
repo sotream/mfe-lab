@@ -84,8 +84,16 @@
 
 .topbar .nav-user {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--ds1-space-sm);
   align-items: center;
+}
+
+.chip--demo {
+  flex: none;
+  border-color: var(--ds1-rule);
+  background-color: var(--ds1-bad-soft);
+  color: var(--ds1-bad);
 }
 
 .nav-email {
@@ -448,7 +456,8 @@ ol.panel-body {
   align-items: center;
 }
 
-.details-hint {
+.details-hint,
+.details-demo {
   margin: 0;
   color: var(--ds1-muted);
   font-size: var(--ds1-text-sm);

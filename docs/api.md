@@ -14,14 +14,18 @@ Demo users (**demo-only credentials, never reuse**): `admin@lab.test`, `editor@l
 ## Auth
 
 - `POST /auth/login` with `{ "email", "password" }` returns `{ token, user }`. Wrong password and unknown email give the same `401 invalid_credentials`; a bad body gives `400 invalid_body`.
+- `POST /auth/login` is limited to 10 per minute per IP (`429 rate_limited`); authenticated writes to 60 per minute per user and `POST /errors` to 30 per minute per IP. The counters live in memory per serverless instance, so on Vercel the limit applies per warm instance.
 - `GET /auth/me` with `Authorization: Bearer <token>` returns the current user (read from the DB, so a deleted user gets `401`).
 - Tokens are HS256 JWTs valid for **15 minutes**. There are no refresh tokens by design: log in again (RFC 0002).
 - Routes are protected with `preHandler: app.authenticate` or `app.requireRole('admin', 'editor')` (`401 unauthorized`, `403 forbidden`).
 - `JWT_SECRET` env sets the signing secret (see `.env.example`, **demo-only**). If unset outside production, the API uses an insecure dev secret and logs a warning; in production a missing secret is a startup error.
 
+- **Demo lock.** When the API runs as the production deployment (`VERCEL_ENV=production`), the public demo accounts (`admin`, `editor`) are read-only for changes that affect every visitor: registry `PATCH`, flag `PATCH`, errors `DELETE`, order writes and product `DELETE` return `403 demo_read_only`. Creating and editing products still works. Previews, dev and tests are unlocked. `POST /auth/login` and `GET /auth/me` return `user.demo: true` for a locked account, so the UI never guesses.
+- **Owner account.** An extra account with 2FA exists only when its three env vars are set (a reseed creates it). Login without a code returns `401 otp_required`; send the code as `otp`. Failed attempts lock it for 15 minutes after 5.
+
 ## Endpoints
 
-All routes except `GET /health`, `POST /auth/login`, `POST /errors` and `/docs*` need `Authorization: Bearer <token>` (auth runs before validation, so no token is always `401`). Errors are always `{ "error": "<code>" }`: `invalid_body` / `invalid_query` / `invalid_params` (400), `unauthorized` (401), `forbidden` (403), `not_found` (404, also for unknown routes), `invalid_canary_url` (400, `PATCH /registry/:name`: not an allowlisted manifest URL, RFC 0017), `conflict` (409), `internal` (500).
+All routes except `GET /health`, `POST /auth/login`, `POST /errors` and `/docs*` need `Authorization: Bearer <token>` (auth runs before validation, so no token is always `401`). Errors are always `{ "error": "<code>" }`: `invalid_body` / `invalid_query` / `invalid_params` (400), `unauthorized` (401), `forbidden` (403), `demo_read_only` (403), `rate_limited` (429), `not_found` (404, also for unknown routes), `invalid_canary_url` (400, `PATCH /registry/:name`: not an allowlisted manifest URL, RFC 0017), `conflict` (409), `internal` (500).
 
 | Route                                   | Roles allowed | Notes                                                                                                                                                                                                                |
 | --------------------------------------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

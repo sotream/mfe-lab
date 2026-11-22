@@ -12,11 +12,16 @@ type Column = {
 
 // [name, information_schema data_type] per the Contract; every column is NOT NULL except
 // errors.stack. `id` is `integer generated always as identity` (checked separately).
+// nullable columns: errors.stack and the two optional 2FA columns on users (migration 005)
+const nullable = new Set(['errors.stack', 'users.locked_until', 'users.totp_last_step']);
 const schema: Record<string, [string, string][]> = {
   users: [
     ['email', 'text'],
     ['password_hash', 'text'],
     ['role', 'text'],
+    ['failed_attempts', 'integer'],
+    ['locked_until', 'timestamp with time zone'],
+    ['totp_last_step', 'bigint'],
   ],
   products: [
     ['sku', 'text'],
@@ -84,7 +89,7 @@ describe('db', () => {
         [...cols, ...(table === 'errors' ? [['stack', 'text']] : [])].sort(),
       );
       for (const c of rest) {
-        if (c.column_name !== 'stack')
+        if (!nullable.has(`${table}.${c.column_name}`))
           expect(c.is_nullable, `${table}.${c.column_name}`).toBe('NO');
       }
       const pk = await db.query(
@@ -143,15 +148,15 @@ describe('db', () => {
     await db.close();
   });
 
-  it('Q-migrate: twice is idempotent, returns 4, schema_migrations has 4 rows', async () => {
+  it('Q-migrate: twice is idempotent, returns 5, schema_migrations has 5 rows', async () => {
     const db = await freshDb(); // freshDb already ran migrate once
-    expect(await migrate(db)).toBe(4);
-    expect(await migrate(db)).toBe(4);
-    expect(await schemaVersions(db)).toEqual([1, 2, 3, 4]);
+    expect(await migrate(db)).toBe(5);
+    expect(await migrate(db)).toBe(5);
+    expect(await schemaVersions(db)).toEqual([1, 2, 3, 4, 5]);
     const rows = await db.query<{ n: number; applied: number }>(
       'SELECT count(*)::int AS n, count(applied_at)::int AS applied FROM schema_migrations',
     );
-    expect(rows).toEqual([{ n: 4, applied: 4 }]);
+    expect(rows).toEqual([{ n: 5, applied: 5 }]);
     // seeded flags from 002 are not duplicated by re-running
     expect(await db.query('SELECT count(*)::int AS n FROM flags')).toEqual([{ n: 3 }]);
     await db.close();
@@ -207,7 +212,7 @@ describe('db url', () => {
     await migrate(a);
     await a.close();
     const b = await openDb(url);
-    expect(await schemaVersions(b)).toEqual([1, 2, 3, 4]);
+    expect(await schemaVersions(b)).toEqual([1, 2, 3, 4, 5]);
     await b.close();
 
     for (const bad of ['mysql://u@h/db', 'sqlite:./x.db', './app.db', '']) {

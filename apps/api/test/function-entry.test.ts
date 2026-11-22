@@ -6,7 +6,7 @@ import { entryPath, invoke } from './function-entry.ts';
 beforeEach(() => {
   vi.resetModules();
   vi.stubEnv('NODE_ENV', 'production');
-  vi.stubEnv('JWT_SECRET', 'test-secret');
+  vi.stubEnv('JWT_SECRET', 'function-entry-test-secret-0123456789abcdef');
 });
 afterEach(() => vi.unstubAllEnvs());
 

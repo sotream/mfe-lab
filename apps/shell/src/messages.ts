@@ -22,6 +22,7 @@ const de = {
   mainNav: 'Hauptnavigation',
   language: 'Sprache',
   logout: 'Abmelden',
+  demoAdmin: 'Demo-Admin: Änderungen, die alle betreffen, sind deaktiviert',
   login: 'Anmelden',
   footer: { imprint: 'Impressum', privacy: 'Datenschutz' },
   home: {
@@ -37,6 +38,8 @@ const de = {
     invalid: 'E-Mail oder Passwort ungültig',
     failed: 'Anmeldung fehlgeschlagen, bitte erneut versuchen',
     demo: 'Demo-Konten (nur zur Demonstration, Passwort lab12345):',
+    otp: 'Bestätigungscode',
+    otpNeeded: 'Bitte den Bestätigungscode eingeben',
   },
   flagToggled: (name: string, on: boolean) => `${name} ${on ? 'eingeschaltet' : 'ausgeschaltet'}`,
   errorsCleared: 'Fehler gelöscht',
@@ -178,6 +181,7 @@ const en: typeof de = {
   mainNav: 'Main',
   language: 'Language',
   logout: 'Log out',
+  demoAdmin: 'Demo admin: changes that affect everyone are disabled',
   login: 'Login',
   footer: { imprint: 'Legal notice', privacy: 'Privacy' },
   home: {
@@ -193,6 +197,8 @@ const en: typeof de = {
     invalid: 'Invalid email or password',
     failed: 'Login failed, try again',
     demo: 'Demo accounts (demo-only, password lab12345):',
+    otp: 'Verification code',
+    otpNeeded: 'Enter your verification code',
   },
   flagToggled: (name, on) => `${name} turned ${on ? 'on' : 'off'}`,
   errorsCleared: 'Errors cleared',

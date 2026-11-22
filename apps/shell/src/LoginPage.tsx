@@ -16,6 +16,8 @@ export function LoginPage() {
   const loading = useAuth((s) => s.status === 'loading');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [otp, setOtp] = useState('');
+  const [needOtp, setNeedOtp] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function submit(e: FormEvent) {
@@ -23,12 +25,16 @@ export function LoginPage() {
     if (loading) return;
     setError(null);
     try {
-      await login(email, password);
+      await login(email, password, needOtp ? otp.trim() : undefined);
       navigate(safeNext(params.get('next')), { replace: true });
     } catch (err) {
-      setError(
-        err instanceof Error && err.message === 'invalid_credentials' ? t.invalid : t.failed,
-      );
+      const code = err instanceof Error ? err.message : '';
+      if (code === 'otp_required') setNeedOtp(true);
+      const known: Record<string, string> = {
+        otp_required: t.otpNeeded,
+        invalid_credentials: t.invalid,
+      };
+      setError(known[code] ?? t.failed);
     }
   }
 
@@ -55,6 +61,17 @@ export function LoginPage() {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
+          {needOtp && (
+            <Field
+              label={t.otp}
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              required
+            />
+          )}
           <Button type="submit" variant="primary" disabled={loading} className="login-submit">
             {t.submit}
           </Button>

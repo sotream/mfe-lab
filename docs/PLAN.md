@@ -264,3 +264,8 @@ Nothing planned.
 
 - **Goal:** a main commit is never skipped by a deploy, previews cannot touch production secrets, and closing a PR leaves nothing behind.
 - **Done when:** `ci.yml` cancels only pull_request runs; `deploy.yml` diffs from the last successful deploy (all when none), runs weekly as a catch-up and only from main when dispatched; production secrets target production only and previews get `-e` `JWT_SECRET` and no `CRON_SECRET`, with the DB guard before `alias set`; cleanup steps are all `always()` and also remove the PR's deployments; Neon branches expire after 14 days; the preview comment only edits one by `github-actions[bot]`; Dependabot auto-merge is an allowlist; `NEON_API_KEY` only on steps that use it; `docs/deploy.md` and RFC 0018 updated; no new dependency.
+
+## T47 Demo lockdown and login hardening
+
+- **Goal:** the public demo admin cannot change things that affect every visitor on the live site, and login resists brute force.
+- **Done when:** with `VERCEL_ENV=production` the demo admin and editor get `403 demo_read_only` on registry, flag, errors-delete, order and product-delete writes and `/auth/me` returns `user.demo: true`; the shell shows a "Demo admin" chip and the Details dialog, flag toggles, errors clear and product delete are disabled with a note; an owner account with 2FA from env passes everything and looks like a normal admin; login is limited to 10 per minute per IP, unknown emails cost the same time as known ones, emails match case-insensitively, a `JWT_SECRET` under 32 bytes refuses to start in production, the daily reseed also resets flags and clears errors; `@fastify/rate-limit` is the one new dependency; `pnpm lint && pnpm typecheck && pnpm test` pass.

@@ -40,15 +40,15 @@ Every answer is running code, covered by black-box tests and argued in a short R
 
 ### Try it in 2 minutes
 
-On the [live site](https://mfe-lab.vercel.app) (the changes below are real and shared, so please undo them at the end):
+On the [live site](https://mfe-lab.vercel.app) the demo admin is read-only: it sees everything, and the controls that would change things for every visitor are visible but disabled, with a note. To use the canary and the kill switch yourself, run `pnpm dev`, or open a PR preview (both are unlocked).
 
 1. Sign in as `admin@lab.test` / `lab12345` (demo-only). Home shows the products and dashboard frames, each labelled with its remote name and build stamp.
-2. Open **Inspector**, then **Details** on the `products` row. Set `products canary URL` to `https://mfe-lab-products.vercel.app/mf-manifest.json` and the percent to `30`, then Save. The Rollout cell reads `canary 30%`; the dialog shows your bucket (0-99, below 30 means canary). ([RFC 0017](docs/rfc/0017-remote-registry-canary-and-kill-switch.md))
-3. Open **Details** on `dashboard`, tick `Switch dashboard off`, Save and reload. Sign in again and look at Home: the dashboard frame says "switched off right now" and the products table keeps working.
+2. Open **Inspector**, then **Details** on the `products` row. Look at the canary form (URL and percent): on the live site it is disabled. Unlocked, set `products canary URL` to `https://mfe-lab-products.vercel.app/mf-manifest.json` and the percent to `30`, then Save. The Rollout cell reads `canary 30%`; the dialog shows your bucket (0-99, below 30 means canary). ([RFC 0017](docs/rfc/0017-remote-registry-canary-and-kill-switch.md))
+3. Open **Details** on `dashboard`: the `Switch dashboard off` box is the kill switch (disabled on the live site). Unlocked, tick it, Save and reload; sign in again and look at Home: the dashboard frame says "switched off right now" and the products table keeps working.
 4. Open **Orders**. It is a Vue 3.5 remote. In DevTools, the frame body is a `#shadow-root (open)`, and `document.head` has no orders styles. ([RFC 0016](docs/rfc/0016-framework-agnostic-remotes-and-css-isolation.md))
 5. Click **DE**. Every remote switches language without a reload, and prices and dates follow German formats. ([RFC 0012](docs/rfc/0012-locale-across-remotes.md))
 
-Undo: untick the dashboard switch, set the products canary percent back to `0` and clear the URL.
+Unlocked runs: untick the dashboard switch, set the products canary percent back to `0` and clear the URL when you are done.
 
 ![Architecture: the shell host reads the remote registry (stable, canary or off) and loads the products, dashboard and orders (Vue, Shadow DOM) remotes at runtime; shared singletons, the products:changed event bus, and the Fastify API with Postgres (Neon in production, PGlite in dev)](docs/img/architecture.svg)
 

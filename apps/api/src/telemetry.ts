@@ -25,6 +25,7 @@ export const errorRoutes: FastifyPluginAsyncZod = async (app) => {
     {
       // Public and unauthenticated: over-long values are rejected (400), not truncated; whole body capped.
       bodyLimit: 16 * 1024,
+      config: { rateLimit: { max: 30, timeWindow: '1 minute' } }, // per IP
       schema: {
         tags: ['errors'],
         body: report,

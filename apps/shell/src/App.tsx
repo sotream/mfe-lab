@@ -1,4 +1,4 @@
-import { logout } from '@mfe/auth-store';
+import { logout, type Role } from '@mfe/auth-store';
 import { useAuth } from '@mfe/auth-store/react';
 import { report } from '@mfe/telemetry';
 import { Button, RemoteFrame, useLocale, type Locale, type RemoteModule } from '@mfe/ui';
@@ -114,6 +114,9 @@ function LanguageSwitch() {
   );
 }
 
+// The owner account looks like a plain admin in the UI.
+const roleLabel = (role: Role) => (role === 'superadmin' ? 'admin' : role);
+
 function Layout() {
   const user = useAuth((s) => s.user);
   const t = useT();
@@ -169,7 +172,10 @@ function Layout() {
           {user ? (
             <div className="nav-user">
               <span className="nav-email">{user.email}</span>
-              <span className="chip chip--role">{user.role}</span>
+              <span className="chip chip--role">{roleLabel(user.role)}</span>
+              {user.role === 'admin' && user.demo && (
+                <span className="chip chip--demo">{t.demoAdmin}</span>
+              )}
               <Button
                 onClick={() => {
                   navigate('/login');

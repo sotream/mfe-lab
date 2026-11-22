@@ -35,7 +35,7 @@ describe('api function bundle', () => {
           ...process.env,
           NODE_ENV: 'production',
           DATABASE_URL: 'postgres://u:p@127.0.0.1:1/x',
-          JWT_SECRET: 'test-secret',
+          JWT_SECRET: 'no-require-esm-test-secret-0123456789abcdef',
           CRON_SECRET: 'test-cron-secret',
         },
       },
