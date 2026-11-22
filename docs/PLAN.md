@@ -289,3 +289,8 @@ Nothing planned.
 
 - **Goal:** `dashboard.cssGzip` back under 90% of its budget without raising it and without a visual change.
 - **Done when:** the dashboard build emits the `@mfe/ui` styles (tokens, ds1, frame) once, not once per chunk group, so `dashboard.cssGzip` is at most 6451 bytes (budget 7168 unchanged); before and after screenshots of the dashboard standalone and inside the shell at `/dashboard` (EN and DE, 1440 and 390) are pixel-identical apart from the build stamp text; `pnpm lint && pnpm typecheck && pnpm test` pass; no new dependency.
+
+## T55 README banner with the mark
+
+- **Goal:** the README opens with one banner that carries the mark and shows the current three remotes.
+- **Done when:** the separate logo block above the banner is gone; `docs/img/banner.svg` has the mfe-lab mark before the wordmark (amber hyphen), its description and shell illustration show products, dashboard and orders (Vue), and the stack line names Vue; the banner renders without clipping or overlap at 880 and 1280 px; `logo.svg` and `logo-light.svg` stay for other uses; `pnpm lint && pnpm test` pass; no new dependency.
