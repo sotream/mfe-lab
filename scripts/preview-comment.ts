@@ -9,6 +9,11 @@ export const MARKER = '<!-- mfe-lab-preview -->';
 const ORDER = ['shell', 'products', 'dashboard', 'orders', 'api'] as const;
 export const DEMO_LOGIN = 'admin@lab.test / lab12345';
 
+// The comment to edit: carries the marker and was written by the Actions bot (anyone else could plant the marker).
+export const findMarkerComment = (
+  comments: readonly { id: number; user?: { login?: string } | null; body?: string | null }[],
+) => comments.find((c) => c.user?.login === 'github-actions[bot]' && c.body?.includes(MARKER))?.id;
+
 export type CommentInput = {
   pr: number | string;
   sha: string;
@@ -57,14 +62,12 @@ if (import.meta.main) {
   else {
     const api = `repos/${e.GITHUB_REPOSITORY}/issues`;
     const gh = (...a: string[]) => execFileSync('gh', ['api', ...a], { encoding: 'utf8' });
-    const [id] = gh(
-      `${api}/${e.PR}/comments`,
-      '--paginate',
-      '--jq',
-      `.[] | select(.body | contains("${MARKER}")) | .id`,
-    )
-      .split('\n')
-      .filter(Boolean);
+    const id = findMarkerComment(
+      gh(`${api}/${e.PR}/comments`, '--paginate', '--jq', '.[]')
+        .split('\n')
+        .filter(Boolean)
+        .map((l) => JSON.parse(l)),
+    );
     if (id) gh('-X', 'PATCH', `${api}/comments/${id}`, '-f', `body=${body}`);
     else gh('-X', 'POST', `${api}/${e.PR}/comments`, '-f', `body=${body}`);
   }

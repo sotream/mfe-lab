@@ -254,3 +254,8 @@ Nothing planned.
 
 - **Goal:** the first image in the README shows the lab as it is now.
 - **Done when:** `docs/img/architecture.svg` says "three remotes", shows `orders` (Vue 3.5, `mount(el, ctx)`, Shadow DOM, only `@mfe/auth-store` shared), the registry read (`GET /registry`: stable, canary, off), the Orders nav link, and the API with Postgres (Neon in prod, PGlite in dev); it renders without overlapping or clipped text at 880 px and at its natural size; the README alt text and the first diagram in `docs/architecture.md` match; no new dependency.
+
+## T48 Deploy and preview pipeline hardening
+
+- **Goal:** a main commit is never skipped by a deploy, previews cannot touch production secrets, and closing a PR leaves nothing behind.
+- **Done when:** `ci.yml` cancels only pull_request runs; `deploy.yml` diffs from the last successful deploy (all when none), runs weekly as a catch-up and only from main when dispatched; production secrets target production only and previews get `-e` `JWT_SECRET` and no `CRON_SECRET`, with the DB guard before `alias set`; cleanup steps are all `always()` and also remove the PR's deployments; Neon branches expire after 14 days; the preview comment only edits one by `github-actions[bot]`; Dependabot auto-merge is an allowlist; `NEON_API_KEY` only on steps that use it; `docs/deploy.md` and RFC 0018 updated; no new dependency.

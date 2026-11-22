@@ -28,7 +28,6 @@ jobs:
       cancel-in-progress: true
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
       GH_TOKEN: ${{ github.token }}
       SHA: ${{ github.event.pull_request.head.sha }}
       BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -54,9 +53,15 @@ jobs:
             node scripts/preview-urls.ts env "$PR" $changed
             echo "VERCEL_SCOPE=$(node scripts/provision.ts vercel-scope)"
           } >> "$GITHUB_ENV"
+          # Per-PR signing key: a token from a preview is worthless on production (and on other PRs).
+          jwt=$(openssl rand -base64 32 | tr '+/' '-_' | tr -d '=')
+          echo "::add-mask::$jwt"
+          echo "JWT_SECRET=$jwt" >> "$GITHUB_ENV"
       # Fails (and the comment says "preview unavailable") when Neon refuses, for example at the free-tier branch limit.
       - name: Neon branch
         id: neon
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
         run: node scripts/provision.ts preview-db "$PR"
       - run: pnpm --filter @mfe/api migrate
       - name: Deploy previews
@@ -80,12 +85,15 @@ jobs:
               [ -n "$(find .vercel/output/functions -name '*.func' -type d 2>/dev/null)" ] || { echo "no function in .vercel/output/functions" >&2; exit 1; }
             fi
             # The URL is the only stdout of `vercel deploy` (progress goes to stderr).
-            url=$(vc deploy --prebuilt "$@" 2>/tmp/deploy.err) || { cat /tmp/deploy.err >&2; exit 1; }
+            url=$(vc deploy --prebuilt -m "pr=$PR" "$@" 2>/tmp/deploy.err) || { cat /tmp/deploy.err >&2; exit 1; }
             echo "$app: $url -> $host"
+            # The API must be on the PR's Neon branch before it gets a stable name; on failure no alias is set.
+            if [ "$app" = api ]; then node scripts/preview-guard.ts "$url"; fi
             vc alias set "$url" "$host"
           }
-          # Runtime env of this deployment only (not a project env var): the PR's Neon branch.
-          deploy api mfe-lab-api -e "DATABASE_URL=$DATABASE_URL"
+          # Runtime env of this deployment only (production secrets target production only): the PR's Neon
+          # branch and a per-PR JWT_SECRET. Cron stays off: no cron secret. -m tags the deployment for cleanup.
+          deploy api mfe-lab-api -e "DATABASE_URL=$DATABASE_URL" -e "JWT_SECRET=$JWT_SECRET"
           for app in $CHANGED; do deploy "$app" "mfe-lab-$app"; done
           # `vercel build` ignores vercel.json build.env, so the shell gets MF_*_URL from the environment (set in Plan).
           # Its /api rewrite (same origin, no CORS) must reach the preview API: regenerate the configs in this checkout.
@@ -126,7 +134,6 @@ jobs:
       cancel-in-progress: false
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
       GH_TOKEN: ${{ github.token }}
       SHA: ${{ github.event.pull_request.head.sha }}
     steps:
@@ -138,13 +145,28 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
-      - run: node scripts/provision.ts preview-db-delete "$PR"
+      # Every step runs even when an earlier one failed, so one failure never leaves the rest behind.
+      - name: Delete Neon branch
+        if: always()
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+        run: node scripts/provision.ts preview-db-delete "$PR"
       - name: Remove aliases
+        if: always()
         run: |
           slug=$(node scripts/provision.ts vercel-scope)
           for host in $(node scripts/preview-urls.ts hosts "$PR" | awk '{ print $2 }'); do
             # A missing alias (app without a preview) is fine.
             pnpm dlx "$VERCEL_CLI" alias rm "$host" --yes --token "$VERCEL_TOKEN" ${slug:+--scope "$slug"} || echo "no alias $host"
           done
+      - name: Remove deployments
+        if: always()
+        run: |
+          slug=$(node scripts/provision.ts vercel-scope)
+          # Deployments tagged with the PR (vercel deploy -m), never a production one.
+          for url in $(node scripts/provision.ts preview-deployments "$PR"); do
+            pnpm dlx "$VERCEL_CLI" remove "$url" --yes --token "$VERCEL_TOKEN" ${slug:+--scope "$slug"} || echo "could not remove $url"
+          done
       - name: Comment
+        if: always()
         run: STATE=closed node scripts/preview-comment.ts post
