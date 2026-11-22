@@ -1,6 +1,14 @@
+import { readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { dbUrlFromEnv, migrate, openDb } from '../src/db.ts';
 import { freshDb, schemaVersions, tempDir, type Db } from './helpers.ts';
+
+// Derived from the migrations dir, so adding a migration does not break the count.
+const versions = readdirSync(join(import.meta.dirname, '../migrations'))
+  .filter((f) => /^\d+_.*\.sql$/.test(f))
+  .map((f) => parseInt(f, 10))
+  .sort((a, b) => a - b);
 
 type Column = {
   column_name: string;
@@ -148,15 +156,15 @@ describe('db', () => {
     await db.close();
   });
 
-  it('Q-migrate: twice is idempotent, returns 5, schema_migrations has 5 rows', async () => {
+  it('Q-migrate: twice is idempotent, returns the file count, schema_migrations has one row each', async () => {
     const db = await freshDb(); // freshDb already ran migrate once
-    expect(await migrate(db)).toBe(5);
-    expect(await migrate(db)).toBe(5);
-    expect(await schemaVersions(db)).toEqual([1, 2, 3, 4, 5]);
+    expect(await migrate(db)).toBe(versions.length);
+    expect(await migrate(db)).toBe(versions.length);
+    expect(await schemaVersions(db)).toEqual(versions);
     const rows = await db.query<{ n: number; applied: number }>(
       'SELECT count(*)::int AS n, count(applied_at)::int AS applied FROM schema_migrations',
     );
-    expect(rows).toEqual([{ n: 5, applied: 5 }]);
+    expect(rows).toEqual([{ n: versions.length, applied: versions.length }]);
     // seeded flags from 002 are not duplicated by re-running
     expect(await db.query('SELECT count(*)::int AS n FROM flags')).toEqual([{ n: 3 }]);
     await db.close();
@@ -212,7 +220,7 @@ describe('db url', () => {
     await migrate(a);
     await a.close();
     const b = await openDb(url);
-    expect(await schemaVersions(b)).toEqual([1, 2, 3, 4, 5]);
+    expect(await schemaVersions(b)).toEqual(versions);
     await b.close();
 
     for (const bad of ['mysql://u@h/db', 'sqlite:./x.db', './app.db', '']) {

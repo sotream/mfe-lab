@@ -16,6 +16,18 @@ async function setRevenue(page: Page, on: boolean): Promise<void> {
   await page.getByRole('link', { name: 'Home' }).click();
 }
 
+// Cleanup goes through the API, so a failed test cannot leave state behind for the next spec.
+test.afterEach(async ({ request }) => {
+  const login = await request.post(`${BASE}/api/auth/login`, {
+    data: { email: 'admin@lab.test', password: 'lab12345' },
+  });
+  const headers = { authorization: `Bearer ${((await login.json()) as { token: string }).token}` };
+  await request.patch(`${BASE}/api/flags/dashboard.revenue`, {
+    data: { enabled: true },
+    headers,
+  });
+});
+
 test('E-flags: admin toggles dashboard.revenue from the inspector', async ({ page }) => {
   await page.goto(`${BASE}/login`);
   await page.getByLabel('Email').fill('admin@lab.test');
@@ -24,19 +36,9 @@ test('E-flags: admin toggles dashboard.revenue from the inspector', async ({ pag
   await expect(page.getByText('admin@lab.test', { exact: true })).toBeVisible();
   await expect(page).not.toHaveURL(/\/login/); // login's replace-navigation has landed
 
-  try {
-    await expect(revenue(page)).toBeVisible();
-    await setRevenue(page, false);
-    await expect(revenue(page)).toHaveCount(0);
-    await setRevenue(page, true);
-    await expect(revenue(page)).toBeVisible();
-  } finally {
-    // Leave the flag on for other specs (best effort, via nav links only).
-    await page.getByRole('link', { name: 'Inspector' }).click();
-    const box = page.getByRole('checkbox', { name: 'dashboard.revenue' });
-    if (await box.isVisible()) {
-      if (!(await box.isChecked())) await box.click();
-      await expect(box).toBeChecked();
-    }
-  }
+  await expect(revenue(page)).toBeVisible();
+  await setRevenue(page, false);
+  await expect(revenue(page)).toHaveCount(0);
+  await setRevenue(page, true);
+  await expect(revenue(page)).toBeVisible();
 });

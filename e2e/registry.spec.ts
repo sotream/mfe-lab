@@ -24,10 +24,16 @@ async function setRegistry(request: APIRequestContext, name: string, patch: obje
   expect(res.status(), await res.text()).toBe(200);
 }
 
+async function clearErrors(request: APIRequestContext) {
+  const token = await adminToken(request);
+  await request.delete(`${API}/errors`, { headers: { authorization: `Bearer ${token}` } });
+}
+
 // The other specs must not see a canary or a kill switch.
 test.afterEach(async ({ request }) => {
   for (const name of REMOTES)
     await setRegistry(request, name, { canaryUrl: null, canaryPercent: 0, disabled: false });
+  await clearErrors(request);
 });
 
 async function login(page: Page) {
@@ -59,7 +65,8 @@ test('E-kill-switch: a disabled remote is never fetched and shows the off state'
   await expect(products(page).getByRole('button', { name: 'Retry' })).toHaveCount(0);
 
   // let the idle prefetch run, then check nothing went to the products origin
-  await page.waitForTimeout(1500);
+  await page.waitForLoadState('networkidle');
+  await page.evaluate(() => new Promise((done) => requestIdleCallback(done)));
   expect(manifestRequests.filter((u) => /mf-manifest\.json/.test(u))).toEqual([]);
   expect(manifestRequests).toEqual([]);
 });
@@ -127,7 +134,6 @@ test.describe('canary', () => {
         return JSON.stringify(await res.json());
       })
       .toContain('canary');
-    await request.delete(`${API}/errors`, { headers: { authorization: `Bearer ${token}` } });
   });
 });
 

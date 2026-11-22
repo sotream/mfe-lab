@@ -15,10 +15,15 @@ const PAGES = [
 // release step), leaving a blank page: reload once if nothing rendered.
 async function open(page: Page, url: string): Promise<void> {
   await page.goto(url);
-  if ((await page.locator('h1').count()) === 0) {
-    await page.waitForTimeout(3000);
-    await page.reload();
-  }
+  const rendered = await page
+    .locator('h1')
+    .first()
+    .waitFor({ timeout: 5000 })
+    .then(
+      () => true,
+      () => false,
+    );
+  if (!rendered) await page.reload();
 }
 
 async function expectOneH1(page: Page, text: string): Promise<void> {

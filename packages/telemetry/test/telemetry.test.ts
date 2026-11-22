@@ -210,3 +210,49 @@ describe('installGlobalHandlers', () => {
     expect(f).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('attribution', () => {
+  // The shell lists the remote origins it must not claim (assumption: `ignoreOrigins` also applies to a
+  // handler with a string origin), the same list its catch-all already uses.
+  const install = async () => {
+    const { installGlobalHandlers } = await fresh();
+    const f = fetchMock();
+    const offs = [
+      installGlobalHandlers({
+        remote: 'shell',
+        build: 'bs',
+        origin: 'http://localhost:3000',
+        ignoreOrigins: ['http://localhost:3001', 'http://localhost:3002'],
+      }),
+      installGlobalHandlers({ remote: 'products', build: 'bp', origin: 'http://localhost:3001' }),
+    ];
+    return { f, off: () => offs.forEach((o) => o()) };
+  };
+  const throwWith = (stack: string) => {
+    const error = new Error('boom');
+    error.stack = stack;
+    window.dispatchEvent(new ErrorEvent('error', { message: 'boom', error }));
+  };
+
+  it('Q-telemetry-attribution: a products stack with shared react-dom frames from the shell origin is reported once, as products', async () => {
+    const { f, off } = await install();
+    throwWith(
+      [
+        'Error: boom',
+        '    at Cell (http://localhost:3001/static/js/async/products.js:1:1)',
+        '    at renderWithHooks (http://localhost:3000/static/js/vendors-react-dom.js:1:1)',
+      ].join('\n'),
+    );
+    expect(sent(f)).toHaveLength(1);
+    expect(sent(f)[0]).toMatchObject({ remote: 'products', build: 'bp' });
+    off();
+  });
+
+  it('Q-telemetry-attribution: a stack with only shell frames is still reported as shell', async () => {
+    const { f, off } = await install();
+    throwWith('Error: boom\n    at App (http://localhost:3000/static/js/main.js:1:1)');
+    expect(sent(f)).toHaveLength(1);
+    expect(sent(f)[0]).toMatchObject({ remote: 'shell', build: 'bs' });
+    off();
+  });
+});
