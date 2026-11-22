@@ -1,5 +1,6 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
+import { isAllowedCanary } from '../../../deploy/canary.ts';
 import { errors } from './common.ts';
 
 const row = z.object({
@@ -9,16 +10,13 @@ const row = z.object({
   disabled: z.boolean(),
 });
 
-// https anywhere, or http on localhost with an explicit port (the local e2e releases); a manifest path only.
-function isManifestUrl(value: string): boolean {
-  const u = URL.canParse(value) ? new URL(value) : null;
-  if (!u || !u.pathname.endsWith('/mf-manifest.json')) return false;
-  if (u.protocol === 'https:') return true;
-  return u.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(u.hostname) && u.port !== '';
-}
+// Allowlisted origins only (deploy/canary.ts); localhost outside production. Checked in the handler
+// so the response code is invalid_canary_url, not the generic invalid_body.
+const isManifestUrl = (value: string) =>
+  isAllowedCanary(value, process.env.NODE_ENV !== 'production');
 
 const patch = z.strictObject({
-  canaryUrl: z.string().refine(isManifestUrl, 'invalid canary url').nullable().optional(),
+  canaryUrl: z.string().nullable().optional(),
   canaryPercent: z.number().int().min(0).max(100).optional(),
   disabled: z.boolean().optional(),
 });
@@ -52,6 +50,9 @@ export const registryRoutes: FastifyPluginAsyncZod = async (app) => {
     },
     async (request, reply) => {
       const { canaryUrl, canaryPercent, disabled } = request.body;
+      if (canaryUrl && !isManifestUrl(canaryUrl)) {
+        return reply.code(400).send({ error: 'invalid_canary_url' });
+      }
       const [found] = await app.db.query<z.infer<typeof row>>(
         `update remotes set
            canary_url = case when $1::boolean then $2::text else canary_url end,

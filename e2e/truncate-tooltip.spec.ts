@@ -9,7 +9,7 @@ import { expect, test, type APIRequestContext, type Locator, type Page } from '@
 const BASE = 'http://localhost:3000';
 const API = `${BASE}/api`;
 const LONG_CANARY =
-  'https://mfe-lab-products-git-canary-branch-with-a-very-long-name.vercel.app/releases/0.0.2-e2e/mf-manifest.json';
+  'https://mfe-lab-products-pr-123456789012345678.vercel.app/releases/0.0.2-e2e-with-a-very-long-release-name/mf-manifest.json';
 const STABLE = 'http://localhost:3001/mf-manifest.json';
 
 async function setCanary(request: APIRequestContext, canaryUrl: string | null) {

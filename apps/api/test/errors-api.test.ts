@@ -62,13 +62,15 @@ describe('errors api', () => {
     expect(await count(ctx.app.db, 'errors')).toBe(0);
   });
 
-  it('Q-errors-api: truncates message to 500 and stack to 4000', async () => {
+  it('Q-errors-api: over-long message or stack gives 400 (T46 bounds 2000 and 8000), limits inclusive', async () => {
     const ctx = await freshApp();
-    const res = await post(ctx, body({ message: 'm'.repeat(600), stack: 's'.repeat(5000) }));
+    expect((await post(ctx, body({ message: 'm'.repeat(2001) }))).statusCode).toBe(400);
+    expect((await post(ctx, body({ stack: 's'.repeat(8001) }))).statusCode).toBe(400);
+    const res = await post(ctx, body({ message: 'm'.repeat(2000), stack: 's'.repeat(8000) }));
     expect(res.statusCode, res.body).toBe(201);
     const [row] = await list(ctx);
-    expect(row!.message).toHaveLength(500);
-    expect(row!.stack).toHaveLength(4000);
+    expect(row!.message).toHaveLength(2000);
+    expect(row!.stack).toHaveLength(8000);
   });
 
   it('Q-errors-api: GET is newest first, filters by remote', async () => {

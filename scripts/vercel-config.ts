@@ -11,6 +11,27 @@ const urls: Record<'shell' | 'products' | 'dashboard' | 'orders' | 'api', string
 const apiUrl = process.env.PREVIEW_API_URL ?? urls.api;
 const out = resolve(process.argv[2] ?? root);
 
+// The shell's origins for script, style and fetch: itself and the remotes it loads. Each remote's origin comes
+// from MF_<APP>_URL when set (a PR preview, preview.yml), else from urls.json: exact hosts, no wildcard.
+// A wildcard like https://*.vercel.app would let anyone's Vercel project serve scripts to the shell.
+const remoteOrigins = ['products', 'dashboard', 'orders'].map(
+  (a) => new URL(process.env[`MF_${a.toUpperCase()}_URL`] ?? urls[a as 'products']).origin,
+);
+const remotes = remoteOrigins.join(' ');
+// style-src 'unsafe-inline': React style props, and the Vue remote's Shadow DOM <style> element (OrdersApp.ts).
+// Remote origins in script/style/connect: remoteEntry and chunks, remote CSS, manifest and release index fetches.
+const csp = [
+  "default-src 'self'",
+  `script-src 'self' ${remotes}`,
+  `style-src 'self' 'unsafe-inline' ${remotes}`,
+  `connect-src 'self' ${remotes}`,
+  "img-src 'self' data:",
+  "font-src 'self'",
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+].join('; ');
+
 const header = (source: string, key: string, value: string) => ({
   source,
   headers: [{ key, value }],
@@ -28,7 +49,26 @@ function staticApp(name: 'shell' | 'products' | 'dashboard' | 'orders') {
       { source: '/(.*)', destination: '/index.html' },
     ],
     headers: [
-      ...(remote ? [header('/(.*)', 'Access-Control-Allow-Origin', '*')] : []),
+      ...(remote
+        ? [
+            {
+              source: '/(.*)',
+              headers: [
+                { key: 'Access-Control-Allow-Origin', value: '*' },
+                { key: 'X-Content-Type-Options', value: 'nosniff' },
+              ],
+            },
+          ]
+        : [
+            {
+              source: '/(.*)',
+              headers: [
+                { key: 'Content-Security-Policy', value: csp },
+                { key: 'X-Content-Type-Options', value: 'nosniff' },
+                { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+              ],
+            },
+          ]),
       header('/(mf-manifest\\.json|remoteEntry\\.js)', 'Cache-Control', 'no-store'),
       // Content-hashed assets (16 hex chars) never change. remoteEntry.js has no hash, so it never matches.
       // The whole pattern must sit inside one group: Vercel's path-to-regexp 6.1.0 reads a bare {16} as a literal group.

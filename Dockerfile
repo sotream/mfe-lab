@@ -11,6 +11,8 @@ FROM node:26-slim AS api
 ENV NODE_ENV=production HOST=0.0.0.0 
 WORKDIR /app
 COPY --from=build /out/api .
+# The canary allowlist (deploy/canary.ts) is imported from outside the app dir: ../../../deploy from /app/src.
+COPY --from=build /repo/deploy /deploy
 # DATABASE_URL comes from the environment. Migrating and seeding are idempotent.
 CMD ["sh", "-c", "node src/db.ts && node src/seed.ts && node src/server.ts"]
 

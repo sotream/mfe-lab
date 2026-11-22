@@ -8,9 +8,12 @@ const report = z.object({
   remote: z.string().min(1).max(40),
   build: z.string().min(1).max(80),
   kind: z.enum(['render', 'load', 'unhandled']),
-  message: z.string(),
-  stack: z.string().optional(),
-  url: z.string().max(500),
+  message: z.string().max(2000),
+  stack: z.string().max(8000).optional(),
+  url: z
+    .string()
+    .max(2000)
+    .regex(/^https?:\/\//i), // http(s) only: the inspector renders it
 });
 
 const row = report.extend({ id: z.number().int(), stack: z.string().nullable(), at: z.string() });
@@ -20,6 +23,8 @@ export const errorRoutes: FastifyPluginAsyncZod = async (app) => {
   app.post(
     '/errors',
     {
+      // Public and unauthenticated: over-long values are rejected (400), not truncated; whole body capped.
+      bodyLimit: 16 * 1024,
       schema: {
         tags: ['errors'],
         body: report,
@@ -30,15 +35,7 @@ export const errorRoutes: FastifyPluginAsyncZod = async (app) => {
       const b = request.body;
       const [row] = await app.db.query<{ id: number }>(
         'insert into errors (remote, build, kind, message, stack, url, at) values ($1, $2, $3, $4, $5, $6, $7) returning id',
-        [
-          b.remote,
-          b.build,
-          b.kind,
-          b.message.slice(0, 500),
-          b.stack?.slice(0, 4000) ?? null,
-          b.url,
-          new Date().toISOString(),
-        ],
+        [b.remote, b.build, b.kind, b.message, b.stack ?? null, b.url, new Date().toISOString()],
       );
       await app.db.query(
         'delete from errors where id not in (select id from errors order by id desc limit $1)',

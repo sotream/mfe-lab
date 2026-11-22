@@ -22,7 +22,13 @@ export function report(e: ErrorReport): void {
     if (prev !== undefined && now - prev < DEDUPE_MS) return;
     lastSent.set(key, now);
 
-    const json = JSON.stringify({ ...e, url: location.href });
+    // Cut to the API's limits (a longer value would be rejected, losing the report).
+    const json = JSON.stringify({
+      ...e,
+      message: e.message.slice(0, 2000),
+      stack: e.stack?.slice(0, 8000),
+      url: location.href.slice(0, 2000),
+    });
     if (
       typeof navigator !== 'undefined' &&
       typeof navigator.sendBeacon === 'function' &&

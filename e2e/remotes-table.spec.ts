@@ -8,7 +8,7 @@ const BASE = 'http://localhost:3000';
 const API = `${BASE}/api`;
 const REMOTES = ['products', 'dashboard', 'orders'];
 const LONG = (n: string) =>
-  `https://mfe-lab-${n}-git-canary-branch-with-a-very-long-name.vercel.app/releases/0.0.2-e2e/mf-manifest.json`;
+  `https://mfe-lab-${n}-pr-123456789012345678.vercel.app/releases/0.0.2-e2e-with-a-very-long-release-name/mf-manifest.json`;
 
 async function patchAll(request: APIRequestContext, patch: (n: string) => object) {
   const login = await request.post(`${API}/auth/login`, {
@@ -97,6 +97,8 @@ for (const width of [1024, 1280, 1440]) {
 }
 
 test('E-details: set canary 30%, then Off; Rollout and the home frame follow', async ({ page }) => {
+  // T46: the docker API runs NODE_ENV=production, which rejects localhost canaries with 400.
+  test.skip(process.env.E2E_TARGET === 'docker', 'prod API rejects localhost canary URLs');
   await page.setViewportSize({ width: 1440, height: 900 });
   await openInspector(page, 'admin');
   const dialog = page.getByRole('dialog', { name: 'products: details' });
