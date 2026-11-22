@@ -14,6 +14,8 @@ type Props = {
   /** Renders a hidden input so the value posts with a form. */
   name?: string;
   disabled?: boolean;
+  /** Compact trigger (30px) for table rows. */
+  size?: 'sm';
 };
 
 export function Select({
@@ -25,6 +27,7 @@ export function Select({
   id: given,
   name,
   disabled,
+  size,
 }: Props) {
   const generated = useId();
   const id = given ?? generated;
@@ -54,7 +57,7 @@ export function Select({
   };
 
   return (
-    <div className="ds1-select" data-ds="select">
+    <div className={size ? `ds1-select ds1-select--${size}` : 'ds1-select'} data-ds="select">
       <div
         ref={trigger}
         id={id}

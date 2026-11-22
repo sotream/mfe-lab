@@ -98,6 +98,7 @@ function VersionSelect({ name }: { name: RemoteName }) {
   const value = versions.find((v) => current === releaseManifestUrl(name, v)) ?? '';
   return (
     <Select
+      size="sm"
       aria-label={t.versionOf(name)}
       value={value}
       options={[
@@ -281,19 +282,28 @@ function DetailsDialog({
   );
 }
 
-// Two lines per cell: the value, then a muted detail (RFC 0017 state lives in the registry row).
+const VARIANT_CHIP = {
+  stable: '',
+  canary: 'chip--role',
+  fallback: 'chip--down',
+  disabled: 'chip--down',
+};
+
+function rolloutText(t: ReturnType<typeof useT>['inspector'], row: ReturnType<typeof registryRow>) {
+  if (!row) return '—';
+  if (row.disabled) return t.variantNames.disabled;
+  return row.canaryUrl ? t.canaryAt(row.canaryPercent) : '—';
+}
+
+// One line per row (T58). Colour is never the only status signal: down, off and checking show a word,
+// and every state has text for assistive tech.
 function RemoteRow({ name, ping, onOpen }: { name: RemoteName; ping?: Ping; onOpen: () => void }) {
   const t = useT().inspector;
   useSyncExternalStore(subscribeRemotes, registryVersion);
   const row = registryRow(name);
-  const { shown, bucket } = describeRemote(name);
-  const rollout = !row
-    ? '—'
-    : row.disabled
-      ? t.variantNames.disabled
-      : row.canaryUrl
-        ? t.canaryAt(row.canaryPercent)
-        : '—';
+  const { shown } = describeRemote(name);
+  const status = ping?.status ?? 'checking';
+  const rollout = rolloutText(t, row);
   return (
     // A click on the plain part of the row opens Details; controls and tooltip triggers keep their own click.
     // The Details button is the keyboard and screen-reader way in.
@@ -308,48 +318,42 @@ function RemoteRow({ name, ping, onOpen }: { name: RemoteName; ping?: Ping; onOp
       }}
     >
       <th scope="row">
-        {name}
-        <span className="sub">
-          <span className={`chip chip--${ping?.status ?? 'idle'}`}>
-            {ping ? t[ping.status] : t.checking}
+        <span className="remote-name">
+          <span className={`dot dot--${status}`} aria-hidden="true" />
+          <span>
+            {name}
+            <span className="visually-hidden">{status === 'up' ? `, ${t.up}` : ', '}</span>
           </span>
+          {status !== 'up' && (
+            <span className="remote-state">{ping ? t[ping.status] : t.checking}</span>
+          )}
         </span>
       </th>
       <td className="ds1-mono manifest">
-        <Manifest url={stableUrl(name)} />
-        <span className="sub">
-          {row?.canaryUrl && (
-            <>
-              <span className="sub-label">{t.variantNames.canary}</span>
-              <MiddleTruncate text={row.canaryUrl} />
-            </>
-          )}
+        <span className="manifest-line">
+          <Manifest url={stableUrl(name)} />
+          {row?.canaryUrl && <span className="chip chip--role">+ {t.variantNames.canary}</span>}
         </span>
       </td>
       <td className="ds1-mono">
-        {ping?.version ? <BuildStamp v={ping.version} /> : '—'}
-        <span className="sub">
-          <span className={`chip ${shown === 'stable' ? '' : 'chip--down'}`}>
-            {t.variantNames[shown]}
-          </span>
-          {bucket !== null && ` · ${bucket}`}
+        <span className="build-line">
+          {ping?.version ? <BuildStamp v={ping.version} /> : '—'}
+          <span className={`chip ${VARIANT_CHIP[shown]}`}>{t.variantNames[shown]}</span>
         </span>
       </td>
       <td>
         <VersionSelect name={name} />
       </td>
-      <td>
-        {rollout}
-        <span className="sub">
-          <Button
-            id={`details-${name}`}
-            className="ds1-button--sm"
-            aria-label={t.detailsOf(name)}
-            onClick={onOpen}
-          >
-            {t.details}
-          </Button>
-        </span>
+      <td>{rollout}</td>
+      <td className="open-cell">
+        <Button
+          id={`details-${name}`}
+          className="ds1-button--sm open"
+          aria-label={t.detailsOf(name)}
+          onClick={onOpen}
+        >
+          <span aria-hidden="true">›</span>
+        </Button>
       </td>
     </tr>
   );
@@ -635,6 +639,9 @@ export default function InspectorPage() {
               <th scope="col">{t.build}</th>
               <th scope="col">{t.use}</th>
               <HintTh label={t.rollout} hint={t.rolloutHint} />
+              <th scope="col">
+                <span className="visually-hidden">{t.details}</span>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -648,9 +655,13 @@ export default function InspectorPage() {
             ))}
           </tbody>
         </Table>
-        <p className="panel-body">
-          {registryAvailable() === false ? t.registryUnavailable : t.useHint}
-        </p>
+        <div className="panel-body remotes-foot">
+          <p>{registryAvailable() === false ? t.registryUnavailable : t.useHint}</p>
+          <p className="legend" aria-hidden="true">
+            <span className="dot dot--up" /> {t.up} <span className="dot dot--down" /> {t.down}{' '}
+            <span className="dot dot--off" /> {t.off}
+          </p>
+        </div>
       </section>
       {details && (
         <DetailsDialog
