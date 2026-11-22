@@ -65,6 +65,24 @@ function mulberry32(seed: number): () => number {
   };
 }
 
+// The env-provisioned account is the source of truth: all three vars set means the row exists
+// with the env hash (created or updated), otherwise nothing happens. Idempotent. With `only`,
+// it acts only when that email is the env account's (case-insensitive).
+export async function upsertEnvAccount(db: Db, only?: string): Promise<void> {
+  const {
+    SUPERADMIN_EMAIL: email,
+    SUPERADMIN_PASSWORD_HASH: hash,
+    SUPERADMIN_TOTP_SECRET: totp,
+  } = process.env;
+  if (!email || !hash || !totp) return;
+  if (only !== undefined && only.toLowerCase() !== email.toLowerCase()) return;
+  await db.query(
+    `insert into users (email, password_hash, role) values (lower($1), $2, 'superadmin')
+     on conflict (email) do update set password_hash = excluded.password_hash, role = excluded.role`,
+    [email, hash],
+  );
+}
+
 type SeedResult = { seeded: boolean; users: number; products: number; orders: number };
 
 const count = async (db: Db, table: 'users' | 'products' | 'orders'): Promise<number> =>
@@ -103,19 +121,7 @@ export async function seed(db: Db, opts: { reset?: boolean } = {}): Promise<Seed
       ]);
     }
 
-    // The owner account lives in env only: all three set means it is (re)created, otherwise it does not exist.
-    const {
-      SUPERADMIN_EMAIL: email,
-      SUPERADMIN_PASSWORD_HASH: hash,
-      SUPERADMIN_TOTP_SECRET: totp,
-    } = process.env;
-    if (email && hash && totp) {
-      await t.query('insert into users (email, password_hash, role) values (lower($1), $2, $3)', [
-        email,
-        hash,
-        'superadmin',
-      ]);
-    }
+    await upsertEnvAccount(t);
 
     // Registry back to stable: no canary, 0%, enabled (RFC 0017).
     await t.exec('truncate remotes');
