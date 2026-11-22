@@ -1,4 +1,5 @@
 import type { RegistryRow } from '@mfe/api-client';
+import { isAllowedCanary } from '../../../deploy/canary.ts';
 import type { RemoteName } from '../../../federation.contract.ts';
 
 // Manifest URLs are baked in at build time: MF_*_URL env overrides the localhost defaults.
@@ -26,7 +27,10 @@ export function bucket(userId: number | string, remote: string): number {
   return h % 100;
 }
 
-// disabled wins; canary only with a URL, a signed-in user and bucket < percent; else stable.
+// A local stack (stable URLs on localhost) may also use localhost canaries; a production build never does.
+const allowLocal = stableUrls.products.startsWith('http://localhost');
+
+// disabled wins; canary only with an allowlisted URL, a signed-in user and bucket < percent; else stable.
 export function resolveRemote(
   name: RemoteName,
   row: Pick<RegistryRow, 'canaryUrl' | 'canaryPercent' | 'disabled'> | undefined,
@@ -35,7 +39,13 @@ export function resolveRemote(
   const stableEntry = stableUrls[name];
   const b = userId === null ? null : bucket(userId, name);
   if (row?.disabled) return { variant: 'disabled', entry: stableEntry, bucket: b };
-  if (row?.canaryUrl && b !== null && b < row.canaryPercent) {
+  // A row that fails the allowlist (written before the API enforced it) is ignored: stable.
+  if (
+    row?.canaryUrl &&
+    isAllowedCanary(row.canaryUrl, allowLocal) &&
+    b !== null &&
+    b < row.canaryPercent
+  ) {
     return { variant: 'canary', entry: row.canaryUrl, bucket: b };
   }
   return { variant: 'stable', entry: stableEntry, bucket: b };

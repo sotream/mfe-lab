@@ -42,6 +42,14 @@ export async function buildApp(opts: {
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
   registerErrorHandler(app);
+  app.setNotFoundHandler((_request, reply) => reply.code(404).send({ error: 'not_found' }));
+  app.addHook('onSend', async (request, reply) => {
+    reply.header('x-content-type-options', 'nosniff');
+    // Authenticated responses are per-user: never cached by a shared cache or the browser.
+    if (request.headers.authorization && !reply.hasHeader('cache-control')) {
+      reply.header('cache-control', 'no-store');
+    }
+  });
 
   const db = await openDb(opts.dbUrl);
   if (opts.migrate ?? process.env.NODE_ENV !== 'production') await migrate(db);

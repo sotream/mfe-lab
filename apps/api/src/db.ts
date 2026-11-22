@@ -2,6 +2,7 @@ import { mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import type { PGlite } from '@electric-sql/pglite';
 import pg from 'pg';
+import { isAllowedCanary } from '../../../deploy/canary.ts';
 
 // The only DB API the rest of the code uses. Placeholders are $1..$n.
 export type Db = {
@@ -105,6 +106,18 @@ export async function migrate(db: Db): Promise<number> {
       await t.exec(readFileSync(join(dir, file), 'utf8'));
       await t.query('insert into schema_migrations (version) values ($1)', [version]);
     });
+  }
+  // Rows written before the allowlist existed (T46): drop any canary that would not pass it now.
+  const rows = await db.query<{ name: string; canary_url: string }>(
+    'select name, canary_url from remotes where canary_url is not null',
+  );
+  for (const r of rows) {
+    if (!isAllowedCanary(r.canary_url, process.env.NODE_ENV !== 'production')) {
+      await db.query(
+        'update remotes set canary_url = null, canary_percent = 0, updated_at = now() where name = $1',
+        [r.name],
+      );
+    }
   }
   return current();
 }

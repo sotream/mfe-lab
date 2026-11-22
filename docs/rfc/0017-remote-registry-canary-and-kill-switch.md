@@ -52,9 +52,18 @@ The shell bakes each remote's manifest URL in at build time (RFC 0004). Changing
 ## Trade-offs and risks
 
 - The registry is public and cached nowhere, so an API outage only costs the 2 s timeout once per page.
-- Prod has no `/releases` (T30): a canary there is any reachable manifest URL. The demo is a broken canary at 100%: everyone stays on stable.
+- Prod has no `/releases` (T30): a canary there must still be an allowlisted manifest URL (see Trust model). The demo is a broken canary at 100%: everyone stays on stable.
 - Fallback is per page session; the next page load tries the canary again.
 - Not done: per-region rollout, automatic ramp-up, server-side composition.
+
+## Trust model
+
+A canary manifest is code the shell executes in every signed-in user's page, so whoever can write `canary_url` can run script on the site. T46 closed this (review C1: any `https` origin was accepted; one stolen or misused admin token meant script injection).
+
+- **Allowlist** (`deploy/canary.ts`, `isAllowedCanary`): `https:`, no user-info, path ending `/mf-manifest.json`, and the origin is one of the three production remote origins in `deploy/urls.json` or a PR preview host matching exactly `mfe-lab-(products|dashboard|orders)-pr-<digits>.vercel.app` (no port). Outside production, `http://localhost:<port>` is also accepted. Production means `NODE_ENV=production` in the API; the shell allows localhost only when its own stable URLs are on localhost, decided at build time.
+- **One source, two checks.** The API rejects a bad URL on `PATCH /registry/:name` with `400 invalid_canary_url`. The shell runs the same function in `resolveRemote`: a registry row that fails it (written before the fix, or straight into the database) is ignored and the user gets stable. Running `migrate` also clears `canary_url` and `canary_percent` of any row that fails the check.
+- **CSP as the second wall.** The shell sends `script-src 'self'` plus the exact remote origins (docs/deploy.md), so even an allowlist bug cannot load a script from another origin. Preview shells list their own preview remote origins; the wildcard `https://*.vercel.app` is not used, because anyone can host a script there.
+- **Not covered:** a compromised remote origin (its Vercel project) is trusted by design; the allowlist is per origin, not per remote name.
 
 ## Rollout
 

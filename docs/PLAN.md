@@ -255,6 +255,11 @@ Nothing planned.
 - **Goal:** the first image in the README shows the lab as it is now.
 - **Done when:** `docs/img/architecture.svg` says "three remotes", shows `orders` (Vue 3.5, `mount(el, ctx)`, Shadow DOM, only `@mfe/auth-store` shared), the registry read (`GET /registry`: stable, canary, off), the Orders nav link, and the API with Postgres (Neon in prod, PGlite in dev); it renders without overlapping or clipped text at 880 px and at its natural size; the README alt text and the first diagram in `docs/architecture.md` match; no new dependency.
 
+## T46 Close canary script injection, security headers, bounded telemetry
+
+- **Goal:** only our own remote origins can serve a canary; the shell and the API send basic security headers; `POST /errors` cannot be used to fill the table with huge rows (review C1, M2).
+- **Done when:** `PATCH /registry/:name` answers `400 invalid_canary_url` for any URL that is not `https`, has user-info, does not end in `/mf-manifest.json`, or whose origin is not a production remote or an exact `mfe-lab-<app>-pr-<n>.vercel.app` host (localhost only outside production); `resolveRemote` ignores such a row from the database and loads stable; `migrate` clears existing bad canaries; the shell (Vercel config and nginx) sends a CSP with `default-src 'self'`, exact remote origins and `frame-ancestors 'none'`, plus `nosniff` and `Referrer-Policy`; remotes send `nosniff`; the API sends `nosniff`, `no-store` on authenticated requests and `404 { error: 'not_found' }` for unknown routes; `POST /errors` has a 16 KB body limit, `message` ≤ 2000, `stack` ≤ 8000, `url` ≤ 2000 and http(s) only, else 400; RFC 0017 has a Trust model section and `docs/deploy.md` lists the headers; no new dependency.
+
 ## T48 Deploy and preview pipeline hardening
 
 - **Goal:** a main commit is never skipped by a deploy, previews cannot touch production secrets, and closing a PR leaves nothing behind.
