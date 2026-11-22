@@ -40,7 +40,7 @@
     "eslint-plugin-sonarjs": "^4.2.2",
     "globals": "^17.14",
     "jsdom": "^31",
-    "path-to-regexp": "6.1.0",
+    "path-to-regexp": "9.0.0",
     "prettier": "^3.10",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.73",
