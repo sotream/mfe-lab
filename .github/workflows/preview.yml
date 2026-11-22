@@ -45,6 +45,9 @@ jobs:
       - name: Plan
         run: |
           # The merge commit is checked out; BASE_SHA..HEAD is what the PR changes.
+          # Docs-, test- and CI-only PRs deploy nothing (Vercel free plan: 100 deployments a day).
+          needed=$(git diff --name-only "$BASE_SHA" HEAD | node scripts/changed-apps.ts --preview-needed)
+          echo "PREVIEW_NEEDED=$needed" >> "$GITHUB_ENV"
           changed=$(git diff --name-only "$BASE_SHA" HEAD | node scripts/changed-apps.ts | { grep -E '^(products|dashboard|orders)$' || true; } | tr '\n' ' ')
           echo "changed remotes: ${changed:-none}"
           {
@@ -60,12 +63,16 @@ jobs:
       # Fails (and the comment says "preview unavailable") when Neon refuses, for example at the free-tier branch limit.
       - name: Neon branch
         id: neon
+        if: env.PREVIEW_NEEDED == 'true'
         env:
           NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
         run: node scripts/provision.ts preview-db "$PR"
-      - run: pnpm --filter @mfe/api migrate
+      - name: Migrate
+        if: env.PREVIEW_NEEDED == 'true'
+        run: pnpm --filter @mfe/api migrate
       - name: Deploy previews
         id: deploy
+        if: env.PREVIEW_NEEDED == 'true'
         run: |
           set -eu
           vc() { pnpm dlx "$VERCEL_CLI" "$@" --token "$VERCEL_TOKEN" ${VERCEL_SCOPE:+--scope "$VERCEL_SCOPE"}; }
@@ -100,14 +107,19 @@ jobs:
           PREVIEW_API_URL="$PREVIEW_API_URL" node scripts/vercel-config.ts
           grep -q "$PREVIEW_API_URL" apps/shell/vercel.json
           deploy shell mfe-lab
-      - run: pnpm exec playwright install --with-deps chromium
+      - name: Install browser
+        if: env.PREVIEW_NEEDED == 'true'
+        run: pnpm exec playwright install --with-deps chromium
       - name: Smoke
         id: smoke
+        if: env.PREVIEW_NEEDED == 'true'
         run: node scripts/preview-smoke.ts "$PREVIEW_SHELL_URL" "$PREVIEW_API_URL"
       - name: Comment
         if: always()
         run: |
-          if [ "${{ job.status }}" = success ]; then
+          if [ "$PREVIEW_NEEDED" != true ] && [ "${{ job.status }}" = success ]; then
+            export STATE=skipped
+          elif [ "${{ job.status }}" = success ]; then
             export SMOKE=passed
           elif [ "${{ job.status }}" = cancelled ]; then
             exit 0

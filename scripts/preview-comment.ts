@@ -1,5 +1,5 @@
 // The sticky PR comment of a preview.
-//   node scripts/preview-comment.ts body|post   env: PR SHA STATE (open|closed) CHANGED SMOKE UNAVAILABLE
+//   node scripts/preview-comment.ts body|post   env: PR SHA STATE (open|closed|skipped) CHANGED SMOKE UNAVAILABLE
 // `post` creates the comment or edits the one with the marker (gh, GH_TOKEN, GITHUB_REPOSITORY).
 import { execFileSync } from 'node:child_process';
 import { previewUrls } from './preview-urls.ts';
@@ -20,13 +20,15 @@ export type CommentInput = {
   neonBranch?: string; // default preview/pr-<pr>
   changed?: readonly string[];
   smoke?: 'passed' | 'failed';
-  state?: 'open' | 'closed';
+  state?: 'open' | 'closed' | 'skipped';
   unavailable?: string; // reason; the preview could not be built
 };
 
 export function previewComment(i: CommentInput): string {
   const sha = i.sha.slice(0, 7);
   const branch = i.neonBranch ?? previewBranchName(i.pr);
+  if (i.state === 'skipped')
+    return `${MARKER}\n### Preview skipped\n\nThis PR changes no app (only docs, tests or CI), so nothing was deployed. (commit \`${sha}\`)\n`;
   if (i.state === 'closed')
     return `${MARKER}\n### Preview removed\n\nThe preview stack and the Neon branch \`${branch}\` of this PR were deleted (last commit \`${sha}\`).\n`;
   if (i.unavailable !== undefined)
@@ -53,7 +55,7 @@ if (import.meta.main) {
   const body = previewComment({
     pr: e.PR!,
     sha: e.SHA!,
-    state: e.STATE === 'closed' ? 'closed' : 'open',
+    state: e.STATE === 'closed' || e.STATE === 'skipped' ? e.STATE : 'open',
     changed: (e.CHANGED ?? '').split(' ').filter(Boolean),
     smoke: e.SMOKE === 'passed' ? 'passed' : 'failed',
     unavailable: e.UNAVAILABLE || undefined,
