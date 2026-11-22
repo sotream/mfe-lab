@@ -1,7 +1,6 @@
-// Q-function-entry and Q-no-pglite-in-prod. The entry path and handler signature are the
-// builder's choice (see ./function-entry.ts); PHASE 2 adjusts them once known.
+// Q-function-entry and Q-no-pglite-in-prod, against the real entry apps/api/src/vercel.ts.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { entryPath, invoke } from './function-entry.ts';
+import { invoke } from './function-entry.ts';
 
 beforeEach(() => {
   vi.resetModules();
@@ -13,7 +12,6 @@ afterEach(() => vi.unstubAllEnvs());
 describe('vercel function entry', () => {
   it('Q-function-entry: the entry exists and answers /health without a listening port', async () => {
     vi.stubEnv('DATABASE_URL', 'pglite:memory');
-    expect(entryPath()).toBeTruthy();
     const r = await invoke('/health');
     expect(r.statusCode).toBe(200);
     expect(JSON.parse(r.body)).toEqual({ status: 'ok', db: 'local' });
@@ -36,8 +34,8 @@ describe('vercel function entry', () => {
       loaded = true;
       return { PGlite: class {} };
     });
-    expect(entryPath()).toBeTruthy(); // fail on a missing entry, not just on pglite
-    await invoke('/docs/json').catch(() => undefined); // db-free route; import is what matters
+    // the import is what matters; a lazy pool never connects, and a failure here must show
+    expect((await invoke('/health')).statusCode).toBe(500); // db unreachable, handler still answers
     expect(loaded).toBe(false);
   });
 });

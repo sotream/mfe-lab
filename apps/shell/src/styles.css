@@ -89,13 +89,6 @@
   align-items: center;
 }
 
-.chip--demo {
-  flex: none;
-  border-color: var(--ds1-rule);
-  background-color: var(--ds1-bad-soft);
-  color: var(--ds1-bad);
-}
-
 .nav-email {
   color: var(--ds1-ink-2);
   font-size: var(--ds1-text-sm);
@@ -114,6 +107,12 @@
 }
 
 .chip--role {
+  border-color: var(--ds1-rule);
+  background-color: var(--ds1-accent-soft);
+}
+
+.chip--demo {
+  flex: none;
   border-color: var(--ds1-rule);
   background-color: var(--ds1-accent-soft);
 }
@@ -200,7 +199,10 @@ footer .build {
   }
 }
 
-[role='alert'] {
+/* Shell-owned alerts only: a remote styles its own. */
+.login [role='alert'],
+.panel-body[role='alert'],
+.remote-frame-error[role='alert'] {
   color: var(--ds1-bad);
 }
 
@@ -577,6 +579,7 @@ code {
 }
 
 .switch:disabled {
+  border-color: var(--ds1-rule);
   opacity: 0.45;
   cursor: not-allowed;
 }

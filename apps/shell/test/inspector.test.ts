@@ -48,7 +48,7 @@ describe('sharedRows', () => {
     expect(sharedRows(undefined)).toEqual([]);
   });
 
-  it('Q-shared-rows: one row per package sorted by name, with status and sorted versions', () => {
+  it('Q-shared-rows: one row per package sorted by name, with sorted versions', () => {
     const scope: ShareScope = {
       react: {
         '19.1.0': {
@@ -72,10 +72,9 @@ describe('sharedRows', () => {
       versions: ['17.0.0', '18.3.0', '19.1.0'],
       loaded: ['18.3.0', '19.1.0'],
       singleton: true,
-      status: 'loaded 2 times',
     });
-    expect(a).toMatchObject({ loaded: [], singleton: false, status: 'not loaded' });
-    expect(z).toMatchObject({ required: '—', loaded: ['2.0.0'], status: 'loaded once' });
+    expect(a).toMatchObject({ loaded: [], singleton: false });
+    expect(z).toMatchObject({ required: '—', loaded: ['2.0.0'] });
   });
 
   it('Q-shared-rows: required falls back to the first entry when none is from shell', () => {

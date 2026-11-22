@@ -149,17 +149,11 @@ const border = async (loc: ReturnType<Page['locator']>) => {
   return `${s['border-top-width']} ${s['border-top-color']}`;
 };
 
-// Rows are visible and the row count has been the same for a moment (no refetch re-render pending).
+// Rows are visible and the network is idle (no refetch re-render pending).
 async function settled(rows: ReturnType<Page['locator']>) {
   await expect(rows.first()).toBeVisible();
-  let last = -1;
-  await expect(async () => {
-    const n = await rows.count();
-    const stable = n === last;
-    last = n;
-    await rows.page().waitForTimeout(300);
-    expect(stable, 'row count settled').toBe(true);
-  }).toPass({ timeout: 10_000 });
+  await rows.page().waitForLoadState('networkidle'); // no refetch left to re-render the rows
+  await expect(rows.first()).toBeVisible();
 }
 
 test('E-css-leak: a hostile global style hits products cells but not the orders shadow DOM', async ({

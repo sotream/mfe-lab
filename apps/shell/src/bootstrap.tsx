@@ -11,16 +11,18 @@ import './styles.css';
 declare const __BUILD_VERSION__: string;
 
 // Shell's own errors, then a catch-all for everything not from the shell or a remote (RFC 0010).
+const remoteOrigins = remoteManifests.map((r) => new URL(r.manifest).origin);
 installGlobalHandlers({
   remote: 'shell',
   build: __BUILD_VERSION__,
   origin: location.origin,
+  ignoreOrigins: remoteOrigins,
 });
 installGlobalHandlers({
   remote: 'unknown',
   build: __BUILD_VERSION__,
   origin: null,
-  ignoreOrigins: [location.origin, ...remoteManifests.map((r) => new URL(r.manifest).origin)],
+  ignoreOrigins: [location.origin, ...remoteOrigins],
 });
 document.documentElement.lang = detectLocale();
 startEventLog();

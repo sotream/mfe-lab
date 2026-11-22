@@ -7,6 +7,7 @@ export { Select } from './Select.tsx';
 export { Tooltip } from './Tooltip.tsx';
 export { MiddleTruncate } from './MiddleTruncate.tsx';
 export {
+  currentLocale,
   detectLocale,
   formatDate,
   formatMoney,

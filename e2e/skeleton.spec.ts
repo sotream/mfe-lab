@@ -40,6 +40,16 @@ async function signedIn(page: Page) {
   await expect(page).not.toHaveURL(/\/login/);
 }
 
+// Two paint frames and a task turn: layout-shift entries for the last change have been delivered.
+// Not a sleep: it waits for the browser, not for a guessed duration.
+const frames = (page: Page) =>
+  page.evaluate(
+    () =>
+      new Promise<void>((done) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(done, 0))),
+      ),
+  );
+
 const animationName = (page: Page, name: string, cls: string) =>
   frame(page, name)
     .locator(cls)
@@ -139,7 +149,7 @@ test.describe('E-no-jump', () => {
       Math.abs((await height(page, frame(page, 'dashboard'))) - dashBusy),
       'dashboard busy',
     ).toBeLessThanOrEqual(4);
-    await page.waitForTimeout(500);
+    await frames(page);
     expect(await cls(page), 'CLS home').toBeLessThan(0.01);
 
     // /products: the list is requested again and held.
@@ -159,7 +169,7 @@ test.describe('E-no-jump', () => {
     expect(Math.abs((await height(page, pBody)) - pBefore), '/products frame').toBeLessThanOrEqual(
       4,
     );
-    await page.waitForTimeout(500);
+    await frames(page);
     expect(await cls(page), 'CLS /products').toBeLessThan(0.01);
 
     // /orders: first visit, so the orders remote itself loads too.
@@ -179,7 +189,7 @@ test.describe('E-no-jump', () => {
       Math.abs((await height(page, frame(page, 'orders'))) - oBefore),
       '/orders frame',
     ).toBeLessThanOrEqual(4);
-    await page.waitForTimeout(500);
+    await frames(page);
     expect(await cls(page), 'CLS /orders').toBeLessThan(0.01);
   });
 });

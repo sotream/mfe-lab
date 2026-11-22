@@ -1,4 +1,5 @@
-export type Ping = { status: 'up' | 'down'; version: string | null };
+// off: the registry switched the remote off, so it is not fetched at all.
+export type Ping = { status: 'up' | 'down' | 'off'; version: string | null };
 
 export async function pingRemote(manifestUrl: string): Promise<Ping> {
   try {
@@ -23,13 +24,7 @@ export type SharedRow = {
   versions: string[];
   loaded: string[];
   singleton: boolean;
-  status: string;
 };
-
-function status(n: number): string {
-  if (n === 0) return 'not loaded';
-  return n === 1 ? 'loaded once' : `loaded ${n} times`;
-}
 
 export function sharedRows(scope: ShareScope | undefined): SharedRow[] {
   return Object.entries(scope ?? {})
@@ -46,7 +41,6 @@ export function sharedRows(scope: ShareScope | undefined): SharedRow[] {
         loaded,
         // the live runtime stores singleton as 1, not true
         singleton: entries.some((e) => e.shareConfig?.singleton),
-        status: status(loaded.length),
       };
     });
 }

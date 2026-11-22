@@ -210,7 +210,7 @@ async function vercelProject(v: Vercel, name: string, dir: string, log: (s: stri
 async function checkDomain(v: Vercel, name: string) {
   const r = await v('GET', `${VERCEL}/v9/projects/${name}/domains?production=true`);
   const domains: string[] = (r?.domains ?? []).map((d: { name: string }) => d.name);
-  // ponytail: an empty list (no production domain assigned yet) passes; the deploy smoke step catches a wrong URL.
+  // Limitation: an empty list (no production domain assigned yet) passes; the deploy smoke step catches a wrong URL.
   if (domains.length && !domains.includes(`${name}.vercel.app`))
     throw new Error(
       `${name}: production domain is ${domains.join(', ')}, expected ${name}.vercel.app. Update deploy/urls.json and rerun node scripts/vercel-config.ts.`,

@@ -4,7 +4,7 @@
 // the passing path launches a browser.
 import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { buildApp } from '../../apps/api/src/app.ts';
 import { dbFingerprint } from '../../scripts/provision.ts';
 
@@ -20,19 +20,19 @@ describe('db guard', () => {
   });
 
   it('Q-db-guard: /health db matches dbFingerprint and leaks no host, user or password', async () => {
-    // Opening the pool is lazy for pg; /health runs `select 1`, so stub the database check by connecting to
-    // nothing: only the id is asserted when the query fails.
-    const app = await buildApp({ dbUrl: PG, migrate: false }).catch(() => undefined);
-    if (!app) return; // ponytail: pg cannot be opened offline; fingerprint is covered by the unit above
+    // The pool is lazy, so the app builds offline. /health runs `select 1` and fails (500), so the
+    // fingerprint is read from a stubbed query instead: no network, no early return.
+    const app = await buildApp({ dbUrl: PG, migrate: false });
     try {
-      const body = (await app.inject({ method: 'GET', url: '/health' })).body;
-      if (body.includes('"db"')) {
-        expect(JSON.parse(body).db).toBe(dbFingerprint(PG));
-        for (const leak of ['ep-preview', 'neondb_owner', 'S3cretPw'])
-          expect(body).not.toContain(leak);
-      }
+      vi.spyOn(app.db, 'query').mockResolvedValue([{ '?column?': 1 }]);
+      const res = await app.inject({ method: 'GET', url: '/health' });
+      expect(res.statusCode).toBe(200);
+      expect(res.json().db).toBe(dbFingerprint(PG));
+      for (const leak of ['ep-preview', 'neondb_owner', 'S3cretPw'])
+        expect(res.body).not.toContain(leak);
     } finally {
-      await app.close();
+      vi.restoreAllMocks();
+      await app.close().catch(() => {});
     }
   });
 

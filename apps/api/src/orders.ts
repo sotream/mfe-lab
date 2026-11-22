@@ -13,8 +13,8 @@ const order = z.object({
 
 const COLUMNS = 'id, product_id, qty, status, created_at';
 
-// ponytail: no stock decrement on order creation and no status transition rules (spec is
-// silent); add both when orders need to mean something.
+// Limitation: no stock decrement on order creation and no status transition rules (the spec is
+// silent); upgrade path: add both when orders need to mean something.
 export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
   const get = async (id: number) =>
     (
@@ -56,7 +56,7 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
         tags: ['orders'],
         body: z.object({
           product_id: z.number().int().min(1),
-          qty: z.number().int().min(1).max(1000),
+          qty: z.number().int().min(1).max(10_000),
         }),
         response: { 201: order, ...errors(400, 401, 403, 409) },
       },
@@ -83,12 +83,11 @@ export const orderRoutes: FastifyPluginAsyncZod = async (app) => {
       },
     },
     async (request, reply) => {
-      const hit = await app.db.query('update orders set status = $1 where id = $2 returning id', [
-        request.body.status,
-        request.params.id,
-      ]);
-      if (hit.length === 0) return reply.code(404).send({ error: 'not_found' });
-      return (await get(request.params.id))!;
+      const [row] = await app.db.query<z.infer<typeof order>>(
+        `update orders set status = $1 where id = $2 returning ${COLUMNS}`,
+        [request.body.status, request.params.id],
+      );
+      return row ?? reply.code(404).send({ error: 'not_found' });
     },
   );
 };

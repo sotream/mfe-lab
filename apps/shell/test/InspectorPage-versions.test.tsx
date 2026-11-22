@@ -88,7 +88,7 @@ describe('InspectorPage versions', () => {
       }),
     ).toBeTruthy();
     const s = select('products');
-    expect(await optionLabels(s)).toEqual(['dev', '1.0.0', '1.1.0']);
+    expect(await optionLabels(s)).toEqual(['dev (local)', '1.0.0', '1.1.0']);
     expect(
       fetch.mock.calls.some(([u, init]) => String(u) === P_INDEX && init?.cache === 'no-store'),
     ).toBe(true);
@@ -97,12 +97,12 @@ describe('InspectorPage versions', () => {
   it('Q-inspector-versions: failing or non-OK fetch gives dev only', async () => {
     stubFetch(() => Promise.reject(new Error('boom')) as unknown as Response);
     await mount();
-    expect(await optionLabels(select('products'))).toEqual(['dev']);
+    expect(await optionLabels(select('products'))).toEqual(['dev (local)']);
     cleanup();
     stubFetch(() => new Response('nope', { status: 404 }));
     await mount();
-    expect(await optionLabels(select('products'))).toEqual(['dev']);
-    expect(await optionLabels(select('dashboard'))).toEqual(['dev']);
+    expect(await optionLabels(select('products'))).toEqual(['dev (local)']);
+    expect(await optionLabels(select('dashboard'))).toEqual(['dev (local)']);
   });
 
   it('Q-inspector-versions: choosing a version updates Manifest and registers; dev resets', async () => {
@@ -120,7 +120,7 @@ describe('InspectorPage versions', () => {
       { force: true },
     );
 
-    await choose(select('products'), 'dev');
+    await choose(select('products'), 'dev (local)');
     expect(await inUse()).toBe(PRODUCTS);
     expect(rt.registerRemotes).toHaveBeenLastCalledWith(
       [expect.objectContaining({ name: 'products', entry: PRODUCTS })],

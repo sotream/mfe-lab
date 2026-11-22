@@ -11,7 +11,7 @@ document.documentElement.lang = detectLocale();
 
 const ROLES = ['admin', 'editor', 'viewer'] as const;
 
-// ponytail: same bar as apps/products/src/bootstrap.tsx, duplicated (about 15 lines) so the two
+// Note: same bar as apps/products/src/bootstrap.tsx, duplicated (about 15 lines) so the two
 // remotes stay independent; move it to @mfe/ui if a third remote needs it.
 // Only the standalone page renders this bar; inside the shell the user comes from its login.
 function StandaloneBar() {

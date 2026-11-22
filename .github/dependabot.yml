@@ -55,3 +55,13 @@ updates:
     commit-message:
       prefix: ci
       include: scope
+
+  # Base images in the Dockerfile (pinned by digest; Dependabot updates tag and digest together).
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: build
+      include: scope

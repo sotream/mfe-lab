@@ -63,6 +63,8 @@ export async function openDb(url: string): Promise<Db> {
   if (/^postgres(ql)?:\/\//.test(url)) {
     // Small pool: on Vercel every warm instance holds its own, and Neon pools on its side.
     const pool = new pg.Pool({ connectionString: url, max: 3, idleTimeoutMillis: 10_000 });
+    // An idle client dropped by the server must not crash the process; the pool replaces it.
+    pool.on('error', (e) => console.error('pg pool error:', e.message));
     return wrapPg(pool, pool);
   }
   // Dynamic import: the production (Vercel) path must never load PGlite.
