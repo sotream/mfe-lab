@@ -191,6 +191,7 @@ footer .build {
   display: grid;
   grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
   gap: var(--ds1-space-lg);
+  align-items: start;
 }
 
 @media (max-width: 70rem) {
