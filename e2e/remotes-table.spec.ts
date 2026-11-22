@@ -1,6 +1,4 @@
-// T41: E-remotes-fit, E-details, E-a11y (details dialog). ASSUMPTIONS: see unit tests InspectorPage-remotes.test.tsx;
-// plus the Remotes table is `table.remotes`, the last cell of a row is Rollout, and the language is switched through
-// the stored locale (key mfe-lab:locale).
+// T41: E-remotes-fit, E-details, E-a11y (details dialog) on `table.remotes`; language switched via the stored locale (mfe-lab:locale).
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 

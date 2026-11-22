@@ -1,7 +1,4 @@
-// Q-canary-allowlist, Q-headers (API), Q-errors-bounds. Black box from the T46 contract.
-// ASSUMPTIONS: production = NODE_ENV==='production' (read at request time or app build, both work here
-// because the stub stays active for the whole test); 400 body error code is `invalid_canary_url`;
-// over-long /errors values give 400; the oversized body gives 413 or 400.
+// Q-canary-allowlist, Q-headers (API), Q-errors-bounds: canary URL allowlist in production (`invalid_canary_url`), API headers, /errors size bounds.
 import { onTestFinished, describe, expect, it, vi } from 'vitest';
 import { buildApp } from '../src/app.ts';
 import { migrate } from '../src/db.ts';

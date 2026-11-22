@@ -30,7 +30,14 @@ const targets = (md: string) => {
 };
 
 describe('docs links', () => {
-  for (const file of ['README.md', 'docs/tour.md', 'docs/architecture.md']) {
+  for (const file of [
+    'README.md',
+    'docs/tour.md',
+    'docs/architecture.md',
+    'docs/api.md',
+    'docs/deploy.md',
+    'docs/testing.md',
+  ]) {
     it(`Q-readme: every relative link in ${file} resolves`, () => {
       const md = read(file);
       const slugs = new Set(headings(md).map(slug));
@@ -66,5 +73,33 @@ describe('README content', () => {
     const end = rest.findIndex((l) => /^#{1,6}\s/.test(l));
     const section = [lines[i], ...(end < 0 ? rest : rest.slice(0, end))].join('\n');
     expect(section).toMatch(/\bSSR\b|server-side rendering/i);
+  });
+});
+
+describe('docs accuracy', () => {
+  it('T50: dependabot ignores major updates of path-to-regexp (pinned to match Vercel)', () => {
+    const y = read('.github/dependabot.yml');
+    expect(y).toMatch(
+      /dependency-name:\s*path-to-regexp\s*\n(\s+#.*\n)*\s+update-types:\s*\n\s*-\s*version-update:semver-major/,
+    );
+  });
+
+  it('T50: AGENTS.md, BRIEF.md and README.md do not call the repo private', () => {
+    const hits = ['AGENTS.md', 'docs/BRIEF.md', 'README.md'].filter((f) =>
+      /private repo(sitory)?/i.test(read(f)),
+    );
+    expect(hits).toEqual([]);
+  });
+
+  it('T50: BRIEF.md does not say "two remotes"', () => {
+    expect(read('docs/BRIEF.md')).not.toMatch(/two remotes/i);
+  });
+
+  it('T50: README says there are three remotes', () => {
+    expect(readme).toMatch(/three (independently built and deployed )?remotes/i);
+  });
+
+  it('T50: architecture.md does not say "both remotes"', () => {
+    expect(read('docs/architecture.md')).not.toMatch(/both remotes/i);
   });
 });

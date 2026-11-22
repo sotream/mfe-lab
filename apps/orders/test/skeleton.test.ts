@@ -1,6 +1,5 @@
 /** @vitest-environment jsdom */
-// Q-surfaces (orders, Vue). ASSUMPTIONS: skeleton rows are `tbody tr[aria-hidden="true"]` inside the shadow root,
-// styled with the `orders-skeleton` class; the table is aria-busy; the status filter is a real, labelled combobox.
+// Q-surfaces (orders, Vue): skeleton rows, aria-busy table and labelled status filter inside the shadow root.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const api = vi.hoisted(() => ({ listOrders: vi.fn(), listProducts: vi.fn() }));

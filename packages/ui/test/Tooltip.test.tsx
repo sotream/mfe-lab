@@ -1,7 +1,5 @@
 /** @vitest-environment jsdom */
-// Q-tooltip. ASSUMPTIONS: `Tooltip({ content, children })` is exported from ../src/index.ts; the popup is role=tooltip and
-// is in the DOM but `hidden` while closed; the describedby sits on the wrapper span around the child; the trigger's aria-describedby points at it while
-// open. jsdom has no Popover API, so showPopover/hidePopover are stubbed.
+// Q-tooltip: Tooltip popup is role=tooltip, hidden while closed, wired by aria-describedby when open; Popover API stubbed.
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Tooltip } from '../src/index.ts';

@@ -1,8 +1,4 @@
-// T39 (moved to the T41 compact table): E-manifest-fits, E-a11y (tooltip open). ASSUMPTIONS: the Remotes table is
-// `table.remotes` with headers Remote, Manifest, Build, Use, Rollout; the Manifest cell holds the stable URL
-// (and, when a canary is set, a second line with the canary URL), each a MiddleTruncate with two aria-hidden
-// pieces (head, tail) and a focusable [tabindex="0"] trigger; the tooltip is role=tooltip. Hints remain on the
-// Manifest and Rollout headers only.
+// T39 (on the T41 compact table): E-manifest-fits, E-a11y (tooltip open): Manifest cells use MiddleTruncate with a focusable trigger and role=tooltip.
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type APIRequestContext, type Locator, type Page } from '@playwright/test';
 
