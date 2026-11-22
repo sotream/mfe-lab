@@ -38,6 +38,7 @@ export async function buildApp(opts: {
   jwtSecret?: string;
   migrate?: boolean;
   docs?: boolean; // Swagger UI at /docs; default on
+  db?: Db; // share an already open db (tests); the caller closes it
 }): Promise<FastifyInstance> {
   // Vercel overwrites x-forwarded-for with the real client IP, so it is safe to trust there (rate
   // limits and the IP allowlist key on request.ip). Elsewhere the header would be client-controlled.
@@ -54,10 +55,10 @@ export async function buildApp(opts: {
     }
   });
 
-  const db = await openDb(opts.dbUrl);
+  const db = opts.db ?? (await openDb(opts.dbUrl));
   if (opts.migrate ?? process.env.NODE_ENV !== 'production') await migrate(db);
   app.decorate('db', db);
-  app.addHook('onClose', () => db.close());
+  if (!opts.db) app.addHook('onClose', () => db.close());
 
   app.get('/health', async () => {
     await db.query('select 1');
@@ -92,7 +93,7 @@ export async function buildApp(opts: {
     await app.register(swaggerUi, { routePrefix: '/docs' });
   }
 
-  await registerGuards(app);
+  await registerGuards(app, db, opts.jwtSecret || process.env.JWT_SECRET || '');
   await registerAuth(app, { jwtSecret: opts.jwtSecret });
   await app.register(productRoutes);
   await app.register(orderRoutes);
