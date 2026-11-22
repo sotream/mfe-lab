@@ -34,6 +34,8 @@ type MaybeUser = User | null | undefined;
 export const canWrite = (u: MaybeUser): boolean =>
   u?.role === 'admin' || u?.role === 'editor' || u?.role === 'superadmin';
 export const canAdmin = (u: MaybeUser): boolean => u?.role === 'admin' || u?.role === 'superadmin';
+// Display label for a role chip; the owner account reads "owner".
+export const roleLabel = (role: Role): string => (role === 'superadmin' ? 'owner' : role);
 export const canDestroy = (u: MaybeUser): boolean => canWrite(u) && !u?.demo;
 
 export function logout(): void {

@@ -1,4 +1,4 @@
-import { getState, login, subscribe } from '@mfe/auth-store';
+import { getState, login, roleLabel, subscribe } from '@mfe/auth-store';
 import '@mfe/ui/base.css';
 import './standalone.css';
 import { messages } from './messages.ts';
@@ -39,7 +39,7 @@ const who = document.createElement('span');
 bar.append(who);
 const showUser = () => {
   const { user } = getState();
-  who.textContent = user ? t.signedIn(user.email, user.role) : t.signedOut;
+  who.textContent = user ? t.signedIn(user.email, roleLabel(user.role)) : t.signedOut;
 };
 showUser();
 subscribe(showUser);

@@ -126,12 +126,14 @@ describe('demo admin notice in the top bar', () => {
     },
   );
 
-  it('E-demo-banner: the owner role chip reads "admin", no notice, and the role name appears nowhere in the page', async () => {
+  it('E-demo-banner: the owner role chip reads "owner", no notice, and the role name appears nowhere in the page', async () => {
     await mount('/', 'owner');
-    expect(within(banner()).getByText('admin', { exact: true })).toBeTruthy();
+    expect(within(banner()).getByText('owner', { exact: true })).toBeTruthy();
+    expect(within(banner()).queryByText('admin', { exact: true })).toBeNull();
     expect(within(banner()).queryByText(EN)).toBeNull();
     expect(document.body.textContent?.toLowerCase()).not.toContain('superadmin');
     await setLocale('de');
+    expect(within(banner()).getByText('owner', { exact: true })).toBeTruthy();
     expect(document.body.textContent?.toLowerCase()).not.toContain('superadmin');
   });
 });
