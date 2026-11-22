@@ -3,6 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from '@playwright/test';
+import { assertPreviewDb } from './preview-guard.ts';
 
 const prod = JSON.parse(
   readFileSync(join(import.meta.dirname, '..', 'deploy', 'urls.json'), 'utf8'),
@@ -21,8 +22,7 @@ if (!res.ok) throw new Error(`${api}/health answers ${res.status}`);
 const prodHealth = await fetch(`${prod.api}/health`);
 const prodDb = ((await prodHealth.json()) as { db?: string }).db;
 const { db } = (await res.json()) as { db?: string };
-if (!db || db !== process.env.PREVIEW_DB_ID || db === prodDb)
-  throw new Error('preview API is not on the PR branch (would hit production DB)');
+assertPreviewDb(db, process.env.PREVIEW_DB_ID, prodDb);
 
 const browser = await chromium.launch();
 try {

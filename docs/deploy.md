@@ -46,7 +46,7 @@ The Swagger UI (`/docs`) is not served on Vercel: `@fastify/swagger-ui` pulls in
 | api     | `CRON_SECRET`  | random, 32 bytes, created once and never rotated by the script |
 | static  | none           | shell URLs come from `deploy.yml` at build time                |
 
-All three are type `sensitive` on the production and preview targets. The API function runs in `fra1`, next to the database (`aws-eu-central-1`).
+All three are type `sensitive` and target **production only**. Previews get their own values at deploy time (see PR previews); a preview deployment has no `CRON_SECRET`, so cron is off there. The API function runs in `fra1`, next to the database (`aws-eu-central-1`).
 
 ### Daily demo reset
 
@@ -72,9 +72,9 @@ The script logs only names, ids and created / exists / updated. Re-run it any ti
 
 ## Deploy flow
 
-`.github/workflows/deploy.yml` runs when CI succeeds for a push to `main` (`workflow_run`), or by hand (`workflow_dispatch`, input `apps`: `changed` or `all`). Nothing is deployed from pull requests.
+`.github/workflows/deploy.yml` runs when CI succeeds for a push to `main` (`workflow_run`), by a weekly catch-up (`schedule`, Mondays 04:17 UTC), or by hand (`workflow_dispatch`, input `apps`: `changed` or `all`). A manual run is accepted only from `refs/heads/main`; from any other ref `plan` fails with "deploy only runs from main". Nothing is deployed from pull requests.
 
-1. `plan` checks out the commit CI ran on (`workflow_run.head_sha`; the default checkout would be the newest `main`), and lists the files of `HEAD~1..HEAD` (a squash merge is one commit per PR). `scripts/changed-apps.ts` maps them to apps.
+1. `plan` checks out the commit CI ran on (`workflow_run.head_sha`; the default checkout would be the newest `main`), and lists the files changed since the **last successful production deploy**: `scripts/deploy-base.ts` asks the GitHub API for the newest successful `deploy.yml` run on `main` and takes its `head_sha`. `scripts/changed-apps.ts` maps the files to apps. With no such run, or when its SHA is not an ancestor of the commit, everything is deployed. A skipped or cancelled commit is therefore picked up by the next deploy, and so is a Dependabot merge that triggered none. The weekly catch-up run does the same when no deploy followed a dependency-only merge. A deploy run that fails (including `vitals`) does not advance the base, so the next one redeploys the same changes.
 2. `api`: migrate Neon, then deploy.
 3. `products`, `dashboard` and `orders` in parallel.
 4. `shell` last.
@@ -91,13 +91,13 @@ Per app: `vercel link --yes --project <name>` (so no project id is stored), `ver
 | `packages/**`, `federation.shared.ts`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, root `package.json`, `deploy/**`, `scripts/vercel-config.ts`, `.github/workflows/deploy.yml` | all five |
 | docs, tests, `e2e/`, the rest of `.github/**`                                                                                                                                | none     |
 
-If two merges land while a deploy is running, the queue keeps only the newest pending run, so the skipped commit's changes are not deployed. Run `deploy.yml` with `all` to catch up.
+If two merges land while a deploy is running, the queue keeps only the newest pending run; its diff starts at the last successful deploy, so the skipped commit's changes are included. CI on `main` is never cancelled (`cancel-in-progress` only for pull requests), so a push run always finishes and triggers its deploy.
 
 PR previews are a separate workflow, see below.
 
 ### Secrets (names only)
 
-Repository secrets: `VERCEL_TOKEN`, `NEON_API_KEY`. The Vercel GitHub app is not needed. Set them yourself with `gh secret set`; never paste values to an agent. The runtime secrets live only in the Vercel project env.
+Repository secrets: `VERCEL_TOKEN`, `NEON_API_KEY`. `NEON_API_KEY` is passed only to the steps that call Neon. The Vercel GitHub app is not needed. Set them yourself with `gh secret set`; never paste values to an agent. The runtime secrets live only in the Vercel project env.
 
 ## PR previews
 
@@ -111,19 +111,25 @@ flowchart LR
   R --> S[shell preview, /api rewrite to the preview API]
   S --> K[smoke: admin login, three frames]
   K --> C[sticky PR comment]
-  X[PR closed] --> D[delete branch and aliases, comment: Preview removed]
+  X[PR closed] --> D[delete branch, aliases and preview deployments, comment: Preview removed]
 ```
 
 - `vercel build` and `vercel deploy --prebuilt` without `--prod`, in the existing projects, then `vercel alias set` to stable hosts: `mfe-lab-pr-<n>.vercel.app`, `mfe-lab-<app>-pr-<n>.vercel.app` (`scripts/preview-urls.ts`).
-- The API gets `DATABASE_URL` as a runtime env of that deployment only (`-e`), not a project env var.
+- The API gets `DATABASE_URL` (the PR's branch) and `JWT_SECRET` (random per run, masked) as runtime envs of that deployment only (`-e`), not project env vars. The production secrets target production only, and there is no `CRON_SECRET` in a preview. Every preview deployment is tagged `-m pr=<n>`.
+- Before `vercel alias set`, `scripts/preview-guard.ts` reads `/health` of the raw API deployment URL and checks that its `db` is the PR branch's fingerprint and not production's. If it is not, the job fails and the alias is never set.
 - Only the remotes the PR changed get a preview; the others stay on their production URLs from `deploy/urls.json`. The shell is built with those `MF_*_URL`, and `PREVIEW_API_URL=<preview api> node scripts/vercel-config.ts` regenerates the configs in the throwaway checkout so the shell's `/api` rewrite reaches the preview API. The browser stays same-origin, so there is no CORS.
 - Smoke: `scripts/preview-smoke.ts` signs in as the demo admin and waits for the products, dashboard and orders frames.
-- One sticky comment (marker `<!-- mfe-lab-preview -->`, `scripts/preview-comment.ts`) is edited on every push and set to "Preview removed" on close.
-- Limits: forks and Dependabot PRs are skipped (no secrets); Neon free tier caps branches, and then the comment says "preview unavailable"; the preview shares `JWT_SECRET` with production and the demo logins are public; previews must be reachable without a Vercel login, so Vercel Authentication (deployment protection) is off on all five projects (owner decision, 2026-11-22) and preview links are public, like production.
+- One sticky comment (marker `<!-- mfe-lab-preview -->`, `scripts/preview-comment.ts`) is edited on every push and set to "Preview removed" on close. Only a marker comment written by `github-actions[bot]` is edited; any other is ignored and a new one is created.
+- Cleanup on close: every step runs with `if: always()`: delete the Neon branch, `vercel alias rm` the five hosts, `vercel remove` each deployment tagged with the PR (found through the Vercel API by the `pr` metadata; production deployments are never touched), then the comment. Neon branches are created with `expires_at` 14 days ahead and the date is pushed out on every sync, so a PR that never closes cleanly still loses its branch.
+- Limits: forks and Dependabot PRs are skipped (no secrets); Neon free tier caps branches, and then the comment says "preview unavailable"; the preview has its own `JWT_SECRET`, but the demo logins are public; previews must be reachable without a Vercel login, so Vercel Authentication (deployment protection) is off on all five projects (owner decision, 2026-11-22) and preview links are public, like production.
 - The job runs PR code with the deploy secrets, which is acceptable only because forks are skipped.
+
+## Dependabot auto-merge
+
+`dependabot-auto-merge.yml` uses an allowlist (`scripts/dependabot-merge.ts`, run from the base commit): auto-merge is enabled only when every updated dependency is a patch or a minor of a version at or above 1.0.0, the ecosystem is not `github_actions`, and every commit of the PR is authored by `dependabot[bot]`. Majors, 0.x minors and unknown types stay manual.
 
 ## Owner checklist
 
 1. Create Vercel and Neon accounts (a Vercel team and a Neon organization are fine: `scripts/provision.ts` discovers them from the tokens and `deploy.yml` passes `--scope`; nothing is stored, and several teams or orgs fail with a listing).
 2. `gh secret set VERCEL_TOKEN` and `gh secret set NEON_API_KEY`.
-3. After merge: run `provision.yml`, then `deploy.yml` with `all`.
+3. After merge: run `provision.yml`, then `deploy.yml` with `all`. (Since T48 the production secrets target production only; remove the `preview` target from `DATABASE_URL`, `JWT_SECRET` and `CRON_SECRET` on `mfe-lab-api` once, in the Vercel dashboard.)

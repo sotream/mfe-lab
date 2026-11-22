@@ -7,7 +7,7 @@
 
 ## Summary
 
-Every same-repo PR gets a public preview: shell, the remotes it changed and an API on its own Neon branch (a copy-on-write copy of production data). A sticky PR comment links to it; closing the PR deletes everything.
+Every same-repo PR gets a public preview: shell, the remotes it changed and an API on its own Neon branch (a copy-on-write copy of production data). A sticky PR comment links to it; closing the PR deletes the Neon branch, the aliases and the preview deployments.
 
 ## Motivation
 
@@ -20,7 +20,7 @@ Deploys happen only after merge. A reviewer cannot click the change, and an API 
 
 ## Proposal
 
-`preview.yml` (see `docs/deploy.md`): Neon branch `preview/pr-<n>` (created from the default branch, reused, migrated on every push), preview deployments in the existing Vercel projects, aliased to `*-pr-<n>.vercel.app`. The API gets the branch URI as a deployment runtime env. The shell's `/api` rewrite is generated with the preview API URL at build time, so the browser stays same-origin and the API needs no CORS. Cleanup on close removes the branch and the aliases.
+`preview.yml` (see `docs/deploy.md`): Neon branch `preview/pr-<n>` (created from the default branch, reused, migrated on every push), preview deployments in the existing Vercel projects, aliased to `*-pr-<n>.vercel.app`. The API gets the branch URI as a deployment runtime env. The shell's `/api` rewrite is generated with the preview API URL at build time, so the browser stays same-origin and the API needs no CORS. Cleanup on close removes the branch, the aliases and the PR's preview deployments (found by the `pr` deploy metadata). Neon branches expire 14 days after the last sync (`expires_at`), a backstop for PRs that never close cleanly. Production secrets target production only; the preview API gets the branch URI and a per-run `JWT_SECRET`, and no `CRON_SECRET`.
 
 ## Alternatives considered
 
@@ -32,7 +32,7 @@ Deploys happen only after merge. A reviewer cannot click the change, and an API 
 
 ## Trade-offs and risks
 
-Neon free-tier branch cap (the comment says "preview unavailable"). The preview shares `JWT_SECRET` and project env with production. Vercel deployment protection may block anonymous access to preview aliases. Back out by deleting `preview.yml`.
+Neon free-tier branch cap (the comment says "preview unavailable"). The preview shares no secret with production (T48). Vercel deployment protection may block anonymous access to preview aliases. Back out by deleting `preview.yml`.
 
 ## Rollout
 

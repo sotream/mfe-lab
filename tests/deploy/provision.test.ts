@@ -263,7 +263,7 @@ describe('provision', () => {
     expect(f.st.creates).toHaveLength(6);
   });
 
-  it('Q-provision: fresh run sets DATABASE_URL, JWT_SECRET, CRON_SECRET on api only, as sensitive, prod + preview', async () => {
+  it('Q-provision: fresh run sets DATABASE_URL, JWT_SECRET, CRON_SECRET on api only, as sensitive, production only', async () => {
     const f = makeFake();
     await run(f).done;
 
@@ -274,7 +274,7 @@ describe('provision', () => {
     expect(keys).toEqual(new Set(['DATABASE_URL', 'JWT_SECRET', 'CRON_SECRET']));
     for (const e of apiEnv(f)) {
       expect(e.type, e.key).toBe('sensitive');
-      expect(e.target ?? [], e.key).toEqual(expect.arrayContaining(['production', 'preview']));
+      expect(e.target ?? [], e.key).toEqual(['production']);
     }
     expect(valueOf(f, 'DATABASE_URL')).toBe(DB_NORM);
     expect(valueOf(f, 'JWT_SECRET')!.length).toBeGreaterThanOrEqual(32);

@@ -6,6 +6,7 @@
 //   node scripts/provision.ts vercel-scope  print the Vercel team slug (empty for a personal account)
 //   node scripts/provision.ts preview-db <pr>         find or create Neon branch preview/pr-<pr>, export its URI as DATABASE_URL
 //   node scripts/provision.ts preview-db-delete <pr>  delete that branch (no-op when missing)
+//   node scripts/provision.ts preview-deployments <pr>  print the URLs of the PR's preview deployments (never production)
 // The Vercel team and the Neon organization are discovered from the tokens; nothing is stored.
 import { createHash, randomBytes } from 'node:crypto';
 import { appendFileSync, readFileSync } from 'node:fs';
@@ -19,7 +20,8 @@ const VERCEL = 'https://api.vercel.com';
 const NEON_PROJECT = 'mfe-lab';
 const DB = 'neondb'; // Neon defaults for a new project
 const ROLE = 'neondb_owner';
-const TARGETS = ['production', 'preview']; // sensitive vars cannot target "development"
+// Production only: previews get their own DATABASE_URL and JWT_SECRET (-e at deploy) and no CRON_SECRET.
+const TARGETS = ['production'];
 
 const urlsFile = join(import.meta.dirname, '..', 'deploy', 'urls.json');
 
@@ -111,6 +113,14 @@ export async function neonDatabaseUrl(
 export const dbFingerprint = (url: string) =>
   createHash('sha256').update(new URL(url).hostname).digest('hex').slice(0, 12);
 
+// Neon deletes an abandoned preview branch by itself; each sync pushes the date out.
+export const PREVIEW_TTL_DAYS = 14;
+export const branchExpiry = (now = new Date()) =>
+  new Date(now.getTime() + PREVIEW_TTL_DAYS * 86_400_000).toISOString();
+
+// Deployments of the preview workflow carry this metadata (vercel deploy -m).
+export const PREVIEW_META = 'pr';
+
 export const previewBranchName = (pr: number | string) => `preview/pr-${pr}`;
 
 type Branch = { id: string; name: string; default?: boolean };
@@ -132,12 +142,17 @@ export async function ensureNeonBranch(
   const name = previewBranchName(pr);
   const branches = await neonBranches(f, key, project);
   let branch = branches.find((b) => b.name === name);
-  if (branch) log(`neon branch ${name}: exists`);
-  else {
+  if (branch) {
+    log(`neon branch ${name}: exists`);
+    // Best effort: a failed refresh must not block the preview.
+    await call(f, key, 'PATCH', `${NEON}/projects/${project}/branches/${branch.id}`, {
+      branch: { expires_at: branchExpiry() },
+    }).catch(() => log(`neon branch ${name}: expiry not refreshed`));
+  } else {
     const parent = branches.find((b) => b.default);
     if (!parent) throw new Error('neon: no default branch to branch from');
     const created = await call(f, key, 'POST', `${NEON}/projects/${project}/branches`, {
-      branch: { name, parent_id: parent.id },
+      branch: { name, parent_id: parent.id, expires_at: branchExpiry() },
       endpoints: [{ type: 'read_write' }],
     });
     branch = created.branch as Branch;
@@ -159,6 +174,24 @@ export async function deleteNeonBranch(
   if (!branch) return log(`neon branch ${name}: already gone`);
   await call(f, key, 'DELETE', `${NEON}/projects/${project}/branches/${branch.id}`);
   log(`neon branch ${name}: deleted`);
+}
+
+// URLs of the preview deployments of PR n across the five projects, found by the deploy metadata.
+// Production deployments are never returned.
+export async function previewDeployments(env: Env, pr: number | string, f: Fetch = fetch) {
+  const vc = await vercelClient(env, f);
+  const urls: Record<string, string> = JSON.parse(readFileSync(urlsFile, 'utf8'));
+  const found: string[] = [];
+  for (const u of Object.values(urls)) {
+    const project = new URL(u).hostname.replace(/\.vercel\.app$/, '');
+    const r = await vc(
+      'GET',
+      `${VERCEL}/v6/deployments?projectId=${project}&meta-${PREVIEW_META}=${pr}&limit=100`,
+    );
+    for (const d of r?.deployments ?? [])
+      if (d.target !== 'production' && d.meta?.[PREVIEW_META] === String(pr)) found.push(d.url);
+  }
+  return found;
 }
 
 async function vercelProject(v: Vercel, name: string, dir: string, log: (s: string) => void) {
@@ -270,6 +303,8 @@ if (import.meta.main) {
       );
     } else if (process.argv[2] === 'preview-db-delete') {
       await deleteNeonBranch(process.env, process.argv[3]!);
+    } else if (process.argv[2] === 'preview-deployments') {
+      for (const u of await previewDeployments(process.env, process.argv[3]!)) console.log(u);
     } else if (process.argv[2] === 'vercel-scope') {
       console.log((await vercelScope(process.env))?.slug ?? '');
     } else await provision(process.env);
