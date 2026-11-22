@@ -1,6 +1,5 @@
 /** @vitest-environment jsdom */
-// Q-truncate. ASSUMPTIONS: `MiddleTruncate({ text, tail? })` is exported from ../src/index.ts. The visible pieces are two
-// aria-hidden elements in document order (head, then tail); one other element carries the whole text (visually hidden).
+// Q-truncate: MiddleTruncate renders aria-hidden head and tail pieces plus one visually hidden full text.
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { MiddleTruncate } from '../src/index.ts';

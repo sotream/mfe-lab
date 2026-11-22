@@ -1,6 +1,4 @@
-// T37: Q-reduced-motion, E-no-jump, E-a11y (loading). ASSUMPTIONS (phase 2 adapts): a loading table has
-// aria-busy="true"; the shell frame fallback and the remotes' skeletons use `.ds1-skeleton` in the light DOM
-// (products and dashboard); the orders table is in a shadow root and Playwright pierces it.
+// T37: Q-reduced-motion, E-no-jump, E-a11y (loading): aria-busy tables and `.ds1-skeleton` fallbacks, orders skeleton in a shadow root.
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 

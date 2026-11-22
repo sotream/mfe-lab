@@ -1,11 +1,5 @@
 /** @vitest-environment jsdom */
-// T47 E-demo-banner as component tests. ASSUMPTIONS (phase 2 adapts):
-// - the API's login response user (and /auth/me) carries `demo: true` for a locked admin; the shell takes it from there;
-// - the chip text is exactly the contract sentence, EN and DE, in the banner (top bar) next to the role chip;
-// - the Details dialog keeps the admin fields (labels "Canary manifest", "Canary %", "Switch <remote> off") but disabled
-//   with aria-disabled, Save hidden or disabled, and the same sentence shown inside the dialog;
-// - flag checkboxes (aria-label = flag name) and the errors "Clear" button are disabled for a locked admin;
-// - axe runs in e2e only (no axe in the unit setup): run e2e/a11y.spec.ts against a prod-like API for the axe half.
+// T47 E-demo-banner as component tests: demo chip, disabled admin fields, flags and errors Clear locked for the demo admin (axe runs in e2e/a11y.spec.ts).
 import { login, logout } from '@mfe/auth-store';
 import { emit } from '@mfe/events';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';

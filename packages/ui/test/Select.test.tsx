@@ -1,7 +1,5 @@
 /** @vitest-environment jsdom */
-// Q-select-react. ASSUMPTIONS: `Select` is exported from ../src/index.ts with props options, value, onChange(value),
-// labelId | aria-label, id, name, disabled. Trigger is role=combobox, popup role=listbox, items role=option.
-// jsdom has no Popover API, so showPopover/hidePopover are stubbed (the component may also feature-detect).
+// Q-select-react: Select roles, selection, keyboard and disabled behavior; Popover API stubbed for jsdom.
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';

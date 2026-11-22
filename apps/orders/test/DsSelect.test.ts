@@ -1,7 +1,5 @@
 /** @vitest-environment jsdom */
-// Q-select-vue. ASSUMPTIONS: apps/orders/src/DsSelect.vue (default export) takes props options, modelValue, labelId
-// and emits update:modelValue. Same markup as the React Select: role=combobox trigger, role=listbox popup,
-// role=option items. Mounted inside an open shadow root. jsdom has no Popover API: stubbed.
+// Q-select-vue: DsSelect.vue behaves like the React Select (combobox, listbox, options, update:modelValue) in a shadow root; Popover API stubbed.
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createApp, h, nextTick, ref } from 'vue';
 import DsSelect from '../src/DsSelect.vue';

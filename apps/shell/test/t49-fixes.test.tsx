@@ -1,7 +1,5 @@
 /** @vitest-environment jsdom */
-// T49: Q-inspector-no-ping-off, Q-de-strings (shell), E-a11y HintTh. ASSUMPTIONS: a switched-off remote's
-// row header chip reads "off" (variantNames.disabled); the version select's dev option reads "dev (local)"
-// / "dev (lokal)"; the Tooltip trigger inside a `.hint-th` carries the label and the description are not the same text.
+// T49: Q-inspector-no-ping-off, Q-de-strings (shell), E-a11y HintTh: off chip, dev option labels in EN/DE, hint header tooltip.
 import { login, logout } from '@mfe/auth-store';
 import { emit } from '@mfe/events';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';

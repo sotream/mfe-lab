@@ -46,6 +46,11 @@ updates:
       - dependency-name: typescript
         update-types:
           - version-update:semver-major
+      # Pinned to 6.1.0 on purpose: Vercel parses headers[].source with path-to-regexp 6.1.0, and the
+      # header tests must use the same parser (see #56). A major bump would test the wrong syntax.
+      - dependency-name: path-to-regexp
+        update-types:
+          - version-update:semver-major
 
   - package-ecosystem: github-actions
     directory: /

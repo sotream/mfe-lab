@@ -1,7 +1,4 @@
-// Q-vercel-config: committed vercel.json files match the generator and mirror docker/nginx.conf.template.
-// ASSUMPTIONS (contract leaves open, phase 2 adjusts):
-//  - deploy/urls.json maps shell|products|dashboard|orders|api to a URL string (or an object with `url`);
-//  - generator CLI: `node scripts/vercel-config.ts <dir>` writes <dir>/apps/<name>/vercel.json.
+// Q-vercel-config: committed vercel.json files match the generator (`node scripts/vercel-config.ts <dir>`, fed by deploy/urls.json) and mirror docker/nginx.conf.template.
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

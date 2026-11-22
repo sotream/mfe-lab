@@ -1,8 +1,5 @@
 /** @vitest-environment jsdom */
-// T41 Q-remotes-columns, Q-details-dialog, Q-row-click. ASSUMPTIONS (phase 2 adapts to the real markup): the Details
-// control is a button named "Details for <remote>"; the dialog is role=dialog named "<remote>: details" (native <dialog>
-// or not); copy buttons are "Copy stable manifest" / "Copy canary manifest"; "Copied" is announced via a11y:announce;
-// the admin fields are labelled "Canary manifest", "Canary %", "Switch <remote> off", with Save and Cancel buttons.
+// T41 Q-remotes-columns, Q-details-dialog, Q-row-click: remotes table, details dialog, copy buttons, admin fields.
 import { ApiError } from '@mfe/api-client';
 import { emit, onAny } from '@mfe/events';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';

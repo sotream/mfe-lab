@@ -53,7 +53,7 @@ With several independently deployed remotes, "something broke" is not enough: we
 ## Trade-offs and risks
 
 - **Known limit:** a cross-origin script error without `crossorigin` on the script tag reaches `window` as `"Script error."` with no filename and no stack. Module Federation loads remote scripts without `crossorigin`, so such errors cannot be attributed and land in `unknown`. Render and load errors do not have this limit, because React and the runtime catch them in the shell.
-- `POST /errors` is public: anyone can fill the table. The 1000-row cap and truncation bound the damage; it is a lab.
+- `POST /errors` is public: anyone can post. The damage is bounded three ways: the server rejects over-long fields and a body over 16 KB (nothing is truncated on the server), the table keeps only the newest 1000 rows (the cap limits storage, not the request rate), and the route is rate limited to 30 per minute per IP (in memory per serverless instance, so per warm instance on Vercel). The daily reseed also clears the table. It is still a lab: an attacker can push real reports out of the 1000 rows.
 - A canary that fails and falls back to stable is reported by the shell as `kind: 'load'`, `build: 'canary'` ([RFC 0017](0017-remote-registry-canary-and-kill-switch.md)).
 - De-dupe is per bundle and per page load, in memory.
 

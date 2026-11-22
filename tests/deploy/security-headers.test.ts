@@ -1,6 +1,4 @@
-// Q-headers (static): shell vercel.json, generated config and nginx template carry the T46 headers.
-// ASSUMPTIONS: CSP is a header on source `/(.*)` (matched via path-to-regexp like Vercel) of the shell
-// config; remotes get nosniff on their entry files and keep CORS *; nginx sets them via add_header.
+// Q-headers (static): shell vercel.json, generated config and nginx template carry the T46 headers (CSP on `/(.*)`, nosniff and CORS * on remote entries).
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';

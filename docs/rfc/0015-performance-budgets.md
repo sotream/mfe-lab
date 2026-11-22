@@ -47,18 +47,23 @@ Budget log:
 
 ## Alternatives considered
 
-| Option                 | Why not                                                                                                          |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Vitals in PR CI        | PR e2e runs against dev servers, so numbers would be noise; the production build and a real CDN only exist live. |
-| Size only after deploy | Too late and the PR is already merged; size is deterministic and cheap to gate earlier.                          |
-| `web-vitals` library   | An extra dependency for three numbers the browser already exposes through `PerformanceObserver`.                 |
-| Lighthouse CI          | Heavy dependency; needs its own server or storage for history, and its score is a blend we do not need.          |
-| Real-user monitoring   | Needs a collector and traffic; a demo has neither.                                                               |
+| Option                 | Why not                                                                                                                                                                                                                                 |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Vitals in PR CI        | PR e2e runs against dev servers, so numbers would be noise. PR previews (RFC 0018) are real builds on the CDN, but they share the PR's runner-sized noise and hit a free-tier database branch; production stays the one measured place. |
+| Size only after deploy | Too late and the PR is already merged; size is deterministic and cheap to gate earlier.                                                                                                                                                 |
+| `web-vitals` library   | An extra dependency for three numbers the browser already exposes through `PerformanceObserver`.                                                                                                                                        |
+| Lighthouse CI          | Heavy dependency; needs its own server or storage for history, and its score is a blend we do not need.                                                                                                                                 |
+| Real-user monitoring   | Needs a collector and traffic; a demo has neither.                                                                                                                                                                                      |
 
 ## Trade-offs and risks
 
 - Lab data from one GitHub runner is not what users see. Medians of five runs and generous budgets keep it stable; a flaky red is a reason to widen a budget, with a note.
-- A vitals failure comes after the deploy, so it warns, it does not block or roll back.
+- A vitals failure comes after the deploy, so it cannot block or roll back the release: the new version is already live. It does turn the `Deploy` run red (a median over budget exits 1), and because a failed run does not advance the deploy base (docs/deploy.md), the next deploy redeploys the same changes.
+
+## Update (2026-11-22)
+
+The earlier wording "it warns, it does not block" was wrong: `vitals` is a job of `deploy.yml` and fails it. Since T43 PRs also get live previews; vitals still runs only against production, after `smoke`.
+
 - The measured time-to-remotes is warm for the remotes: they are prefetched on idle while the page waits on `/login` (RFC 0005). That is the real user path, not a cold one.
 - Demo logins are used against the public demo; it has no private data.
 

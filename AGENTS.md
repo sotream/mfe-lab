@@ -1,6 +1,6 @@
 # AGENTS.md: rules for builder agents
 
-Project: `mfe-lab`, a private learning monorepo for Federated Micro Frontends. Read in order: `docs/BRIEF.md`, `docs/PLAN.md`, `docs/rfc/`.
+Project: `mfe-lab`, a public learning monorepo for Federated Micro Frontends. Read in order: `docs/BRIEF.md`, `docs/PLAN.md`, `docs/rfc/`.
 
 ## Workflow
 
@@ -14,6 +14,7 @@ Project: `mfe-lab`, a private learning monorepo for Federated Micro Frontends. R
 - **No AI attribution** in commits or PR text: no `Co-Authored-By`, no "Generated with" lines.
 - PR titles and commit subjects are checked by the `conventional` job; gitleaks runs in CI (the `secrets` job); minor and patch Dependabot PRs auto-merge.
 - `main` is protected: PR only. The owner merges unless told otherwise.
+- The repo is public: no secrets, personal data or private infrastructure details in code, docs, PR text or commit messages.
 - If the task conflicts with an RFC, stop and write the question in the PR; do not silently diverge. Decision changes = edit the RFC in the same PR.
 
 ## Stack rules

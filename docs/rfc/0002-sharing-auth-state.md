@@ -53,7 +53,7 @@ getToken(): string | null;                       // for the API client
 
 ## Public demo admin is read-only in production
 
-The demo accounts are public, so on the live deployment the API refuses the changes that affect every visitor (registry, flags, error log, orders, product delete) with `403 demo_read_only`. The API decides and tells the client through `user.demo` in the login and `/auth/me` responses; the shell shows a "Demo admin" chip and disables those controls, and remotes use the shared helpers `canWrite` and `canDestroy` from `@mfe/auth-store`. Previews, dev and tests are unlocked. An owner account with 2FA from env can use the full controls.
+The demo accounts are public, so on the live deployment the API refuses the changes that affect every visitor (registry, flags, error log, orders, product delete) with `403 demo_read_only`. The API decides and tells the client through `user.demo` in the login and `/auth/me` responses; the shell shows a "Demo admin" chip and disables those controls, and remotes use the shared helpers `canWrite` and `canDestroy` from `@mfe/auth-store`. Previews, dev and tests are unlocked.
 
 ## Rollout
 

@@ -1,9 +1,5 @@
 /** @vitest-environment jsdom */
-// Q-orders-unit (Vue). ASSUMPTIONS (phase 2 adapts): apps/orders/src/OrdersApp.ts exports `mount` and `buildVersion`;
-// the vitest config gets the Vue plugin; listOrders (and listProducts for product names) come from @mfe/api-client and
-// are mocked here; the status filter is the custom DsSelect (T38: role=combobox trigger, role=option items); the empty and error states use role=status / role=alert.
-// The mocked rows carry both the plain API fields and product_name / total_cents, so a join in the API or a second
-// listProducts call both give the same table.
+// Q-orders-unit (Vue): OrdersApp mount, buildVersion, orders table, DsSelect status filter, empty and error states, with @mfe/api-client mocked.
 import { emit } from '@mfe/events';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 

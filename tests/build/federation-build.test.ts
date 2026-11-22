@@ -184,9 +184,7 @@ describe('federation build', { timeout: BUILD_TIMEOUT }, () => {
     for (const r of refs) expect(basename(r), `index.html -> ${r}`).toMatch(hash);
   });
 
-  // Q-size-budget. ASSUMPTIONS (phase 2 adapts): `--budget <file>` overrides perf-budget.json;
-  // shape { shell|products|dashboard: { initialJsGzip, totalJsGzip, cssGzip }, vitals: {...} };
-  // violations are reported on stdout/stderr naming the app and metric.
+  // Q-size-budget: `--budget <file>` overrides perf-budget.json; violations name the app and metric on stdout/stderr.
   const apps = ['shell', 'products', 'dashboard', 'orders'] as const;
   const metrics = ['initialJsGzip', 'totalJsGzip', 'cssGzip'] as const;
   const sizeBudget = (args: string[] = []) =>

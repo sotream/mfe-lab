@@ -1,6 +1,4 @@
-// T49 amendments 14 and 15, checked on the CSS source: locked controls look disabled, the demo chip is
-// not red. ASSUMPTIONS: the disabled style is a rule whose selector has `:disabled` and covers input,
-// select or the switch, in @mfe/ui CSS or the shell's styles.css; the demo chip uses no --ds1-bad token.
+// T49 amendments 14 and 15 on the CSS source: locked controls look disabled, the demo chip does not use the red token.
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';

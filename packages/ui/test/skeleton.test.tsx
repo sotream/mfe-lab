@@ -1,6 +1,5 @@
 /** @vitest-environment jsdom */
-// Q-skeleton-ui. ASSUMPTIONS (phase 2 adapts): `Skeleton` is exported from ../src/index.ts with width/height/radius;
-// Table `loading={{ rows }}` keeps the caller's <thead> child and renders `rows` aria-hidden body rows itself.
+// Q-skeleton-ui: Skeleton props and Table `loading={{ rows }}` rendering aria-hidden body rows.
 import { act, cleanup, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { RemoteFrame, Skeleton, Table, type RemoteModule } from '../src/index.ts';
