@@ -311,3 +311,8 @@ Nothing planned.
 
 - **Goal:** headroom wins from the final review, with no behaviour change for users.
 - **Done when:** `mf-manifest.json` and `remoteEntry.js` are `no-cache` (always revalidated, a repeat visit gets a 304) instead of `no-store` in the generated `vercel.json` files, the nginx template and the deploy smoke check; the API pool's `idleTimeoutMillis` is 120 s; the shell's idle prefetch starts orders only after the products and dashboard preload has settled; `scripts/size-budget.ts` counts byte-identical emitted JS or CSS files of one app once; budgets unchanged; `pnpm lint && pnpm typecheck && pnpm test && pnpm build` pass; no new dependency. Shared tree-shaking of `react-router` was tried and dropped: the runtime then asks for an `independent-packages/.../share-entry.js` fallback that the build does not emit.
+
+## T64 Registry default label and shell preload
+
+- **Goal:** the inspector's empty "Use" option says what it does, and the shell's first paint does not wait one hop for the boot chunks and fonts.
+- **Done when:** the empty option of each Use select reads `default (registry)` (EN) and `Standard (Registry)` (DE) instead of `dev (local)`; the shell build adds `rel="preload"` links to `index.html` for the bootstrap chunk, the sync chunks of the shared packages (from `mf-manifest.json`, no hard-coded names) and at most two self-hosted fonts (`type="font/woff2"`, `crossorigin`), and nothing for remotes or async chunks; every linked file exists in `dist/` and is requested once; `pnpm lint && pnpm typecheck && pnpm test && pnpm build` and the size budget pass; budgets and CSP unchanged; no new dependency.

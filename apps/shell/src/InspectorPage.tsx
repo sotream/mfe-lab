@@ -102,7 +102,7 @@ function VersionSelect({ name }: { name: RemoteName }) {
       aria-label={t.versionOf(name)}
       value={value}
       options={[
-        { value: '', label: t.devOption },
+        { value: '', label: t.defaultOption },
         ...versions.map((v) => ({ value: v, label: v })),
       ]}
       onChange={(v) => setRemoteEntry(name, v ? releaseManifestUrl(name, v) : null)}
