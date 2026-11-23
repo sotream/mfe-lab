@@ -290,6 +290,11 @@ Nothing planned.
 - **Goal:** `dashboard.cssGzip` back under 90% of its budget without raising it and without a visual change.
 - **Done when:** the dashboard build emits the `@mfe/ui` styles (tokens, ds1, frame) once, not once per chunk group, so `dashboard.cssGzip` is at most 6451 bytes (budget 7168 unchanged); before and after screenshots of the dashboard standalone and inside the shell at `/dashboard` (EN and DE, 1440 and 390) are pixel-identical apart from the build stamp text; `pnpm lint && pnpm typecheck && pnpm test` pass; no new dependency.
 
+## T53 How it was built
+
+- **Goal:** a short, honest write-up of how the lab was built: roles, the loop per task, what kept it honest, what the final review found, and the numbers.
+- **Done when:** `docs/how-it-was-built.md` exists (600 to 900 words) with setup, loop, gates, review findings (#69 to #72, #77), numbers taken from the repo, CI and the last vitals run, and three "do differently" bullets; the README "How it was built" section links to it; the docs link test covers it; no code change, no new dependency.
+
 ## T54 Env-provisioned login and cron diagnostics
 
 - **Goal:** login no longer depends on the reseed for env-provisioned accounts; cron auth failures are logged without secrets.
