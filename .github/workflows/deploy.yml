@@ -121,16 +121,15 @@ jobs:
           pnpm dlx "$VERCEL_CLI" build --prod
           # Fail loudly instead of deploying a function-less API (every path 404s).
           [ -n "$(find .vercel/output/functions -name '*.func' -type d 2>/dev/null)" ] || { echo "no function in .vercel/output/functions" >&2; exit 1; }
-          # The function lists its installed dependencies as paths in this checkout; ship has none, so inline them.
+          # The function lists its installed dependencies as paths in this checkout; ship has none, so recreate them as symlinks.
           node scripts/inline-func-deps.ts
-      # Only the build output and the project link; never the pulled .env files.
+      # Only the build output and the project link; never the pulled .env files. A tar, because
+      # upload-artifact drops symlinks (pnpm's layout in the api function).
+      - run: tar -cf "$RUNNER_TEMP/vercel-out.tar" .vercel/output .vercel/project.json
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: vercel-api
-          path: |
-            .vercel/output
-            .vercel/project.json
-          include-hidden-files: true
+          path: ${{ runner.temp }}/vercel-out.tar
           retention-days: 1
           if-no-files-found: error
 
@@ -151,7 +150,8 @@ jobs:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: vercel-api
-          path: .vercel
+          path: ${{ runner.temp }}
+      - run: tar -xf "$RUNNER_TEMP/vercel-out.tar"
       - name: Deploy api
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
@@ -193,14 +193,13 @@ jobs:
       - name: Build ${{ matrix.app }}
         run: |
           pnpm dlx "$VERCEL_CLI" build --prod
-      # Only the build output and the project link; never the pulled .env files.
+      # Only the build output and the project link; never the pulled .env files. A tar, because
+      # upload-artifact drops symlinks (pnpm's layout in the api function).
+      - run: tar -cf "$RUNNER_TEMP/vercel-out.tar" .vercel/output .vercel/project.json
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: vercel-${{ matrix.app }}
-          path: |
-            .vercel/output
-            .vercel/project.json
-          include-hidden-files: true
+          path: ${{ runner.temp }}/vercel-out.tar
           retention-days: 1
           if-no-files-found: error
 
@@ -225,7 +224,8 @@ jobs:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: vercel-${{ matrix.app }}
-          path: .vercel
+          path: ${{ runner.temp }}
+      - run: tar -xf "$RUNNER_TEMP/vercel-out.tar"
       - name: Deploy ${{ matrix.app }}
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
@@ -271,14 +271,13 @@ jobs:
           pnpm dlx "$VERCEL_CLI" build --prod
           # Fail instead of shipping a shell that points at localhost remotes.
           ! grep -rl 'localhost:300' .vercel/output/static || { echo "localhost remote URL in the shell build" >&2; exit 1; }
-      # Only the build output and the project link; never the pulled .env files.
+      # Only the build output and the project link; never the pulled .env files. A tar, because
+      # upload-artifact drops symlinks (pnpm's layout in the api function).
+      - run: tar -cf "$RUNNER_TEMP/vercel-out.tar" .vercel/output .vercel/project.json
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: vercel-shell
-          path: |
-            .vercel/output
-            .vercel/project.json
-          include-hidden-files: true
+          path: ${{ runner.temp }}/vercel-out.tar
           retention-days: 1
           if-no-files-found: error
 
@@ -299,7 +298,8 @@ jobs:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: vercel-shell
-          path: .vercel
+          path: ${{ runner.temp }}
+      - run: tar -xf "$RUNNER_TEMP/vercel-out.tar"
       - name: Deploy shell
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}

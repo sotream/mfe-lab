@@ -117,7 +117,7 @@ jobs:
             pnpm dlx "$VERCEL_CLI" build
             if [ "$app" = api ]; then
               [ -n "$(find .vercel/output/functions -name '*.func' -type d 2>/dev/null)" ] || { echo "no function in .vercel/output/functions" >&2; exit 1; }
-              # The function lists its installed dependencies as paths in this checkout; ship has none, so inline them.
+              # The function lists its installed dependencies as paths in this checkout; ship has none, so recreate them as symlinks.
               node scripts/inline-func-deps.ts
             fi
             # Only the output and the project link go on; never the pulled .env files.
@@ -130,11 +130,12 @@ jobs:
           node scripts/vercel-config.ts
           grep -q "$PREVIEW_API_URL" apps/shell/vercel.json
           build shell
+      # A tar, because upload-artifact drops symlinks (pnpm's layout in the api function).
+      - run: tar -cf "$RUNNER_TEMP/vc-out.tar" -C "$RUNNER_TEMP" vc-out
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: vercel-preview
-          path: ${{ runner.temp }}/vc-out
-          include-hidden-files: true
+          path: ${{ runner.temp }}/vc-out.tar
           retention-days: 1
           if-no-files-found: error
 
@@ -156,7 +157,8 @@ jobs:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: vercel-preview
-          path: ${{ runner.temp }}/vc-out
+          path: ${{ runner.temp }}
+      - run: tar -xf "$RUNNER_TEMP/vc-out.tar" -C "$RUNNER_TEMP"
       - name: Neon branch
         env:
           NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
