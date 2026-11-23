@@ -13,7 +13,11 @@ const row = z.object({
 // Allowlisted origins only (deploy/canary.ts); localhost outside production. Checked in the handler
 // so the response code is invalid_canary_url, not the generic invalid_body.
 const isManifestUrl = (value: string) =>
-  isAllowedCanary(value, process.env.NODE_ENV !== 'production');
+  isAllowedCanary(
+    value,
+    process.env.NODE_ENV !== 'production',
+    process.env.VERCEL_ENV === 'production',
+  );
 
 const patch = z.strictObject({
   canaryUrl: z.string().nullable().optional(),

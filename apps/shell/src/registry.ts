@@ -27,6 +27,9 @@ export function bucket(userId: number | string, remote: string): number {
   return h % 100;
 }
 
+// Set at build time: true only for the production deployment (VERCEL_ENV), which takes no preview canaries.
+declare const __PRODUCTION__: boolean;
+
 // A local stack (stable URLs on localhost) may also use localhost canaries; a production build never does.
 const allowLocal = stableUrls.products.startsWith('http://localhost');
 
@@ -42,7 +45,7 @@ export function resolveRemote(
   // A row that fails the allowlist (written before the API enforced it) is ignored: stable.
   if (
     row?.canaryUrl &&
-    isAllowedCanary(row.canaryUrl, allowLocal) &&
+    isAllowedCanary(row.canaryUrl, allowLocal, __PRODUCTION__) &&
     b !== null &&
     b < row.canaryPercent
   ) {

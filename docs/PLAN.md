@@ -302,6 +302,11 @@ Nothing planned.
 
 ## T56 Shared role labels
 
+## T62 Deploy token isolation and auth hardening
+
+- **Goal:** the deploy token never reaches third-party code, and the login lock, reseed, canary allowlist and demo rate limit have no gaps left from the final review.
+- **Done when:** `VERCEL_TOKEN` is not job-level anywhere; `deploy.yml` and `preview.yml` split each app into a build job (link and pull with the token before `pnpm install`, then install and `vercel build` without it, output uploaded as a one-day artifact) and a ship job (no install, `vercel deploy --prebuilt` with the token in the step env), with the old guards and the api, remotes, shell, smoke, vitals order kept, and new actions pinned by SHA; a login attempt with a code is counted atomically before it is checked, so parallel requests get at most five guesses per lock window and a locked account refuses correct credentials; a reseed keeps the env account's `failed_attempts`, `locked_until` and `totp_last_step`; `upsertEnvAccount` demotes stale rows of the env account's role to `viewer`; `isAllowedCanary` refuses preview hosts when called for production (API `VERCEL_ENV=production`, production shell build); demo accounts get one write bucket per user and IP; `docs/deploy.md` and RFCs 0017 and 0018 say so; `pnpm lint && pnpm typecheck && pnpm test` pass; no new dependency.
+
 ## T63 Cheap performance wins
 
 - **Goal:** headroom wins from the final review, with no behaviour change for users.

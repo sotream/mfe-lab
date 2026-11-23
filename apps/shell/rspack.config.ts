@@ -42,6 +42,7 @@ export default defineConfig({
     new ModuleFederationPlugin({ name: 'shell', shared, manifest: true, dts: false }),
     new rspack.DefinePlugin({
       __BUILD_VERSION__: JSON.stringify(buildVersion),
+      __PRODUCTION__: JSON.stringify(process.env.VERCEL_ENV === 'production'),
       __MF_PRODUCTS_URL__: JSON.stringify(productsUrl),
       __MF_DASHBOARD_URL__: JSON.stringify(dashboardUrl),
       __MF_ORDERS_URL__: JSON.stringify(ordersUrl),

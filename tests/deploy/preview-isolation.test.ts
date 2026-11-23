@@ -106,7 +106,7 @@ describe('preview.yml', () => {
       .split(/^ {6}- /m)
       .slice(1)
       .map((s) => s);
-  const preview = job('preview');
+  const preview = job('ship');
   const cleanup = job('cleanup');
 
   it('Q-preview-isolation: the deploy passes a masked per-PR JWT_SECRET with -e', () => {

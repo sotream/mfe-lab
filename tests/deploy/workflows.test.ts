@@ -125,23 +125,22 @@ describe('workflows', () => {
       const m = new RegExp(`^  ${job}:[\\s\\S]*?^    needs:\\s*(.+)$`, 'm').exec(t);
       return m?.[1] ?? '';
     };
-    // The remotes (products, dashboard) are one matrix job.
-    expect(needs('shell')).toMatch(/remotes/);
-    expect(needs('remotes')).toMatch(/\bapi\b/);
+    // The remotes (products, dashboard, orders) are one matrix build and one matrix ship (T62).
+    expect(needs('shell-build')).toMatch(/remotes-ship/);
+    expect(needs('remotes-build')).toMatch(/api-ship/);
+    expect(needs('api-ship')).toMatch(/api-build/);
     expect(t).toMatch(/remotes=/);
   });
 
-  it('Q-workflows: every vercel link/pull/build/deploy line in deploy.yml carries the scope array', () => {
+  it('Q-workflows: every vercel link/pull/deploy line in deploy.yml carries the scope array', () => {
     const t = code(files['deploy.yml']);
     const lines = t
       .split('\n')
       .filter((l) =>
-        /\$VERCEL_CLI"?\s+(link|pull|build|deploy)\b|\bvercel(@\S+)?\s+(link|pull|build|deploy)\b/.test(
-          l,
-        ),
+        /\$VERCEL_CLI"?\s+(link|pull|deploy)\b|\bvercel(@\S+)?\s+(link|pull|deploy)\b/.test(l),
       );
-    // api + matrix remotes + shell, four commands each
-    expect(lines.length).toBeGreaterThanOrEqual(12);
+    // api + matrix remotes + shell, three commands each; `vercel build` runs without the token (T62)
+    expect(lines.length).toBeGreaterThanOrEqual(9);
     for (const l of lines) expect(l, l).toMatch(/"\$\{scope\[@\]\}"/);
   });
 
