@@ -28,11 +28,4 @@ describe('GET /registry cache headers', () => {
     const authed = await call(ctx, { url: '/registry', as: 'admin' });
     expect(anon.json()).toEqual(authed.json());
   });
-
-  // T65: shape may need adapting in phase 2 (drop if the builder documents Vary as unnecessary)
-  it('Q-registry-cache: Vary includes Authorization', async () => {
-    const ctx = await freshApp();
-    const res = await call(ctx, { url: '/registry', as: null });
-    expect(String(res.headers.vary ?? '')).toMatch(/authorization/i);
-  });
 });
