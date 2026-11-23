@@ -37,7 +37,7 @@ const header = (source: string, key: string, value: string) => ({
   headers: [{ key, value }],
 });
 
-// Mirrors docker/nginx.conf.template: API proxy, SPA fallback, CORS for remotes, no-store entries.
+// Mirrors docker/nginx.conf.template: API proxy, SPA fallback, CORS for remotes, revalidated entries.
 function staticApp(name: 'shell' | 'products' | 'dashboard' | 'orders') {
   const remote = name !== 'shell';
   return {
@@ -69,7 +69,7 @@ function staticApp(name: 'shell' | 'products' | 'dashboard' | 'orders') {
               ],
             },
           ]),
-      header('/(mf-manifest\\.json|remoteEntry\\.js)', 'Cache-Control', 'no-store'),
+      header('/(mf-manifest\\.json|remoteEntry\\.js)', 'Cache-Control', 'no-cache'),
       // Content-hashed assets (16 hex chars) never change. remoteEntry.js has no hash, so it never matches.
       // The whole pattern must sit inside one group: Vercel's path-to-regexp 6.1.0 reads a bare {16} as a literal group.
       header(

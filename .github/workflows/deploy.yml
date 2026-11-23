@@ -198,11 +198,11 @@ jobs:
           m=$(h https://mfe-lab-products.vercel.app/mf-manifest.json)
           echo "$m" | head -1 | grep -q ' 200'
           echo "$m" | grep -qi '^access-control-allow-origin: \*'
-          echo "$m" | grep -i '^cache-control:' | grep -qi 'no-store'
+          echo "$m" | grep -i '^cache-control:' | grep -qi 'no-cache'
           o=$(h https://mfe-lab-orders.vercel.app/mf-manifest.json)
           echo "$o" | head -1 | grep -q ' 200'
           echo "$o" | grep -qi '^access-control-allow-origin: \*'
-          echo "$o" | grep -i '^cache-control:' | grep -qi 'no-store'
+          echo "$o" | grep -i '^cache-control:' | grep -qi 'no-cache'
           [ "$(code https://mfe-lab-api.vercel.app/cron/reseed)" = 401 ]
           echo smoke ok
 

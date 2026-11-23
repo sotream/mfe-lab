@@ -144,6 +144,6 @@ describe('M10: the idle prefetch warms the resolved entry', () => {
       (c[0] as { name: string; entry: string }[]).filter((e) => e.name === 'products'),
     );
     expect(entries.every((e) => e.entry === STABLE)).toBe(true);
-    expect(h.preloadRemote).toHaveBeenCalledTimes(1);
+    expect(h.preloadRemote).toHaveBeenCalledTimes(2); // products and dashboard, then orders
   });
 });

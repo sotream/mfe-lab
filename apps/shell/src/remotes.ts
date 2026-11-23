@@ -228,7 +228,7 @@ const warmed = new Map<RemoteName, string>();
 
 // Warm the browser cache (manifest, entry, expose chunks incl. async) of every enabled remote from the
 // entry it resolves to now: canary or stable per the registry and the user's bucket. Disabled remotes
-// are skipped (RFC 0017); a remote already warmed from the same entry is skipped too.
+// are skipped (RFC 0017); a remote already warmed from the same entry is skipped too. Orders goes last.
 async function warm(): Promise<void> {
   await ensureRegistry();
   const todo = (Object.keys(entries) as RemoteName[]).filter((n) => {
@@ -241,17 +241,23 @@ async function warm(): Promise<void> {
     warmed.set(n, entry);
     if (registered.get(n) !== entry) register(n, entry);
   }
-  try {
-    await preloadRemote(
-      todo.map((name) => ({
-        nameOrAlias: name,
-        exposes: [`./${entries[name].module}`],
-        resourceCategory: 'all' as const,
-      })),
-    );
-  } catch (err) {
-    console.warn('prefetchRemotes failed', err);
-  }
+  const preload = async (names: RemoteName[]) => {
+    try {
+      await preloadRemote(
+        names.map((name) => ({
+          nameOrAlias: name,
+          exposes: [`./${entries[name].module}`],
+          resourceCategory: 'all' as const,
+        })),
+      );
+    } catch (err) {
+      console.warn('prefetchRemotes failed', err);
+    }
+  };
+  // Orders (the heaviest) only starts once products and dashboard are done, so it never competes
+  // with the remotes the user is most likely to open first.
+  await preload(todo.filter((n) => n !== 'orders'));
+  if (todo.includes('orders')) await preload(['orders']);
 }
 
 // Once per page load, at idle. The user is usually anonymous then, so it warms stable; a later sign-in

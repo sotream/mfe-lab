@@ -40,10 +40,13 @@ describe('prefetchRemotes', () => {
   it('Q-prefetch: calls preloadRemote once with all remotes', async () => {
     const { prefetchRemotes } = await fresh();
     await prefetchRemotes();
-    expect(rt.preloadRemote).toHaveBeenCalledTimes(1);
-    expect(rt.preloadRemote).toHaveBeenCalledWith([
+    // products and dashboard first, orders in a second call
+    expect(rt.preloadRemote).toHaveBeenCalledTimes(2);
+    expect(rt.preloadRemote).toHaveBeenNthCalledWith(1, [
       { nameOrAlias: 'products', exposes: ['./ProductsPage'], resourceCategory: 'all' },
       { nameOrAlias: 'dashboard', exposes: ['./DashboardPage'], resourceCategory: 'all' },
+    ]);
+    expect(rt.preloadRemote).toHaveBeenNthCalledWith(2, [
       { nameOrAlias: 'orders', exposes: ['./OrdersApp'], resourceCategory: 'all' },
     ]);
   });
@@ -52,16 +55,16 @@ describe('prefetchRemotes', () => {
     const { prefetchRemotes } = await fresh();
     await prefetchRemotes();
     await prefetchRemotes();
-    expect(rt.preloadRemote).toHaveBeenCalledTimes(1);
+    expect(rt.preloadRemote).toHaveBeenCalledTimes(2);
   });
 
   it('Q-prefetch: a fresh module instance prefetches again', async () => {
     const a = await fresh();
     await a.prefetchRemotes();
-    expect(rt.preloadRemote).toHaveBeenCalledTimes(1);
+    expect(rt.preloadRemote).toHaveBeenCalledTimes(2);
     const b = await fresh();
     await b.prefetchRemotes();
-    expect(rt.preloadRemote).toHaveBeenCalledTimes(1); // fresh() clears the mocks
+    expect(rt.preloadRemote).toHaveBeenCalledTimes(2); // fresh() clears the mocks
   });
 
   it('Q-prefetch: rejected preloadRemote does not throw, warns after settle', async () => {

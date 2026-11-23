@@ -21,7 +21,7 @@ Nothing checked size or speed. RFC 0005 was measured once, by hand. JS and CSS h
 
 ## Proposal
 
-**Hashed names.** `[name].[contenthash:16].js` and `.css` for entries and chunks in all three apps. Fixed names stay for `remoteEntry.js`, `mf-manifest.json`, `mf-stats.json` and `index.html`, because the shell and users fetch them by a stable URL. The generated `vercel.json` files and the nginx template send `Cache-Control: public, max-age=31536000, immutable` only for names with a 16-hex hash (js, css, woff2); the no-store rule for manifest and `remoteEntry.js` is unchanged.
+**Hashed names.** `[name].[contenthash:16].js` and `.css` for entries and chunks in all three apps. Fixed names stay for `remoteEntry.js`, `mf-manifest.json`, `mf-stats.json` and `index.html`, because the shell and users fetch them by a stable URL. The generated `vercel.json` files and the nginx template send `Cache-Control: public, max-age=31536000, immutable` only for names with a 16-hex hash (js, css, woff2); the no-cache rule (always revalidated, a repeat visit gets a 304) for manifest and `remoteEntry.js` is unchanged.
 
 **Size, in CI.** `node scripts/size-budget.ts` runs after `pnpm build` and gzips (level 9) per app:
 

@@ -211,8 +211,10 @@ describe('fallback once-only (through remotes.ts)', () => {
     await expect(r.loadPage('products')).rejects.toBeInstanceOf(r.RemoteDisabledError);
     expect(h.loadRemote).not.toHaveBeenCalled();
     await r.prefetchRemotes();
-    const call = h.preloadRemote.mock.calls[0]![0] as { nameOrAlias: string }[];
-    expect(call.map((c) => c.nameOrAlias)).toEqual(['dashboard', 'orders']);
+    const names = h.preloadRemote.mock.calls.flatMap((c) =>
+      (c[0] as { nameOrAlias: string }[]).map((e) => e.nameOrAlias),
+    );
+    expect(names).toEqual(['dashboard', 'orders']);
   });
 });
 
