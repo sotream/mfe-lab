@@ -135,6 +135,7 @@ jobs:
 
   api-ship:
     needs: [plan, api-build]
+    if: ${{ !cancelled() && !failure() && needs.api-build.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -205,6 +206,7 @@ jobs:
 
   remotes-ship:
     needs: [plan, remotes-build]
+    if: ${{ !cancelled() && !failure() && needs.remotes-build.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     strategy:
@@ -283,6 +285,7 @@ jobs:
 
   shell-ship:
     needs: [plan, shell-build]
+    if: ${{ !cancelled() && !failure() && needs.shell-build.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

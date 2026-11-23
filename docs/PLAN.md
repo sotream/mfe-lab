@@ -326,3 +326,8 @@ Nothing planned.
 
 - **Goal:** the shell's idle prefetch no longer waits for an API cold start and database wake-up on every cold visit.
 - **Done when:** anonymous `GET /registry` sends `Cache-Control: public, s-maxage=5, stale-while-revalidate=60` and requests with `Authorization` keep `no-store`; the shell's boot fetch adds no cache bypass and the inspector applies the `PATCH` response, so an admin sees changes at once; `docs/api.md` and RFC 0017 say the kill switch reaches visitors within about a minute; on a preview, a repeat anonymous `/api/registry` within 5 s returns `x-vercel-cache: HIT`; `pnpm lint && pnpm typecheck && pnpm test` pass; no new dependency.
+
+## T66 Ship jobs run after skipped siblings
+
+- **Goal:** a deploy that changes only some apps still ships each changed app. A ship job whose `needs` chain contains a skipped job (for example `remotes-ship` when no remote changed) must not be skipped with it.
+- **Done when:** `api-ship`, `remotes-ship` and `shell-ship` in `deploy.yml` have an explicit `if: ${{ !cancelled() && !failure() && needs.<build>.result == 'success' }}`; a static test requires every job that needs a job with its own `if:` to carry `!cancelled()` and each `*-ship` job to check its build job's result; `smoke` and `vitals` keep their conditions; `pnpm lint && pnpm typecheck && pnpm test` pass.
