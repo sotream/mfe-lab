@@ -81,6 +81,11 @@ export async function upsertEnvAccount(db: Db, only?: string): Promise<void> {
      on conflict (email) do update set password_hash = excluded.password_hash, role = excluded.role`,
     [email, hash],
   );
+  // The env account is the only superadmin: a row from an earlier email loses the role.
+  await db.query(
+    "update users set role = 'viewer' where role = 'superadmin' and email <> lower($1)",
+    [email],
+  );
 }
 
 type SeedResult = { seeded: boolean; users: number; products: number; orders: number };
@@ -106,6 +111,17 @@ export async function seed(db: Db, opts: { reset?: boolean } = {}): Promise<Seed
     new Date(from + Math.floor(rnd() * days * DAY)).toISOString();
 
   await db.tx(async (t) => {
+    // The env account's login lock and used TOTP step survive the reseed (a daily reset must not unlock it).
+    const envEmail = process.env.SUPERADMIN_EMAIL?.toLowerCase();
+    const [guard] = envEmail
+      ? await t.query<{
+          failed_attempts: number;
+          locked_until: string | null;
+          totp_last_step: number | null;
+        }>('select failed_attempts, locked_until, totp_last_step from users where email = $1', [
+          envEmail,
+        ])
+      : [];
     await t.exec('truncate orders, products, users restart identity cascade');
     // Visitors toggle flags and report errors; the daily reset clears both.
     await t.exec('truncate errors');
@@ -122,6 +138,12 @@ export async function seed(db: Db, opts: { reset?: boolean } = {}): Promise<Seed
     }
 
     await upsertEnvAccount(t);
+    if (guard) {
+      await t.query(
+        'update users set failed_attempts = $1, locked_until = $2, totp_last_step = $3 where email = $4',
+        [guard.failed_attempts, guard.locked_until, guard.totp_last_step, envEmail],
+      );
+    }
 
     // Registry back to stable: no canary, 0%, enabled (RFC 0017).
     await t.exec('truncate remotes');

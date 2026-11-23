@@ -84,21 +84,14 @@ describe('preview.yml', () => {
     const body = job(jobNames.find((n) => /clean|remove|teardown/i.test(n)) ?? '__none__');
     expect(body).toMatch(/alias rm|alias remove/);
     expect(body).toMatch(/preview-db-delete/i);
-    const deploy = jobNames.find(
-      (n) => /deploy|preview/i.test(n) && !/clean|remove|teardown/i.test(n),
-    );
-    expect(deploy).toBeTruthy();
-    expect(job(deploy!)).toMatch(/action\s*!=\s*'closed'/);
+    // The plan job gates every other one (T62 split the old single job).
+    expect(job('plan')).toMatch(/action\s*!=\s*'closed'/);
   });
 
-  it('Q-workflow: Plan computes PREVIEW_NEEDED and the deploy steps are gated on it', () => {
+  it('Q-workflow: plan computes `needed` and the build job is gated on it', () => {
     expect(t).toMatch(/changed-apps\.ts --preview-needed/);
-    expect(t).toMatch(/PREVIEW_NEEDED=\$needed/);
-    const body = job('preview');
-    for (const name of ['Neon branch', 'Migrate', 'Deploy previews', 'Smoke']) {
-      const step = new RegExp(`- name: ${name}\\n((?: {8}.*\\n)+)`).exec(body)?.[1] ?? '';
-      expect(step, name).toMatch(/if:\s*env\.PREVIEW_NEEDED == 'true'/);
-    }
-    expect(body).toMatch(/export STATE=skipped/);
+    expect(t).toMatch(/needed=\$needed/);
+    expect(job('build')).toMatch(/if:\s*needs\.plan\.outputs\.needed == 'true'/);
+    expect(job('comment')).toMatch(/export STATE=skipped/);
   });
 });

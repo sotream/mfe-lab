@@ -85,7 +85,7 @@ The script logs only names, ids and created / exists / updated. Re-run it any ti
 5. `smoke` checks the live URLs: shell `<title>`, `/api/health` 200, the products and orders manifests (200, CORS `*`, `no-cache`), and `/cron/reseed` 401 without auth.
 6. `vitals` runs `node scripts/vitals.ts` against the shell URL from `deploy/urls.json`: Chromium on Fast 4G and 4x CPU, 5 cold runs, median LCP, CLS and time-to-remotes against `perf-budget.json`. The table goes to the job summary; a median over budget fails the job. It runs only after a green `smoke`, and a failure does not roll the deploy back. Locally: `VITALS_URL=<base> pnpm vitals`.
 
-Per app: `vercel link --yes --project <name>` (so no project id is stored), `vercel pull --yes --environment=production`, `vercel build --prod`, `vercel deploy --prebuilt --prod`. The CLI is pinned in `deploy.yml` (`VERCEL_CLI`) and runs with `pnpm dlx`. Jobs run under `concurrency: deploy` without cancelling.
+Per app, two jobs (T62): `<app>-build` runs `vercel link --yes --project <name>` (so no project id is stored) and `vercel pull --yes --environment=production` first, before `pnpm install`, then installs, builds with `vercel build --prod` and uploads `.vercel/output` and `.vercel/project.json` as a one-day artifact; `<app>-ship` downloads it on a fresh runner (no install) and runs `vercel deploy --prebuilt --prod`. `VERCEL_TOKEN` is set only on the pull step and the deploy step, never on a job, so install scripts and the build cannot read it. The CLI is pinned in `deploy.yml` (`VERCEL_CLI`) and runs with `pnpm dlx`. Jobs run under `concurrency: deploy` without cancelling.
 
 ### What gets deployed
 
@@ -107,7 +107,7 @@ Repository secrets: `VERCEL_TOKEN`, `NEON_API_KEY`. `NEON_API_KEY` is passed onl
 
 `.github/workflows/preview.yml` gives every same-repo PR a live copy of the lab (RFC 0018). It never touches production data or production deployments.
 
-A preview is skipped when a PR changes no app: only docs, tests (`apps/*/test`, `*.test.*`, `*.spec.*`, `e2e`, `tests`) or CI files other than the preview pipeline. The Plan step decides with `previewNeeded` in `scripts/changed-apps.ts`; the Neon, migrate, deploy and smoke steps are skipped, the job succeeds and the comment says "Preview skipped". This saves the Vercel free plan's 100 deployments a day. PRs that touch the preview pipeline itself (`preview.yml`, `scripts/preview-*.ts`, `scripts/provision.ts`, `scripts/vercel-config.ts`) still get a real preview.
+A preview is skipped when a PR changes no app: only docs, tests (`apps/*/test`, `*.test.*`, `*.spec.*`, `e2e`, `tests`) or CI files other than the preview pipeline. The Plan step decides with `previewNeeded` in `scripts/changed-apps.ts`; the build, ship and smoke jobs are skipped, the run succeeds and the comment says "Preview skipped". This saves the Vercel free plan's 100 deployments a day. PRs that touch the preview pipeline itself (`preview.yml`, `scripts/preview-*.ts`, `scripts/provision.ts`, `scripts/vercel-config.ts`) still get a real preview.
 
 ```mermaid
 flowchart LR
@@ -128,7 +128,7 @@ flowchart LR
 - One sticky comment (marker `<!-- mfe-lab-preview -->`, `scripts/preview-comment.ts`) is edited on every push and set to "Preview removed" on close. Only a marker comment written by `github-actions[bot]` is edited; any other is ignored and a new one is created.
 - Cleanup on close: every step runs with `if: always()`: delete the Neon branch, `vercel alias rm` the five hosts, `vercel remove` each deployment tagged with the PR (found through the Vercel API by the `pr` metadata; production deployments are never touched), then the comment. Neon branches are created with `expires_at` 14 days ahead and the date is pushed out on every sync, so a PR that never closes cleanly still loses its branch.
 - Limits: forks and Dependabot PRs are skipped (no secrets); Neon free tier caps branches, and then the comment says "preview unavailable"; the preview has its own `JWT_SECRET`, but the demo logins are public; previews must be reachable without a Vercel login, so Vercel Authentication (deployment protection) is off on all five projects (owner decision, 2026-11-22) and preview links are public, like production.
-- The job runs PR code with the deploy secrets, which is acceptable only because forks are skipped.
+- Same split as `deploy.yml`: the `build` job pulls with the token before `pnpm install` and builds without it, `ship` deploys the artifact without installing, `smoke` installs and runs Playwright without the token, `comment` reports. The Neon step runs wherever the branch URL or fingerprint is needed (it is idempotent). PR code still runs in a job with `NEON_API_KEY` (install, migrate), which is acceptable only because forks are skipped.
 
 ## Dependabot auto-merge
 

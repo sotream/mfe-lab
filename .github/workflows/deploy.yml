@@ -83,13 +83,11 @@ jobs:
             echo "any=$([ -n "${apps// /}" ] && echo true || echo false)"
           } >> "$GITHUB_OUTPUT"
 
-  api:
+  api-build:
     needs: plan
     if: needs.plan.outputs.api == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    env:
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -100,36 +98,75 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
+      # The deploy token lives only in this step and the ship job's deploy step. It runs before `pnpm install`
+      # and uses no repo dependencies, so install scripts and the build never see it.
+      - name: Link and pull
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          slug=$(node scripts/provision.ts vercel-scope)
+          scope=(); [ -z "$slug" ] || scope=(--scope "$slug")
+          pnpm dlx "$VERCEL_CLI" link --yes --project mfe-lab-api --token "$VERCEL_TOKEN" "${scope[@]}"
+          pnpm dlx "$VERCEL_CLI" pull --yes --environment=production --token "$VERCEL_TOKEN" "${scope[@]}"
       - run: pnpm install --frozen-lockfile --filter @mfe/api...
       # Migrate Neon before the new code goes live.
       - run: node scripts/provision.ts db-url
         env:
           NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
       - run: pnpm --filter @mfe/api migrate
+      - name: Build api
+        run: |
+          # Vercel detects api/*.js functions before it runs buildCommand; the bundle is gitignored, so build it first.
+          pnpm --filter @mfe/api build
+          pnpm dlx "$VERCEL_CLI" build --prod
+          # Fail loudly instead of deploying a function-less API (every path 404s).
+          [ -n "$(find .vercel/output/functions -name '*.func' -type d 2>/dev/null)" ] || { echo "no function in .vercel/output/functions" >&2; exit 1; }
+      # Only the build output and the project link; never the pulled .env files.
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: vercel-api
+          path: |
+            .vercel/output
+            .vercel/project.json
+          include-hidden-files: true
+          retention-days: 1
+          if-no-files-found: error
+
+  api-ship:
+    needs: [plan, api-build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # Trusted checkout for scripts/provision.ts only; no `pnpm install` in this job.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.plan.outputs.sha }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: vercel-api
+          path: .vercel
       - name: Deploy api
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
           slug=$(node scripts/provision.ts vercel-scope)
           scope=(); [ -z "$slug" ] || scope=(--scope "$slug")
-          pnpm dlx "$VERCEL_CLI" link --yes --project mfe-lab-api --token "$VERCEL_TOKEN" "${scope[@]}"
-          pnpm dlx "$VERCEL_CLI" pull --yes --environment=production --token "$VERCEL_TOKEN" "${scope[@]}"
-          # Vercel detects api/*.js functions before it runs buildCommand; the bundle is gitignored, so build it first.
-          pnpm --filter @mfe/api build
-          pnpm dlx "$VERCEL_CLI" build --prod --token "$VERCEL_TOKEN" "${scope[@]}"
-          # Fail loudly instead of deploying a function-less API (every path 404s).
-          [ -n "$(find .vercel/output/functions -name '*.func' -type d 2>/dev/null)" ] || { echo "no function in .vercel/output/functions" >&2; exit 1; }
           pnpm dlx "$VERCEL_CLI" deploy --prebuilt --prod --token "$VERCEL_TOKEN" "${scope[@]}"
 
-  remotes:
-    needs: [plan, api]
+  remotes-build:
+    needs: [plan, api-ship]
     if: ${{ !cancelled() && !failure() && needs.plan.result == 'success' && needs.plan.outputs.remotes != '[]' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
         app: ${{ fromJSON(needs.plan.outputs.remotes) }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    env:
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -140,22 +177,66 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
-      - name: Deploy ${{ matrix.app }}
+      # The deploy token lives only in this step and the ship job's deploy step. It runs before `pnpm install`
+      # and uses no repo dependencies, so install scripts and the build never see it.
+      - name: Link and pull
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
           slug=$(node scripts/provision.ts vercel-scope)
           scope=(); [ -z "$slug" ] || scope=(--scope "$slug")
           pnpm dlx "$VERCEL_CLI" link --yes --project "mfe-lab-${{ matrix.app }}" --token "$VERCEL_TOKEN" "${scope[@]}"
           pnpm dlx "$VERCEL_CLI" pull --yes --environment=production --token "$VERCEL_TOKEN" "${scope[@]}"
-          pnpm dlx "$VERCEL_CLI" build --prod --token "$VERCEL_TOKEN" "${scope[@]}"
+      - run: pnpm install --frozen-lockfile
+      - name: Build ${{ matrix.app }}
+        run: |
+          pnpm dlx "$VERCEL_CLI" build --prod
+      # Only the build output and the project link; never the pulled .env files.
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: vercel-${{ matrix.app }}
+          path: |
+            .vercel/output
+            .vercel/project.json
+          include-hidden-files: true
+          retention-days: 1
+          if-no-files-found: error
+
+  remotes-ship:
+    needs: [plan, remotes-build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJSON(needs.plan.outputs.remotes) }}
+    steps:
+      # Trusted checkout for scripts/provision.ts only; no `pnpm install` in this job.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.plan.outputs.sha }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: vercel-${{ matrix.app }}
+          path: .vercel
+      - name: Deploy ${{ matrix.app }}
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          slug=$(node scripts/provision.ts vercel-scope)
+          scope=(); [ -z "$slug" ] || scope=(--scope "$slug")
           pnpm dlx "$VERCEL_CLI" deploy --prebuilt --prod --token "$VERCEL_TOKEN" "${scope[@]}"
 
-  shell:
-    needs: [plan, remotes]
+  shell-build:
+    needs: [plan, remotes-ship]
     if: ${{ !cancelled() && !failure() && needs.plan.result == 'success' && needs.plan.outputs.shell == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    env:
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -166,24 +247,67 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
-      - name: Deploy shell
+      # The deploy token lives only in this step and the ship job's deploy step. It runs before `pnpm install`
+      # and uses no repo dependencies, so install scripts and the build never see it.
+      - name: Link and pull
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
           slug=$(node scripts/provision.ts vercel-scope)
           scope=(); [ -z "$slug" ] || scope=(--scope "$slug")
           pnpm dlx "$VERCEL_CLI" link --yes --project "mfe-lab" --token "$VERCEL_TOKEN" "${scope[@]}"
           pnpm dlx "$VERCEL_CLI" pull --yes --environment=production --token "$VERCEL_TOKEN" "${scope[@]}"
+      - run: pnpm install --frozen-lockfile
+      - name: Build shell
+        run: |
           # `vercel build` ignores vercel.json build.env, so pass the remote manifests from the single source of truth.
           MF_PRODUCTS_URL="$(node -p "require('./deploy/urls.json').products")/mf-manifest.json"
           MF_DASHBOARD_URL="$(node -p "require('./deploy/urls.json').dashboard")/mf-manifest.json"
           MF_ORDERS_URL="$(node -p "require('./deploy/urls.json').orders")/mf-manifest.json"
-          export MF_PRODUCTS_URL MF_DASHBOARD_URL MF_ORDERS_URL
-          pnpm dlx "$VERCEL_CLI" build --prod --token "$VERCEL_TOKEN" "${scope[@]}"
+          # The production build refuses preview canaries (deploy/canary.ts).
+          export MF_PRODUCTS_URL MF_DASHBOARD_URL MF_ORDERS_URL VERCEL_ENV=production
+          pnpm dlx "$VERCEL_CLI" build --prod
           # Fail instead of shipping a shell that points at localhost remotes.
           ! grep -rl 'localhost:300' .vercel/output/static || { echo "localhost remote URL in the shell build" >&2; exit 1; }
+      # Only the build output and the project link; never the pulled .env files.
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: vercel-shell
+          path: |
+            .vercel/output
+            .vercel/project.json
+          include-hidden-files: true
+          retention-days: 1
+          if-no-files-found: error
+
+  shell-ship:
+    needs: [plan, shell-build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # Trusted checkout for scripts/provision.ts only; no `pnpm install` in this job.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.plan.outputs.sha }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: vercel-shell
+          path: .vercel
+      - name: Deploy shell
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          slug=$(node scripts/provision.ts vercel-scope)
+          scope=(); [ -z "$slug" ] || scope=(--scope "$slug")
           pnpm dlx "$VERCEL_CLI" deploy --prebuilt --prod --token "$VERCEL_TOKEN" "${scope[@]}"
 
   smoke:
-    needs: [plan, shell]
+    needs: [plan, shell-ship]
     if: ${{ !cancelled() && !failure() && needs.plan.result == 'success' && needs.plan.outputs.any == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5

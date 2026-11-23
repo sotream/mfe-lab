@@ -61,8 +61,12 @@ export async function registerGuards(app: FastifyInstance, db: Db, salt: string)
     store: pgRateLimitStore(db, salt, app.log),
     skipOnError: true, // DB hiccup: allow the request (the store logs a warning)
     // One counter per route and caller, as the old per-route in-memory stores had. The user id
-    // when signed in (writes), else the IP (login, POST /errors).
-    keyGenerator: (r: FastifyRequest) =>
-      `${r.routeOptions.method} ${r.routeOptions.url} ${r.user?.sub ? `u${r.user.sub}` : normalizeIP(r.ip)}`,
+    // when signed in (writes), else the IP (login, POST /errors). The shared demo accounts add the
+    // IP, so one visitor cannot spend every visitor's budget.
+    keyGenerator: (r: FastifyRequest) => {
+      const ip = normalizeIP(r.ip);
+      const who = r.user?.sub ? `u${r.user.sub}${isDemo(r.user.role) ? ` ${ip}` : ''}` : ip;
+      return `${r.routeOptions.method} ${r.routeOptions.url} ${who}`;
+    },
   });
 }

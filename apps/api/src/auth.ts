@@ -140,35 +140,40 @@ export async function registerAuth(app: FastifyInstance, opts: { jwtSecret?: str
     }
   });
 
-  const recordFailure = (id: number) =>
-    app.db.query(
-      `update users set failed_attempts = failed_attempts + 1,
-         locked_until = case when failed_attempts + 1 >= ${MAX_FAILURES}
-           then now() + interval '${LOCK_MINUTES} minutes' else locked_until end
-       where id = $1`,
+  // Count first, decide after: one atomic update takes an attempt slot and sets the lock when the
+  // MAX_FAILURES-th one is taken. No row back means the account was already locked, so parallel
+  // requests share at most MAX_FAILURES guesses per window. An expired lock starts a new window.
+  const claimAttempt = async (id: number): Promise<boolean> => {
+    const next = 'case when locked_until is not null then 1 else failed_attempts + 1 end';
+    const rows = await app.db.query(
+      `update users set failed_attempts = ${next},
+         locked_until = case when ${next} >= ${MAX_FAILURES} then now() + interval '${LOCK_MINUTES} minutes' end
+       where id = $1 and (locked_until is null or locked_until <= now())
+       returning failed_attempts, locked_until`,
       [id],
     );
+    return rows.length > 0;
+  };
+
+  // True when the owner account must be refused: env, IP or a stale read says no, or the counted attempt hit the lock.
+  const ownerGate = async (user: UserRow, ip: string, counted: boolean): Promise<boolean> =>
+    ownerRefused(user, ip) || (counted && !(await claimAttempt(user.id)));
 
   // The step is stored atomically: a code (or an older one) can be used only once.
-  // Counts a failure; resets the counters on success.
-  const acceptOtp = async (id: number, otp: string): Promise<boolean> => {
+  // Success resets the counters; the attempt itself was counted by claimAttempt.
+  const acceptOtp = async (id: number, otp?: string): Promise<'ok' | 'missing' | 'bad'> => {
+    if (!otp) return 'missing';
     const step = verifyTotp(process.env.SUPERADMIN_TOTP_SECRET!, otp.trim());
     const fresh =
       step !== null &&
       (
         await app.db.query(
-          'update users set totp_last_step = $1 where id = $2 and (totp_last_step is null or totp_last_step < $1) returning id',
+          `update users set totp_last_step = $1, failed_attempts = 0, locked_until = null
+           where id = $2 and (totp_last_step is null or totp_last_step < $1) returning id`,
           [step, id],
         )
       ).length > 0;
-    if (!fresh) {
-      await recordFailure(id);
-      return false;
-    }
-    await app.db.query('update users set failed_attempts = 0, locked_until = null where id = $1', [
-      id,
-    ]);
-    return true;
+    return fresh ? 'ok' : 'bad';
   };
 
   // Same shape for login and /auth/me. demo: the UI must not guess whether the lock is on.
@@ -197,20 +202,22 @@ export async function registerAuth(app: FastifyInstance, opts: { jwtSecret?: str
       const owner = user?.role === 'superadmin';
       // The owner account is refused with the generic error when its env is missing, the
       // caller IP is not allowed, or it is locked. scrypt still runs, so timing does not differ.
-      const refused = owner && ownerRefused(user, request.ip);
+      // A guess with a code is counted before it is checked; a password-only attempt (the first step
+      // of the two-step login) is counted only when the password is wrong.
+      const counted = owner && !!request.body.otp;
+      const refused = owner && (await ownerGate(user, request.ip, counted));
       const passwordOk = await verifyPassword(
         request.body.password,
         user?.password_hash ?? (await getDummyHash()),
       );
       if (!user || refused || !passwordOk) {
-        if (owner && !refused) await recordFailure(user.id);
+        if (owner && !refused && !counted) await claimAttempt(user.id);
         return invalid();
       }
 
-      if (owner) {
-        if (!request.body.otp) return reply.code(401).send({ error: 'otp_required' });
-        if (!(await acceptOtp(user.id, request.body.otp))) return invalid();
-      }
+      const otp = owner ? await acceptOtp(user.id, request.body.otp) : 'ok';
+      if (otp === 'missing') return reply.code(401).send({ error: 'otp_required' });
+      if (otp === 'bad') return invalid();
 
       const token = app.jwt.sign({ sub: user.id, role: user.role, email: user.email });
       return { token, user: publicUser(user) };

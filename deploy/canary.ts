@@ -8,13 +8,16 @@ const PROD_ORIGINS = new Set([urls.products, urls.dashboard, urls.orders]);
 const PREVIEW_HOST = /^mfe-lab-(products|dashboard|orders)-pr-\d+\.vercel\.app$/;
 
 // https, no user-info, a manifest path, an allowlisted origin. `allowLocal` (never in production)
-// also accepts http://localhost:<port> for the local e2e releases.
-export function isAllowedCanary(value: string, allowLocal: boolean): boolean {
+// also accepts http://localhost:<port> for the local e2e releases. `production` (the live API or the
+// production shell build) refuses PR preview hosts: a preview deployment is not production code.
+export function isAllowedCanary(value: string, allowLocal: boolean, production = false): boolean {
   if (!URL.canParse(value)) return false;
   const u = new URL(value);
   if (u.username || u.password || !u.pathname.endsWith('/mf-manifest.json')) return false;
   if (u.protocol === 'https:') {
-    return PROD_ORIGINS.has(u.origin) || (u.port === '' && PREVIEW_HOST.test(u.hostname));
+    return (
+      PROD_ORIGINS.has(u.origin) || (!production && u.port === '' && PREVIEW_HOST.test(u.hostname))
+    );
   }
   return allowLocal && u.protocol === 'http:' && u.hostname === 'localhost' && u.port !== '';
 }
