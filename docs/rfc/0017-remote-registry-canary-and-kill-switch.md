@@ -22,7 +22,7 @@ The shell bakes each remote's manifest URL in at build time (RFC 0004). Changing
 
 ## Proposal
 
-**Registry.** Migration `004_remote_registry.sql`: `remotes(name, canary_url, canary_percent 0..100, disabled, updated_at)`, seeded with `products`, `dashboard` and `orders` (no canary, 0%, enabled). `GET /registry` is public (the shell reads it before login) and sends `Cache-Control: no-store`. `PATCH /registry/:name` is admin only; `canaryUrl` must be `https://` or `http://localhost:<port>` / `http://127.0.0.1:<port>`, with a path ending in `/mf-manifest.json`. `seed:reset` and the daily reseed put the registry back to stable.
+**Registry.** Migration `004_remote_registry.sql`: `remotes(name, canary_url, canary_percent 0..100, disabled, updated_at)`, seeded with `products`, `dashboard` and `orders` (no canary, 0%, enabled). `GET /registry` is public (the shell reads it before login) and sends `Cache-Control: public, s-maxage=5, stale-while-revalidate=60` to anonymous requests, so the Vercel CDN can answer without waking the function and the database (a cold start plus a Neon wake-up cost about 1.4 s); a request with `Authorization` gets `no-store` (Vercel never caches those), so a signed-in admin reads fresh state, and the inspector applies the `PATCH` response directly. `PATCH /registry/:name` is admin only; `canaryUrl` must be `https://` or `http://localhost:<port>` / `http://127.0.0.1:<port>`, with a path ending in `/mf-manifest.json`. `seed:reset` and the daily reseed put the registry back to stable.
 
 **Stable stays build-time.** The registry only adds a canary and a switch. The stable URL is still the shell's baked-in manifest.
 
@@ -32,7 +32,7 @@ The shell bakes each remote's manifest URL in at build time (RFC 0004). Changing
 
 **Resolution.** `resolveRemote(name, row, userId)` returns `{ variant, entry, bucket }`: `disabled` wins; then `canary` (URL set, signed in, bucket below percent); else `stable`. Each load of a remote re-resolves, so a change applies on the next load, not as a hot swap.
 
-**Kill switch.** A disabled remote is never fetched: no manifest, no entry request. Its frame shows "<remote> is switched off right now" (DE: "ist gerade abgeschaltet") with no Retry, and the rest of the page keeps working. The idle prefetch (RFC 0005) skips disabled remotes and warms the resolved entry.
+**Kill switch.** A disabled remote is never fetched: no manifest, no entry request. Its frame shows "<remote> is switched off right now" (DE: "ist gerade abgeschaltet") with no Retry, and the rest of the page keeps working. For visitors the switch takes effect within about a minute (CDN freshness 5 s plus up to 60 s stale-while-revalidate); an admin sees it at once. The idle prefetch (RFC 0005) skips disabled remotes and warms the resolved entry.
 
 **Fallback.** A Module Federation runtime plugin (`fallbackPlugin.ts`) implements `errorLoadRemote`. If a remote on canary fails to load (manifest, entry or expose), the plugin re-registers stable with `force`, marks the remote as fallen back for the page session, reports `{ kind: 'load', build: 'canary', message: 'canary failed, fell back to stable: ...' }` (RFC 0010) and returns the stable module, so the frame renders stable without an error. A canary that hangs never reaches the plugin: `load()` gives it 5 s (`CANARY_TIMEOUT_MS` in `remotes.ts`), then falls back the same way and reports `canary timeout`. `load()` also waits at most 1 s for an idle prefetch still in flight before it re-registers a remote. At most one fallback per remote per page. A failure on stable behaves as before: frame error and Retry.
 
@@ -51,7 +51,7 @@ The shell bakes each remote's manifest URL in at build time (RFC 0004). Changing
 
 ## Trade-offs and risks
 
-- The registry is public and cached nowhere, so an API outage only costs the 2 s timeout once per page.
+- The registry is public and cached at the CDN for seconds, so an API outage only costs the 2 s timeout once per page.
 - Prod has no `/releases` (T30): a canary there must still be an allowlisted manifest URL (see Trust model). The demo is a broken canary at 100%: everyone stays on stable.
 - Fallback is per page session; the next page load tries the canary again.
 - Not done: per-region rollout, automatic ramp-up, server-side composition.
