@@ -11,11 +11,11 @@ const list = async (ctx: Awaited<ReturnType<typeof freshApp>>) =>
   (await call(ctx, { url: '/registry', as: null })).json<Row[]>();
 
 describe('registry', () => {
-  it('Q-registry-api: GET is public, returns the 3 seeded rows, no-store', async () => {
+  it('Q-registry-api: GET is public, returns the 3 seeded rows, CDN-cacheable', async () => {
     const ctx = await freshApp();
     const res = await call(ctx, { url: '/registry', as: null });
     expect(res.statusCode, res.body).toBe(200);
-    expect(res.headers['cache-control']).toMatch(/no-store/);
+    expect(res.headers['cache-control']).toBe('public, s-maxage=5, stale-while-revalidate=60');
     const rows = res.json<Row[]>();
     expect(rows.map((r) => r.name)).toEqual(['dashboard', 'orders', 'products']);
     for (const r of rows) {

@@ -33,8 +33,15 @@ export const registryRoutes: FastifyPluginAsyncZod = async (app) => {
   app.get(
     '/registry',
     { schema: { tags: ['registry'], security: [], response: { 200: z.array(row) } } },
-    async (_request, reply) => {
-      reply.header('cache-control', 'no-store');
+    async (request, reply) => {
+      // Anonymous reads may sit in the CDN for ~a minute (RFC 0017). Vercel never caches a request that
+      // carries Authorization, so a signed-in admin always reads fresh and no Vary is needed.
+      reply.header(
+        'cache-control',
+        request.headers.authorization
+          ? 'no-store'
+          : 'public, s-maxage=5, stale-while-revalidate=60',
+      );
       return app.db.query<z.infer<typeof row>>(
         'select name, canary_url as "canaryUrl", canary_percent as "canaryPercent", disabled from remotes order by name',
       );

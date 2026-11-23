@@ -321,3 +321,8 @@ Nothing planned.
 
 - **Goal:** the inspector's empty "Use" option says what it does, and the shell's first paint does not wait one hop for the boot chunks and fonts.
 - **Done when:** the empty option of each Use select reads `default (registry)` (EN) and `Standard (Registry)` (DE) instead of `dev (local)`; the shell build adds `rel="preload"` links to `index.html` for the bootstrap chunk, the sync chunks of the shared packages (from `mf-manifest.json`, no hard-coded names) and at most two self-hosted fonts (`type="font/woff2"`, `crossorigin`), and nothing for remotes or async chunks; every linked file exists in `dist/` and is requested once; `pnpm lint && pnpm typecheck && pnpm test && pnpm build` and the size budget pass; budgets and CSP unchanged; no new dependency.
+
+## T65 Cached registry reads
+
+- **Goal:** the shell's idle prefetch no longer waits for an API cold start and database wake-up on every cold visit.
+- **Done when:** anonymous `GET /registry` sends `Cache-Control: public, s-maxage=5, stale-while-revalidate=60` and requests with `Authorization` keep `no-store`; the shell's boot fetch adds no cache bypass and the inspector applies the `PATCH` response, so an admin sees changes at once; `docs/api.md` and RFC 0017 say the kill switch reaches visitors within about a minute; on a preview, a repeat anonymous `/api/registry` within 5 s returns `x-vercel-cache: HIT`; `pnpm lint && pnpm typecheck && pnpm test` pass; no new dependency.
