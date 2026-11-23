@@ -6,6 +6,7 @@
 //   remotes : remoteEntry.js + the union of the `assets.js.sync` chunks of every expose in
 //             dist/mf-manifest.json (an expose is fetched whole when the host mounts it)
 // Async chunks only count towards totalJsGzip. No hand-kept file lists.
+import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { gzipSync } from 'node:zlib';
@@ -31,10 +32,20 @@ export function initialFiles(dist: string, app: string): string[] {
 export function measure(dist: string, app: string): Record<Metric, number> {
   const all = readdirSync(dist);
   const sum = (files: string[]) => files.reduce((n, f) => n + gz(join(dist, f)), 0);
+  // Byte-identical emitted files (e.g. the same CSS under two chunk names) are counted once.
+  const once = (files: string[]) => {
+    const seen = new Set<string>();
+    return files.filter((f) => {
+      const h = createHash('sha256')
+        .update(readFileSync(join(dist, f)))
+        .digest('hex');
+      return !seen.has(h) && seen.add(h);
+    });
+  };
   return {
     initialJsGzip: sum(initialFiles(dist, app)),
-    totalJsGzip: sum(all.filter((f) => f.endsWith('.js'))),
-    cssGzip: sum(all.filter((f) => f.endsWith('.css'))),
+    totalJsGzip: sum(once(all.filter((f) => f.endsWith('.js')))),
+    cssGzip: sum(once(all.filter((f) => f.endsWith('.css')))),
   };
 }
 

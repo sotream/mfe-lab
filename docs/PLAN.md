@@ -174,7 +174,7 @@ Goal: weekly grouped dependency update PRs via `.github/dependabot.yml`, with no
 ## T30 Vercel hosting prep
 
 - **Goal:** every app can be deployed to Vercel as its own project and the API runs as a Vercel Function against Neon. Nothing is deployed here; T31 adds the accounts, `deploy.yml` and the first deploy (`docs/deploy.md`).
-- **Done when:** `deploy/urls.json` and `node scripts/vercel-config.ts` generate the four committed `apps/*/vercel.json`; the static apps rewrite `/api/:path*` to the API, fall back to `/index.html`, send CORS (remotes), `no-store` on `mf-manifest.json` and `remoteEntry.js`, and `immutable` only on content-hashed files; the shell `build.env` has both production manifest URLs; the API has a Vercel entry that never listens or migrates and never loads PGlite; `GET /cron/reseed` is 404 without `CRON_SECRET`, 401 without the bearer token, and reseeds (3/30/60) with it; `docs/deploy.md` and the RFC 0013 hosting note exist; `pnpm lint && pnpm typecheck && pnpm test` pass.
+- **Done when:** `deploy/urls.json` and `node scripts/vercel-config.ts` generate the four committed `apps/*/vercel.json`; the static apps rewrite `/api/:path*` to the API, fall back to `/index.html`, send CORS (remotes), `no-cache` on `mf-manifest.json` and `remoteEntry.js`, and `immutable` only on content-hashed files; the shell `build.env` has both production manifest URLs; the API has a Vercel entry that never listens or migrates and never loads PGlite; `GET /cron/reseed` is 404 without `CRON_SECRET`, 401 without the bearer token, and reseeds (3/30/60) with it; `docs/deploy.md` and the RFC 0013 hosting note exist; `pnpm lint && pnpm typecheck && pnpm test` pass.
 
 ## T31 Provision and deploy from Actions
 
@@ -301,3 +301,8 @@ Nothing planned.
 - **Done when:** the separate logo block above the banner is gone; `docs/img/banner.svg` has the mfe-lab mark before the wordmark (amber hyphen), its description and shell illustration show products, dashboard and orders (Vue), and the stack line names Vue; the banner renders without clipping or overlap at 880 and 1280 px; `logo.svg` and `logo-light.svg` stay for other uses; `pnpm lint && pnpm test` pass; no new dependency.
 
 ## T56 Shared role labels
+
+## T63 Cheap performance wins
+
+- **Goal:** headroom wins from the final review, with no behaviour change for users.
+- **Done when:** `mf-manifest.json` and `remoteEntry.js` are `no-cache` (always revalidated, a repeat visit gets a 304) instead of `no-store` in the generated `vercel.json` files, the nginx template and the deploy smoke check; the API pool's `idleTimeoutMillis` is 120 s; the shell's idle prefetch starts orders only after the products and dashboard preload has settled; `scripts/size-budget.ts` counts byte-identical emitted JS or CSS files of one app once; budgets unchanged; `pnpm lint && pnpm typecheck && pnpm test && pnpm build` pass; no new dependency. Shared tree-shaking of `react-router` was tried and dropped: the runtime then asks for an `independent-packages/.../share-entry.js` fallback that the build does not emit.

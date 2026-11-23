@@ -14,11 +14,11 @@ server {
     proxy_pass http://api:4000/;
   }
 
-  # Remote entry points must never be cached, so a restarted remote is picked up.
+  # Remote entry points are always revalidated (no-cache), so a restarted remote is picked up.
   location ~ ^/(mf-manifest\.json|remoteEntry\.js)$ {
     add_header Access-Control-Allow-Origin * always;
     add_header X-Content-Type-Options nosniff always;
-    add_header Cache-Control no-store always;
+    add_header Cache-Control no-cache always;
   }
 
   # Content-hashed assets (16 hex chars) never change.

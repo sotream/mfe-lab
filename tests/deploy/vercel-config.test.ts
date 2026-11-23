@@ -75,7 +75,7 @@ describe('vercel config', () => {
     }
   });
 
-  it('Q-vercel-config: remotes send CORS *, manifest and remoteEntry are no-store', () => {
+  it('Q-vercel-config: remotes send CORS *, manifest and remoteEntry are no-cache', () => {
     for (const app of ['products', 'dashboard', 'orders'] as const) {
       const c = load(root, app);
       for (const p of ['/mf-manifest.json', '/remoteEntry.js']) {
@@ -85,7 +85,7 @@ describe('vercel config', () => {
     for (const app of statics) {
       const c = load(root, app);
       for (const p of ['/mf-manifest.json', '/remoteEntry.js']) {
-        expect(headersFor(c, p)['cache-control'], `${app} ${p}`).toBe('no-store');
+        expect(headersFor(c, p)['cache-control'], `${app} ${p}`).toBe('no-cache');
       }
       expect(headersFor(c, '/index.html')['cache-control'] ?? '', `${app} index`).not.toMatch(
         /immutable/,
@@ -108,7 +108,7 @@ describe('vercel config', () => {
         );
       }
       for (const p of ['/remoteEntry.js', '/mf-manifest.json']) {
-        expect(headersFor(c, p)['cache-control'], `${app} ${p}`).toBe('no-store');
+        expect(headersFor(c, p)['cache-control'], `${app} ${p}`).toBe('no-cache');
       }
       expect(headersFor(c, '/index.html')['cache-control'] ?? '', `${app} index`).not.toMatch(
         /immutable/,
