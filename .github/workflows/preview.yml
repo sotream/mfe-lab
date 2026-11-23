@@ -117,6 +117,8 @@ jobs:
             pnpm dlx "$VERCEL_CLI" build
             if [ "$app" = api ]; then
               [ -n "$(find .vercel/output/functions -name '*.func' -type d 2>/dev/null)" ] || { echo "no function in .vercel/output/functions" >&2; exit 1; }
+              # The function lists its installed dependencies as paths in this checkout; ship has none, so inline them.
+              node scripts/inline-func-deps.ts
             fi
             # Only the output and the project link go on; never the pulled .env files.
             mkdir -p "$RUNNER_TEMP/vc-out/$app"

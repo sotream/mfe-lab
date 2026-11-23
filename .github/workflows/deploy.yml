@@ -121,6 +121,8 @@ jobs:
           pnpm dlx "$VERCEL_CLI" build --prod
           # Fail loudly instead of deploying a function-less API (every path 404s).
           [ -n "$(find .vercel/output/functions -name '*.func' -type d 2>/dev/null)" ] || { echo "no function in .vercel/output/functions" >&2; exit 1; }
+          # The function lists its installed dependencies as paths in this checkout; ship has none, so inline them.
+          node scripts/inline-func-deps.ts
       # Only the build output and the project link; never the pulled .env files.
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
