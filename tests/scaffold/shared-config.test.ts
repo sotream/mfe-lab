@@ -22,4 +22,15 @@ describe('federation.shared', () => {
         .sort(),
     ).toEqual(['@mfe/auth-store', 'react', 'react-dom', 'react-router']);
   });
+
+  // T63: react-router is tree-shaken but must stay a singleton with the installed ^version.
+  it('Q-t63-router: react-router stays a singleton with a caret requiredVersion', async () => {
+    vi.resetModules();
+    vi.spyOn(process, 'cwd').mockReturnValue(resolve(import.meta.dirname, '../../apps/shell'));
+    const { shared } = (await import('../../federation.shared.ts')) as {
+      shared: Record<string, { singleton: boolean; requiredVersion: string }>;
+    };
+    expect(shared['react-router']?.singleton).toBe(true);
+    expect(shared['react-router']?.requiredVersion).toMatch(/^\^\d+\.\d+\.\d+/);
+  });
 });
