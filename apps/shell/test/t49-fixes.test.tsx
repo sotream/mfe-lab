@@ -130,7 +130,7 @@ describe('Q-de-strings (inspector)', () => {
     expect(kind).not.toBe('render');
   });
 
-  it('the dev option reads "dev (local)" in EN and "dev (lokal)" in DE', async () => {
+  it('the empty option reads "default (registry)" in EN and "Standard (Registry)" in DE', async () => {
     await mount();
     const labels = async () => {
       const s = screen.getByRole('combobox', { name: /^products/ });
@@ -142,9 +142,11 @@ describe('Q-de-strings (inspector)', () => {
       await act(async () => void fireEvent.keyDown(s, { key: 'Escape' }));
       return text;
     };
-    expect(await labels()).toContain('dev (local)');
+    expect(await labels()).toContain('default (registry)');
+    expect(await labels()).not.toContain('dev (local)');
     await setLocale('de');
-    expect(await labels()).toContain('dev (lokal)');
+    expect(await labels()).toContain('Standard (Registry)');
+    expect(await labels()).not.toContain('dev (lokal)');
   });
 });
 

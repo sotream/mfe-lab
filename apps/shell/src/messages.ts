@@ -100,7 +100,7 @@ const de = {
     up: 'erreichbar',
     down: 'nicht erreichbar',
     off: 'aus',
-    devOption: 'dev (lokal)',
+    defaultOption: 'Standard (Registry)',
     kinds: { render: 'Darstellung', load: 'Laden', unhandled: 'Unbehandelt' },
     flagDescriptions: {
       'dashboard.revenue': 'Abschnitt „Umsatz nach Status“ anzeigen',
@@ -263,7 +263,7 @@ const en: typeof de = {
     up: 'up',
     down: 'down',
     off: 'off',
-    devOption: 'dev (local)',
+    defaultOption: 'default (registry)',
     kinds: { render: 'render', load: 'load', unhandled: 'unhandled' },
     flagDescriptions: {},
     shared: 'Shared dependencies',

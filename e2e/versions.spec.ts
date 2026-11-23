@@ -10,7 +10,7 @@ async function pickVersion(page: Page, version: string): Promise<void> {
   await page.getByRole('link', { name: 'Inspector' }).click();
   // T38: custom select (role=combobox / role=option); '' is the "dev" entry
   await page.getByRole('combobox', { name: 'products version' }).click();
-  await page.getByRole('option', { name: version || 'dev (local)', exact: true }).click();
+  await page.getByRole('option', { name: version || 'default (registry)', exact: true }).click();
   await page.getByRole('link', { name: 'Home' }).click();
 }
 

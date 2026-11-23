@@ -159,6 +159,40 @@ describe('federation build', { timeout: BUILD_TIMEOUT }, () => {
     }
   });
 
+  it('T64-preload: shell index.html preloads boot chunks (incl. react-dom) and at most two woff2 fonts, same-origin, all in dist', () => {
+    // T64: shape may need adapting in phase 2 (attribute order, modulepreload vs preload)
+    const dist = join(root, 'apps', 'shell', 'dist');
+    const html = readFileSync(join(dist, 'index.html'), 'utf8');
+    const links = [...html.matchAll(/<link\b[^>]*>/g)]
+      .map((m) => m[0])
+      .filter((l) => /rel="(?:module)?preload"/.test(l));
+    expect(links.length, 'preload links').toBeGreaterThan(0);
+    const attr = (l: string, n: string) => new RegExp(`\\s${n}="([^"]*)"`).exec(l)?.[1];
+    const hrefs = links.map((l) => attr(l, 'href') ?? '');
+    for (const h of hrefs) {
+      expect(h, 'same-origin, no scheme').not.toMatch(/^(?:[a-z]+:)?\/\//i);
+      expect(existsSync(join(dist, h.replace(/^\//, ''))), `exists in dist: ${h}`).toBe(true);
+    }
+    expect(new Set(hrefs).size, 'no duplicates').toBe(hrefs.length);
+    const m = JSON.parse(readFileSync(join(dist, 'mf-manifest.json'), 'utf8')) as {
+      shared: { name: string; assets: { js: { sync: string[] } } }[];
+    };
+    const reactDom = m.shared.find((s) => s.name === 'react-dom')!.assets.js.sync;
+    expect(
+      hrefs.some((h) => reactDom.some((f) => h.endsWith(f))),
+      'react-dom chunk preloaded',
+    ).toBe(true);
+    const fonts = links.filter((l) => attr(l, 'as') === 'font');
+    expect(fonts.length).toBeLessThanOrEqual(2);
+    for (const f of fonts) {
+      expect(attr(f, 'type')).toBe('font/woff2');
+      expect(f).toMatch(/\scrossorigin/);
+    }
+    for (const r of ['products', 'dashboard', 'orders']) {
+      expect(hrefs.join(' '), `no ${r} remote`).not.toMatch(new RegExp(r, 'i'));
+    }
+  });
+
   it('Q-hashed-assets: every js and css except remoteEntry.js has a 16-hex hash; entry files stay unhashed', () => {
     const hash = /[0-9a-f]{16}/;
     for (const app of ['shell', 'products', 'dashboard', 'orders']) {
