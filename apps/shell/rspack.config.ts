@@ -17,15 +17,19 @@ const bootPreload = {
       compilation.hooks.processAssets.tap(
         { name: 'boot-preload', stage: rspack.Compilation.PROCESS_ASSETS_STAGE_REPORT },
         () => {
-          const manifest = JSON.parse(
-            String(compilation.getAsset('mf-manifest.json')?.source.source()),
-          );
-          const boot = compilation
+          // The bootstrap chunk plus the shell's own shared chunks ("provide" modules). The "consume
+          // fallback" chunks (e.g. a second react-dom file) are only fetched when no provider exists.
+          const chunks = compilation
             .getStats()
-            .toJson({ all: false, chunks: true, chunkModules: true })
-            .chunks?.find((c) => c.modules?.some((m) => m.name?.startsWith('./src/bootstrap.tsx')));
-          const js = new Set<string>(boot?.files?.filter((f) => f.endsWith('.js')));
-          for (const sh of manifest.shared) for (const f of sh.assets.js.sync) js.add(f);
+            .toJson({ all: false, chunks: true, chunkModules: true, chunkOrigins: true }).chunks!;
+          const js = new Set<string>();
+          for (const c of chunks) {
+            const boot = c.modules?.some((m) => m.name?.startsWith('./src/bootstrap.tsx'));
+            const provided = c.origins?.some((o) =>
+              o.moduleName?.startsWith('provide shared module'),
+            );
+            if (boot || provided) for (const f of c.files ?? []) if (f.endsWith('.js')) js.add(f);
+          }
           const fonts = Object.keys(compilation.assets)
             .filter((f) => f.endsWith('.woff2'))
             .slice(0, 2);
